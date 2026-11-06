@@ -1,0 +1,2889 @@
+# AI PDF STUDIO
+## ULTIMATE AI DOCUMENT ORCHESTRATION, INTELLIGENT EDITING & COMPLETE DOCUMENT CONTROL
+
+**Platform:** Base44  
+**Application:** AI PDF STUDIO  
+**AI Engine:** Gemini conversational AI  
+**Product Category:** Intelligent Document Creation, Editing, Management, Publishing & PDF Production Platform
+
+---
+
+# PART I: FUNDAMENTAL PRODUCT REQUIREMENT
+
+## 1. TRANSFORM THE AI CHAT INTO A COMPLETE DOCUMENT CONTROL SYSTEM
+
+The most important requirement is that the conversational AI must have comprehensive operational control over the entire application document.
+
+The AI must be capable of creating, editing, restructuring, merging, splitting, reorganizing, formatting, analyzing, validating, and rebuilding documents through natural-language instructions.
+
+The chat interface must not be restricted to generating text or modifying a limited selection of document properties.
+
+It must function as the primary control center for the entire document.
+
+### The user must be able to:
+
+- Create an entire document through conversation.
+- Build documents from supplied text.
+- Build documents from uploaded files.
+- Build documents from multiple source documents.
+- Generate missing sections.
+- Rewrite existing sections.
+- Merge multiple sections.
+- Split sections into smaller sections.
+- Move sections anywhere in the document.
+- Reorganize the entire document.
+- Delete unwanted content.
+- Restore previously deleted content.
+- Rebuild the entire document structure.
+- Change formatting globally.
+- Modify individual pages.
+- Modify tables.
+- Modify images.
+- Modify headers and footers.
+- Manage signature blocks.
+- Add appendices.
+- Generate tables of contents.
+- Modify page layouts.
+- Generate new PDF versions.
+- Compare revisions.
+- Inspect and validate the final PDF.
+
+All of these operations must be executable through AI chat.
+
+**The AI must have the same document-editing capabilities as the visual editor, plus advanced capabilities that the visual editor does not necessarily expose.**
+
+The user should not need to manually navigate through multiple panels to perform ordinary document operations.
+
+---
+
+# PART II: THE AI DOCUMENT ORCHESTRATION ENGINE
+
+## 2. CENTRAL DOCUMENT COMMAND ORCHESTRATOR
+
+Implement a dedicated Document Command Orchestrator.
+
+This component coordinates complex instructions involving multiple document operations.
+
+It must translate natural-language requests into executable, structured document operations.
+
+For example:
+
+"Take Sections 3, 5, and 8, combine them into a single intellectual property section, remove repeated language, preserve all unique provisions, move the result after Section 2, renumber everything, and update all references."
+
+This should be treated as one coordinated workflow.
+
+### Required execution pipeline
+
+1. Receive the user's instruction.
+2. Identify the active document.
+3. Retrieve the current document model.
+4. Retrieve the complete document structure.
+5. Understand the requested changes.
+6. Identify the affected document components.
+7. Identify dependencies and cross-references.
+8. Generate an execution plan.
+9. Validate the proposed operations.
+10. Execute the required operations.
+11. Check intermediate results.
+12. Update the document model.
+13. Synchronize the visual editor.
+14. Recalculate layout and pagination.
+15. Regenerate the PDF preview.
+16. Perform content-integrity verification.
+17. Save a new document version.
+18. Return an accurate execution summary.
+
+### Multi-operation execution
+
+The orchestrator must support:
+
+- Sequential operations.
+- Parallel operations when independent.
+- Conditional operations.
+- Dependent operations.
+- Batch operations.
+- Repeated operations.
+- Nested operations.
+- Reversible operations.
+- Transactional operations.
+
+It must understand operation dependencies.
+
+For example, section renumbering must happen after section reordering, not before.
+
+Cross-reference updates must happen after the final section structure is established.
+
+### Execution planning
+
+For complex requests, the AI should display a concise execution plan.
+
+Example:
+
+**Requested operation: Reorganize agreement**
+
+1. Merge Sections 4 and 5.
+2. Extract payment provisions from Section 8.
+3. Create a new PAYMENT AND DISTRIBUTION section.
+4. Move definitions to the beginning.
+5. Reorganize appendices.
+6. Renumber all clauses.
+7. Update cross-references.
+8. Recalculate pagination.
+9. Verify source-content preservation.
+
+Allow the user to approve the plan or instruct the AI to proceed.
+
+Do not require approval for every trivial formatting adjustment.
+
+---
+
+# PART III: COMPLETE DOCUMENT STRUCTURE CONTROL
+
+## 3. UNIVERSAL DOCUMENT OBJECT MODEL
+
+Create a comprehensive structured document model.
+
+Every document component must have a persistent unique identifier.
+
+The model must support nested document structures.
+
+### Supported document objects
+
+**Document-level objects**
+- Document.
+- Document metadata.
+- Document sections.
+- Document outline.
+- Document styles.
+- Page configuration.
+- Brand configuration.
+
+**Structural objects**
+- Sections.
+- Subsections.
+- Nested subsections.
+- Chapters.
+- Articles.
+- Clauses.
+- Subclauses.
+- Paragraphs.
+- Lists.
+- Tables.
+- Figures.
+- Appendices.
+- Exhibits.
+- Schedules.
+- Attachments.
+
+**Content objects**
+- Text runs.
+- Paragraphs.
+- Headings.
+- Hyperlinks.
+- Images.
+- Charts.
+- Captions.
+- Footnotes.
+- Endnotes.
+- Citations.
+- Mathematical expressions.
+- Code blocks.
+- Callout boxes.
+- Definitions.
+- Quotations.
+
+**Layout objects**
+- Pages.
+- Page breaks.
+- Section breaks.
+- Columns.
+- Headers.
+- Footers.
+- Margins.
+- Page numbering.
+- Watermarks.
+- Backgrounds.
+- Text frames.
+- Image frames.
+
+**Execution objects**
+- Signature blocks.
+- Initial fields.
+- Date fields.
+- Signatory information.
+- Witness information.
+- Electronic signature placeholders.
+
+### Object requirements
+
+Every object should contain:
+
+- Unique ID.
+- Object type.
+- Parent ID.
+- Position.
+- Order index.
+- Content.
+- Formatting properties.
+- Creation timestamp.
+- Modification timestamp.
+- Source reference.
+- Version reference.
+
+Objects must be independently addressable by the AI.
+
+For example:
+
+"Change the heading of the third subsection under Section 4."
+
+The AI should identify the exact object rather than relying on fragile text matching.
+
+---
+
+## 4. COMPLETE SECTION MANAGEMENT
+
+Give the AI unrestricted operational access to all sections.
+
+### Creation
+
+- Create sections.
+- Create subsections.
+- Create nested subsections.
+- Create chapters.
+- Create articles.
+- Create clauses.
+- Create supporting sections.
+- Create standalone sections.
+- Create appendix sections.
+- Generate introductions.
+- Generate conclusions.
+- Generate definitions sections.
+- Generate executive summaries.
+
+### Modification
+
+- Rewrite sections.
+- Expand sections.
+- Condense sections.
+- Improve wording.
+- Change terminology.
+- Correct grammar.
+- Modify headings.
+- Change section hierarchy.
+- Modify formatting.
+- Replace section content.
+- Append new content.
+- Insert content at precise locations.
+
+### Deletion
+
+- Delete sections.
+- Delete subsections.
+- Delete clauses.
+- Delete paragraphs.
+- Delete empty objects.
+- Delete duplicates.
+- Delete obsolete content.
+
+### Duplication
+
+- Duplicate sections.
+- Duplicate subsections.
+- Duplicate clauses.
+- Duplicate tables.
+- Duplicate formatting structures.
+- Duplicate entire documents.
+
+### Reordering
+
+- Move sections.
+- Move subsections.
+- Move clauses.
+- Reorder chapters.
+- Reorder appendices.
+- Reorder tables.
+- Move content between sections.
+- Move content between documents.
+
+All structural changes must preserve document relationships and trigger appropriate numbering and reference updates.
+
+---
+
+## 5. ADVANCED SECTION MERGING
+
+Implement a dedicated intelligent section-merging engine.
+
+This must be a core AI capability.
+
+### Supported operations
+
+- Merge two sections.
+- Merge multiple sections.
+- Merge selected subsections.
+- Merge clauses.
+- Merge paragraphs.
+- Merge appendices.
+- Merge multiple tables.
+- Merge related content from different documents.
+- Consolidate sections based on subject matter.
+
+### Four merging modes
+
+**MODE A: EXACT MERGE**
+
+Combine content without changing original wording.
+
+Only structural organization, hierarchy, and numbering may change.
+
+**MODE B: INTELLIGENT MERGE**
+
+Combine related material, improve flow, and eliminate confirmed duplication when authorized.
+
+Preserve every unique substantive provision.
+
+**MODE C: CONSOLIDATION MERGE**
+
+Produce a more concise unified section while preserving all distinct rights, obligations, conditions, restrictions, figures, and material details.
+
+**MODE D: STRUCTURAL MERGE**
+
+Preserve all original wording while reorganizing content into a unified section with appropriate subsections.
+
+### Semantic analysis
+
+Before merging, identify:
+
+- Duplicate paragraphs.
+- Similar provisions.
+- Overlapping content.
+- Conflicting statements.
+- Different terminology for the same concept.
+- Unique information.
+- Dependent clauses.
+- Referenced appendices.
+- Referenced tables.
+- Related definitions.
+
+The AI must distinguish between genuine duplication and similar language that serves different purposes.
+
+Never delete substantive content simply because it resembles another paragraph.
+
+### Conflict management
+
+If two sections contain conflicting information:
+
+1. Identify the conflict.
+2. Display the affected passages.
+3. Explain the discrepancy.
+4. Identify possible resolutions.
+5. Ask the user when the intended resolution is unclear.
+
+Never silently decide which conflicting contractual or financial provision takes precedence.
+
+---
+
+## 6. ADVANCED SECTION SPLITTING
+
+Allow the AI to split any document component.
+
+Examples:
+
+"Split Section 4 into ownership, licensing, and distribution."
+
+"Separate the payment terms from the royalty provisions."
+
+"Break this long paragraph into numbered clauses."
+
+"Create separate appendices for the technical and financial information."
+
+Support:
+
+- Section splitting.
+- Subsection splitting.
+- Clause splitting.
+- Paragraph splitting.
+- Table splitting.
+- Appendix splitting.
+- Content extraction.
+- Topic-based splitting.
+- Length-based splitting.
+- Logical restructuring.
+
+Preserve all original content unless the user authorizes rewriting.
+
+---
+
+## 7. INTELLIGENT DOCUMENT REORGANIZATION
+
+Allow the AI to reorganize an entire document.
+
+The AI should understand the document's purpose and recommend an appropriate structure.
+
+Examples:
+
+"Reorganize this agreement into a professional contractual structure."
+
+"Group all ownership provisions together."
+
+"Move all payment provisions into one section."
+
+"Put definitions at the beginning."
+
+"Move termination provisions toward the end."
+
+"Organize the appendices according to their references."
+
+"Reorganize this report into an executive summary, methodology, findings, analysis, and conclusion."
+
+Provide:
+
+- Automatic structural analysis.
+- Suggested section hierarchy.
+- Content classification.
+- Topic grouping.
+- Dependency analysis.
+- Section prioritization.
+- Structural recommendations.
+- Automatic renumbering.
+- Reference correction.
+
+Allow the user to approve the proposed structure before execution.
+
+---
+
+# PART IV: COMPLETE CONTENT CONTROL
+
+## 8. DOCUMENT-WIDE CONTENT OPERATIONS
+
+The AI must be able to manipulate every piece of text in the document.
+
+Implement:
+
+- Insert text.
+- Replace text.
+- Delete text.
+- Move text.
+- Duplicate text.
+- Rewrite text.
+- Expand text.
+- Summarize text.
+- Condense text.
+- Rephrase text.
+- Correct spelling.
+- Correct grammar.
+- Improve clarity.
+- Change tone.
+- Change terminology.
+- Convert paragraphs into lists.
+- Convert lists into paragraphs.
+- Convert text into tables.
+- Convert tables into structured prose.
+
+### Context-aware editing
+
+The AI must understand surrounding content before modifying a passage.
+
+For example:
+
+"Rewrite the second paragraph under the intellectual property section, but maintain the same legal meaning."
+
+The AI must identify the correct paragraph, retrieve surrounding context, make the requested change, and preserve unrelated content.
+
+### Global editing
+
+Support document-wide operations such as:
+
+- Replace all occurrences of a name.
+- Standardize terminology.
+- Standardize dates.
+- Standardize currency.
+- Standardize percentages.
+- Standardize capitalization.
+- Standardize punctuation.
+- Remove duplicated paragraphs.
+- Find inconsistent wording.
+- Identify contradictory figures.
+- Identify inconsistent names.
+- Identify inconsistent party references.
+
+Provide a preview of affected instances for potentially destructive global changes.
+
+---
+
+## 9. ADVANCED FIND, SEARCH AND REPLACE
+
+Implement a document-wide intelligent search system.
+
+Search across:
+
+- Entire document.
+- Specific sections.
+- Subsections.
+- Tables.
+- Headers.
+- Footers.
+- Appendices.
+- Footnotes.
+- Metadata.
+
+Support:
+
+- Exact text matching.
+- Case-sensitive matching.
+- Case-insensitive matching.
+- Whole-word matching.
+- Phrase matching.
+- Fuzzy matching.
+- Semantic search.
+- Pattern matching.
+- Regular expressions where supported.
+
+Allow instructions such as:
+
+"Find every reference to the original royalty percentage."
+
+"Show me every place where the agreement mentions ownership."
+
+"Find all references to Section 7."
+
+"Replace every instance of the old company name with the new company name."
+
+Provide location-aware search results with clickable navigation to the relevant document component.
+
+---
+
+# PART V: ADVANCED CLAUSE AND REFERENCE MANAGEMENT
+
+## 10. DYNAMIC NUMBERING ENGINE
+
+Implement dynamic numbering independent of ordinary paragraph text.
+
+Support:
+
+- Decimal numbering.
+- Hierarchical numbering.
+- Alphabetical numbering.
+- Roman numerals.
+- Nested numbering.
+- Custom numbering.
+- Legal clause numbering.
+- Appendix numbering.
+- Exhibit numbering.
+- Figure numbering.
+- Table numbering.
+
+Examples:
+
+1.
+1.1
+1.1.1
+(a)
+(b)
+(i)
+(ii)
+
+Automatically recalculate numbering after structural modifications.
+
+Allow users to specify numbering conventions through chat.
+
+---
+
+## 11. CROSS-REFERENCE ENGINE
+
+Create a document dependency graph.
+
+Track relationships between:
+
+- Sections.
+- Clauses.
+- Defined terms.
+- Appendices.
+- Exhibits.
+- Tables.
+- Figures.
+- Footnotes.
+- Signature blocks.
+
+When a referenced object moves or changes numbering, update valid references automatically.
+
+Detect:
+
+- Broken references.
+- Missing sections.
+- Deleted targets.
+- Incorrect numbering.
+- Undefined terms.
+- Unused definitions.
+- Duplicate identifiers.
+- Circular references.
+- References to nonexistent appendices.
+- References to outdated document versions.
+
+Provide an automated cross-reference repair function.
+
+Do not silently invent replacement references.
+
+---
+
+## 12. DEFINITION AND TERMINOLOGY MANAGER
+
+Implement a dedicated terminology system.
+
+Allow AI to:
+
+- Extract defined terms.
+- Create definitions.
+- Edit definitions.
+- Delete definitions.
+- Identify undefined terms.
+- Detect inconsistent capitalization.
+- Detect inconsistent terminology.
+- Find unused definitions.
+- Find conflicting definitions.
+- Update terminology globally.
+
+Example:
+
+"Change every reference to 'Master Recording' to 'Masters' where appropriate, including the definitions section."
+
+The AI must understand contextual differences rather than blindly replacing text.
+
+---
+
+# PART VI: TABLE, DATA AND GRAPHIC CONTROL
+
+## 13. ADVANCED TABLE MANAGEMENT
+
+Provide full AI control over all document tables.
+
+### Operations
+
+- Create tables.
+- Delete tables.
+- Edit tables.
+- Merge tables.
+- Split tables.
+- Duplicate tables.
+- Move tables.
+- Reorder rows.
+- Reorder columns.
+- Insert rows.
+- Delete rows.
+- Insert columns.
+- Delete columns.
+- Merge cells.
+- Split cells.
+- Resize columns.
+- Resize rows.
+- Change alignment.
+- Change borders.
+- Change shading.
+- Change typography.
+- Add captions.
+- Add table numbering.
+
+### Data operations
+
+- Sort rows.
+- Filter rows.
+- Calculate totals.
+- Calculate percentages.
+- Calculate differences.
+- Compare values.
+- Validate calculations.
+- Identify missing values.
+- Detect inconsistent entries.
+
+Example:
+
+"Create a table showing every collaborator, their ownership percentage, their royalty percentage, and their responsibilities."
+
+The AI must create the actual table inside the document.
+
+---
+
+## 14. ADVANCED CHART AND GRAPH MANAGEMENT
+
+Support AI-generated visual data components.
+
+Allow:
+
+- Bar charts.
+- Line charts.
+- Pie charts.
+- Donut charts.
+- Area charts.
+- Scatter plots.
+- Flow diagrams.
+- Process diagrams.
+- Organizational charts.
+- Timeline graphics.
+- Comparison charts.
+
+The AI must be able to:
+
+- Generate charts from document data.
+- Insert charts.
+- Edit chart data.
+- Change chart types.
+- Update titles.
+- Change labels.
+- Modify legends.
+- Resize charts.
+- Reposition charts.
+- Delete charts.
+- Regenerate charts when source data changes.
+
+Charts must be based on actual supplied or verified data.
+
+Never fabricate numerical values to make a chart appear complete.
+
+---
+
+## 15. IMAGE AND GRAPHIC CONTROL
+
+Provide complete AI control over uploaded and inserted assets.
+
+### Supported operations
+
+- Upload images.
+- Insert images.
+- Replace images.
+- Remove images.
+- Duplicate images.
+- Resize images.
+- Crop images.
+- Rotate images.
+- Reposition images.
+- Align images.
+- Add captions.
+- Edit captions.
+- Change image widths.
+- Maintain aspect ratios.
+- Add borders.
+- Add backgrounds.
+- Position images relative to text.
+- Move images between sections.
+- Move images between pages.
+- Add logos to headers.
+- Add logos to footers.
+- Create cover-page designs.
+
+Support drag-and-drop uploads and clipboard image pasting.
+
+### Asset intelligence
+
+The AI should understand uploaded images sufficiently to identify their intended role.
+
+For example:
+
+"Use the first image as the company logo, the second as the cover-page artwork, and the third in Appendix B."
+
+The AI must map the correct assets to the correct document objects.
+
+Maintain an asset library and track which documents use each asset.
+
+---
+
+# PART VII: COMPLETE PAGE AND LAYOUT CONTROL
+
+## 16. PAGE MANAGEMENT ENGINE
+
+Give the AI control over individual PDF pages and document pagination.
+
+Support:
+
+- Insert pages.
+- Delete pages.
+- Duplicate pages.
+- Move pages.
+- Reorder pages.
+- Rotate pages.
+- Extract pages.
+- Replace pages.
+- Split documents.
+- Merge documents.
+- Change page orientation.
+- Change page dimensions.
+- Change page margins.
+- Insert page breaks.
+- Remove page breaks.
+- Insert section breaks.
+- Change page numbering.
+- Create custom page layouts.
+
+Examples:
+
+"Move the signature page to the end."
+
+"Make Appendix A begin on a new page."
+
+"Change pages 12 through 15 to landscape."
+
+"Remove the unnecessary blank pages."
+
+"Move the cover page before the table of contents."
+
+The AI must understand the difference between the underlying document structure and the rendered PDF page sequence.
+
+Do not assume that editing a PDF page is equivalent to editing the underlying document content.
+
+---
+
+## 17. INTELLIGENT PAGINATION ENGINE
+
+Implement advanced pagination controls.
+
+Prevent:
+
+- Headings stranded at page bottoms.
+- Signature blocks split across pages.
+- Tables split improperly.
+- Images overlapping text.
+- Footers overlapping content.
+- Unnecessary blank pages.
+- Excessive whitespace.
+- Awkward page breaks.
+- Orphaned paragraphs.
+- Inconsistent section spacing.
+
+Support:
+
+- Keep-with-next.
+- Keep-together.
+- Widow control.
+- Orphan control.
+- Table continuation.
+- Repeating table headers.
+- Page-specific margins.
+- Section-specific layouts.
+- Landscape inserts.
+- Different first-page headers.
+- Different odd/even page headers.
+
+Allow users to control these settings conversationally.
+
+---
+
+## 18. GLOBAL FORMATTING CONTROL
+
+The AI must be able to modify every formatting property.
+
+### Typography
+
+- Font family.
+- Font size.
+- Font weight.
+- Font style.
+- Text color.
+- Highlighting.
+- Letter spacing.
+- Line height.
+- Character spacing.
+- Text decoration.
+- Text alignment.
+
+### Paragraph formatting
+
+- Paragraph spacing.
+- Indentation.
+- First-line indentation.
+- Hanging indentation.
+- Line spacing.
+- Alignment.
+- Borders.
+- Background shading.
+
+### Heading formatting
+
+- Heading levels.
+- Heading colors.
+- Heading fonts.
+- Heading sizes.
+- Heading numbering.
+- Heading spacing.
+- Heading hierarchy.
+
+### Page formatting
+
+- Margins.
+- Page size.
+- Orientation.
+- Columns.
+- Borders.
+- Backgrounds.
+- Watermarks.
+
+Examples:
+
+"Make all primary headings uppercase, bold, and 16-point Garamond."
+
+"Apply consistent paragraph spacing throughout the entire agreement."
+
+"Make only the appendix headings blue."
+
+"Use Times New Roman throughout, except the cover page."
+
+All formatting changes must update the actual document model.
+
+---
+
+# PART VIII: COMPLETE AI DOCUMENT CREATION
+
+## 19. BUILD ENTIRE DOCUMENTS FROM CONVERSATION
+
+The AI must be capable of building complete documents without requiring users to construct sections manually.
+
+A user should be able to start with an empty document and describe the desired result.
+
+Example:
+
+"Create a comprehensive music collaboration and master recording ownership agreement for two parties. Include ownership, master rights, composition rights, royalty distribution, publishing, distribution responsibilities, accounting, termination, dispute resolution, confidentiality, representations, warranties, and signature blocks. Leave unknown information as clearly marked placeholders."
+
+The AI should:
+
+1. Identify the document type.
+2. Determine the appropriate structure.
+3. Generate a complete outline.
+4. Identify missing information.
+5. Ask necessary questions.
+6. Create all required sections.
+7. Generate relevant subsections.
+8. Organize the content.
+9. Apply numbering.
+10. Generate tables where appropriate.
+11. Create signature blocks.
+12. Apply professional formatting.
+13. Generate the document.
+14. Validate structural completeness.
+15. Generate the PDF.
+
+### Dynamic document construction
+
+Allow users to continue building through chat.
+
+Example:
+
+"Add a section about distribution responsibilities."
+
+"Expand the intellectual property section."
+
+"Add a separate provision addressing derivative works."
+
+"Create an appendix listing the deliverables."
+
+"Move the new section before termination."
+
+The AI must modify the existing document rather than generating an unrelated replacement.
+
+---
+
+## 20. COMPLETE DOCUMENT RECONSTRUCTION
+
+Allow users to request a complete rebuild of an existing document.
+
+Examples:
+
+"Rebuild the entire agreement using a cleaner contractual structure."
+
+"Reconstruct this document using the same content but improve its organization and presentation."
+
+"Create a new version using the original document as the source."
+
+The AI must:
+
+- Extract the original content.
+- Identify document hierarchy.
+- Identify all document components.
+- Preserve source information.
+- Reconstruct the structure.
+- Apply requested formatting.
+- Restore tables and images.
+- Recreate headers and footers.
+- Recreate signature blocks.
+- Recreate appendices.
+- Verify content completeness.
+
+Maintain the original document as a recoverable version.
+
+---
+
+# PART IX: MULTI-DOCUMENT INTELLIGENCE
+
+## 21. MULTI-DOCUMENT WORKSPACE
+
+Allow the user to work with multiple documents simultaneously.
+
+The AI should be able to access documents explicitly selected or authorized by the user.
+
+### Capabilities
+
+- Combine multiple documents.
+- Compare multiple documents.
+- Extract selected sections.
+- Merge unique provisions.
+- Identify conflicting information.
+- Transfer tables.
+- Transfer images.
+- Transfer appendices.
+- Extract signature pages.
+- Consolidate reports.
+- Create master documents.
+- Create document packages.
+
+### Example
+
+"Use Agreement A as the primary document. Extract the intellectual property and payment sections from Agreement B and incorporate them into Agreement A. Preserve the original language where possible and identify any conflicting provisions."
+
+The AI must:
+
+1. Identify both documents.
+2. Inspect both structures.
+3. Extract requested components.
+4. Analyze conflicts.
+5. Map relevant sections.
+6. Apply approved changes.
+7. Preserve source references.
+8. Update cross-references.
+9. Save a new version.
+10. Validate the combined document.
+
+---
+
+# PART X: ADVANCED DOCUMENT INTELLIGENCE
+
+## 22. DOCUMENT-WIDE ANALYSIS ENGINE
+
+The AI must be capable of analyzing the complete document, not merely the visible section.
+
+Support:
+
+- Structural analysis.
+- Content analysis.
+- Semantic analysis.
+- Grammar analysis.
+- Terminology analysis.
+- Formatting analysis.
+- Consistency analysis.
+- Numerical analysis.
+- Date analysis.
+- Cross-reference analysis.
+- Completeness analysis.
+- Duplication analysis.
+- Conflict detection.
+
+### Intelligent recommendations
+
+The AI should identify:
+
+- Sections that should be merged.
+- Sections that should be split.
+- Sections that are out of order.
+- Missing sections.
+- Repeated content.
+- Contradictory provisions.
+- Undefined terminology.
+- Inconsistent figures.
+- Incorrect references.
+- Poor formatting.
+- Unnecessary complexity.
+- Incomplete appendices.
+
+Provide recommendations without automatically modifying substantive content.
+
+---
+
+## 23. DOCUMENT COMPLETENESS INTELLIGENCE
+
+Create a document completeness engine.
+
+The AI should understand the expected components of different document types.
+
+For example, a music collaboration agreement may require:
+
+- Party identification.
+- Project identification.
+- Ownership allocation.
+- Royalty allocation.
+- Rights and responsibilities.
+- Distribution provisions.
+- Accounting provisions.
+- Termination provisions.
+- Dispute resolution.
+- Governing law.
+- Signatures.
+
+The system must distinguish between:
+
+- Required by user instruction.
+- Expected by the selected template.
+- Recommended.
+- Optional.
+- Missing information.
+
+Never imply that a document is legally complete or enforceable merely because a checklist is satisfied.
+
+---
+
+## 24. SOURCE TRACEABILITY AND CONTENT PROVENANCE
+
+Implement a source-tracking system.
+
+Every imported or generated content component should be traceable to its origin.
+
+Track:
+
+- Original pasted text.
+- Uploaded document.
+- Uploaded image.
+- AI-generated content.
+- Manually edited content.
+- Imported section.
+- Imported table.
+- User-approved revision.
+
+Allow users to ask:
+
+"Where did this clause come from?"
+
+"Show me which sections were generated by AI."
+
+"Identify everything imported from the second agreement."
+
+"Show me all changes made since the original document."
+
+Provide source references and revision history.
+
+---
+
+# PART XI: CONVERSATIONAL AI EXPERIENCE
+
+## 25. TRANSFORM THE CHAT INTO A FULL DOCUMENT WORKSPACE
+
+The AI chat must be a persistent, document-aware workspace.
+
+It must understand the entire active document and the current state of every component.
+
+### Chat capabilities
+
+- Multi-turn conversations.
+- Persistent document context.
+- Conversation history.
+- Document-specific instructions.
+- File attachments.
+- Image attachments.
+- Large text input.
+- Long-document processing.
+- Context recovery.
+- Operation summaries.
+- Revision comparisons.
+- Undo requests.
+- Redo requests.
+- Export commands.
+- Validation commands.
+
+### Chat interface improvements
+
+Implement:
+
+- Large expandable message input.
+- Resizable composer.
+- Drag-and-drop file attachments.
+- Clipboard image pasting.
+- Multiple attachment support.
+- Attachment previews.
+- Upload progress.
+- Message editing.
+- Message regeneration.
+- Conversation search.
+- Conversation export.
+- Stop-generation control.
+- Retry controls.
+- Processing indicators.
+- Operation status indicators.
+
+Allow users to continue writing long instructions without the input field becoming cramped.
+
+### Context awareness
+
+The AI must understand:
+
+- The active document.
+- The current document version.
+- The document's complete structure.
+- Previous AI instructions.
+- User-approved changes.
+- Uploaded source materials.
+- Active brand profile.
+- Formatting preferences.
+- Previous revisions.
+
+Do not rely exclusively on chat-history tokens to remember the document.
+
+Retrieve the authoritative document state when executing operations.
+
+---
+
+## 26. AI PERSONAS AND SPECIALIZED EXPERT MODES
+
+Expand the existing Gemini chatbot with specialized operating modes.
+
+### AUTO DOCUMENT ARCHITECT
+
+Automatically identifies document type and selects appropriate tools.
+
+### DOCUMENT STRUCTURAL ARCHITECT
+
+Specializes in document hierarchy, section organization, merging, splitting, and reconstruction.
+
+### LEGAL DOCUMENT SPECIALIST
+
+Specializes in legal document drafting, terminology, clause organization, and consistency analysis.
+
+Must not claim to be a lawyer or guarantee enforceability.
+
+### BUSINESS DOCUMENT SPECIALIST
+
+Specializes in proposals, business plans, reports, and corporate documents.
+
+### FINANCIAL DOCUMENT SPECIALIST
+
+Specializes in tables, calculations, invoices, budgets, and numerical validation.
+
+### MUSIC INDUSTRY DOCUMENT SPECIALIST
+
+Specializes in collaboration agreements, master recording ownership, royalty splits, licensing, songwriting, and producer agreements.
+
+### ACADEMIC DOCUMENT SPECIALIST
+
+Specializes in research reports, citations, references, and academic formatting.
+
+### TECHNICAL DOCUMENT SPECIALIST
+
+Specializes in technical documentation, specifications, architecture documents, and manuals.
+
+### DOCUMENT QUALITY AUDITOR
+
+Specializes in completeness, formatting, source preservation, and export validation.
+
+### DOCUMENT DESIGNER
+
+Specializes in typography, layout, branding, page composition, and visual presentation.
+
+The user should be able to change modes through conversation or a selector.
+
+All personas must share access to the same authoritative document model and toolset.
+
+---
+
+# PART XII: ACTUAL AI TOOL EXECUTION
+
+## 27. MANDATORY EXECUTABLE DOCUMENT TOOLKIT
+
+The AI must have access to actual backend functions.
+
+These must not exist only as descriptions in a system prompt.
+
+Create a structured tool registry with validated inputs and outputs.
+
+### DOCUMENT TOOLS
+
+- get_document.
+- get_document_metadata.
+- get_document_structure.
+- get_document_outline.
+- get_document_content.
+- create_document.
+- duplicate_document.
+- rename_document.
+- archive_document.
+- restore_document.
+- delete_document.
+- restore_document_version.
+
+### SECTION TOOLS
+
+- create_section.
+- update_section.
+- delete_section.
+- duplicate_section.
+- move_section.
+- reorder_sections.
+- merge_sections.
+- split_section.
+- extract_section.
+- replace_section_content.
+- analyze_section.
+- compare_sections.
+
+### CLAUSE TOOLS
+
+- create_clause.
+- update_clause.
+- delete_clause.
+- duplicate_clause.
+- move_clause.
+- merge_clauses.
+- split_clause.
+- renumber_clauses.
+- validate_clause_numbering.
+
+### CONTENT TOOLS
+
+- insert_content.
+- update_content.
+- delete_content.
+- move_content.
+- duplicate_content.
+- replace_content.
+- find_content.
+- find_and_replace.
+- reorganize_content.
+- rewrite_content.
+- summarize_content.
+- expand_content.
+- condense_content.
+
+### TABLE TOOLS
+
+- create_table.
+- update_table.
+- delete_table.
+- merge_tables.
+- split_table.
+- reorder_table_rows.
+- reorder_table_columns.
+- insert_table_row.
+- delete_table_row.
+- insert_table_column.
+- delete_table_column.
+- merge_table_cells.
+- split_table_cells.
+- calculate_table_values.
+- validate_table_data.
+
+### IMAGE TOOLS
+
+- upload_image.
+- insert_image.
+- replace_image.
+- delete_image.
+- duplicate_image.
+- resize_image.
+- crop_image.
+- rotate_image.
+- reposition_image.
+- align_image.
+- update_image_caption.
+- update_image_properties.
+
+### FORMATTING TOOLS
+
+- apply_formatting.
+- update_typography.
+- update_heading_styles.
+- update_paragraph_styles.
+- update_margins.
+- update_spacing.
+- update_alignment.
+- update_page_orientation.
+- update_page_size.
+- update_headers.
+- update_footers.
+- update_watermarks.
+- update_document_theme.
+
+### PAGE TOOLS
+
+- insert_page.
+- delete_page.
+- duplicate_page.
+- move_page.
+- reorder_pages.
+- rotate_page.
+- extract_page.
+- insert_page_break.
+- remove_page_break.
+- insert_section_break.
+- update_page_layout.
+- update_page_numbering.
+- recalculate_pagination.
+
+### TERMINOLOGY AND REFERENCES
+
+- extract_definitions.
+- create_definition.
+- update_definition.
+- delete_definition.
+- find_undefined_terms.
+- validate_terminology.
+- validate_cross_references.
+- update_cross_references.
+- repair_broken_references.
+
+### ANALYSIS TOOLS
+
+- analyze_document.
+- analyze_document_structure.
+- detect_duplicates.
+- detect_conflicts.
+- detect_missing_sections.
+- detect_inconsistencies.
+- inspect_document.
+- compare_document_versions.
+- generate_document_report.
+- verify_source_preservation.
+- inspect_document_dependencies.
+
+### PDF TOOLS
+
+- generate_pdf.
+- regenerate_pdf.
+- render_pdf.
+- preview_pdf.
+- validate_pdf.
+- inspect_pdf.
+- compare_pdf_versions.
+- export_document.
+- merge_pdf_files.
+- split_pdf.
+- compress_pdf.
+- rotate_pdf_pages.
+- reorder_pdf_pages.
+- redact_pdf.
+- add_pdf_watermark.
+- update_pdf_metadata.
+
+### VERSION CONTROL TOOLS
+
+- create_checkpoint.
+- create_version.
+- compare_versions.
+- restore_version.
+- rollback_operation.
+- get_revision_history.
+- generate_change_summary.
+
+### BRANDING TOOLS
+
+- get_brand_profiles.
+- create_brand_profile.
+- update_brand_profile.
+- apply_brand_profile.
+- remove_brand_profile.
+- update_brand_logo.
+- update_brand_colors.
+- update_brand_typography.
+
+The tool registry must be extensible.
+
+The AI should discover available operations and understand their capabilities rather than relying on a fixed list of hardcoded conversational responses.
+
+---
+
+# PART XIII: OPERATIONAL SAFETY AND TRANSACTION MANAGEMENT
+
+## 28. ATOMIC DOCUMENT OPERATIONS
+
+Complex document modifications must be transactional wherever possible.
+
+For example, a section merge may require:
+
+- Retrieving source sections.
+- Creating a destination section.
+- Moving content.
+- Deleting source sections.
+- Updating numbering.
+- Updating references.
+- Updating the outline.
+
+If one critical operation fails, the system must not leave the document in a partially corrupted state.
+
+Use:
+
+- Pre-operation snapshots.
+- Operation identifiers.
+- Transaction boundaries.
+- Validation checkpoints.
+- Rollback support.
+- Idempotency controls.
+- Operation logs.
+
+Every operation must identify the document and version it was intended to modify.
+
+Prevent stale AI responses from overwriting newer manual edits.
+
+### Concurrency
+
+If the user edits the document while AI processing is underway:
+
+1. Detect the version change.
+2. Compare the relevant objects.
+3. Identify conflicts.
+4. Reconcile safe changes.
+5. Request clarification where necessary.
+
+Never blindly overwrite newer user changes.
+
+---
+
+## 29. UNDO, REDO AND TIME TRAVEL
+
+Implement complete document operation history.
+
+Allow users to say:
+
+"Undo that."
+
+"Restore the document to before the section merge."
+
+"Go back to Version 8."
+
+"Undo the last formatting changes but keep the content edits."
+
+"Restore Appendix A without restoring the rest of the document."
+
+Support granular rollback where technically feasible.
+
+Maintain immutable historical snapshots.
+
+A rollback must restore the document model, not merely change a version label.
+
+---
+
+## 30. AI CHANGE TRANSPARENCY
+
+For substantial changes, provide a detailed but concise report.
+
+Example:
+
+**DOCUMENT UPDATE COMPLETED**
+
+- Merged Sections 3, 5, and 8.
+- Created unified ownership section.
+- Preserved 14 unique provisions.
+- Removed 2 confirmed duplicate paragraphs.
+- Updated 7 clause numbers.
+- Updated 4 cross-references.
+- Preserved 3 hyperlinks.
+- Retained the original signature blocks.
+- Regenerated the PDF.
+- Created Version 12.
+
+**Verification:**
+- Source content: Passed.
+- Cross-references: Passed.
+- Numbering: Passed.
+- PDF rendering: Passed.
+
+Only display checks that actually ran and passed.
+
+Provide expandable before-and-after comparisons.
+
+---
+
+# PART XIV: PDF PRODUCTION AND DOCUMENT RENDERING
+
+## 31. UNIFIED DOCUMENT RENDERING ENGINE
+
+The AI, visual editor, document model, and PDF renderer must operate from the same authoritative document structure.
+
+Do not maintain disconnected copies.
+
+The architecture must be:
+
+AI CHAT  
+↓  
+DOCUMENT COMMAND ORCHESTRATOR  
+↓  
+DOCUMENT OPERATION TOOLKIT  
+↓  
+AUTHORITATIVE DOCUMENT MODEL  
+↓  
+VISUAL EDITOR AND LAYOUT ENGINE  
+↓  
+PDF RENDERER  
+↓  
+PDF VALIDATION ENGINE  
+↓  
+EXPORT AND STORAGE
+
+Every successful modification must synchronize the affected components.
+
+### Rendering requirements
+
+Support:
+
+- Multi-page documents.
+- Dynamic pagination.
+- Professional typography.
+- Headers and footers.
+- Tables.
+- Images.
+- Hyperlinks.
+- Bookmarks.
+- Footnotes.
+- Endnotes.
+- Appendices.
+- Signature blocks.
+- Page numbering.
+- Watermarks.
+- Unicode.
+- Embedded fonts where permitted.
+
+The actual exported PDF must match the preview.
+
+---
+
+## 32. INTELLIGENT PDF REGENERATION
+
+The AI must be able to regenerate the entire PDF whenever necessary.
+
+Examples:
+
+"Rebuild the PDF with the new section structure."
+
+"Regenerate the agreement after the formatting changes."
+
+"Create a print-ready version."
+
+"Generate a compressed version without sacrificing readability."
+
+"Rebuild the document with a separate signature page."
+
+The system should determine which changes require:
+
+- Content updates.
+- Layout recalculation.
+- Full PDF regeneration.
+- Partial preview refresh.
+
+Never present an outdated preview as the latest document.
+
+---
+
+## 33. ADVANCED PDF VALIDATION
+
+Before export, inspect:
+
+- File integrity.
+- Page count.
+- Page dimensions.
+- Font rendering.
+- Text extraction.
+- Image rendering.
+- Hyperlinks.
+- Bookmarks.
+- Headers.
+- Footers.
+- Pagination.
+- Tables.
+- Signature blocks.
+- Required sections.
+- Source content.
+- Metadata.
+- Accessibility structure.
+
+Where possible, render every page and perform visual inspection.
+
+If problems are detected:
+
+1. Identify the affected page.
+2. Identify the problem.
+3. Attempt correction.
+4. Regenerate the PDF.
+5. Reinspect the affected pages.
+6. Repeat validation.
+
+Do not report a PDF as fully validated if visual inspection or another required test was unavailable.
+
+---
+
+# PART XV: ADVANCED DOCUMENT IMPORT AND EXTRACTION
+
+## 34. UNIVERSAL FILE INGESTION
+
+Support:
+
+- PDF.
+- DOCX.
+- DOC where conversion is available.
+- TXT.
+- RTF.
+- HTML.
+- CSV.
+- XLSX.
+- PPTX.
+- PNG.
+- JPG.
+- JPEG.
+- WebP.
+- SVG where safely supported.
+
+Implement:
+
+- Text extraction.
+- OCR.
+- Table extraction.
+- Image extraction.
+- Heading detection.
+- Paragraph detection.
+- List detection.
+- Hyperlink extraction.
+- Metadata extraction.
+- Document structure reconstruction.
+
+Preserve the original upload.
+
+Display extraction confidence and identify uncertain areas.
+
+---
+
+## 35. ADVANCED OCR AND SCANNED DOCUMENT RECONSTRUCTION
+
+Support scanned documents and image-based PDFs.
+
+The AI must be able to:
+
+- Recognize text.
+- Detect page boundaries.
+- Detect columns.
+- Detect tables.
+- Detect headings.
+- Detect signature areas.
+- Detect handwritten content where supported.
+- Reconstruct paragraphs.
+- Identify uncertain characters.
+- Flag extraction errors.
+
+Allow the user to review uncertain OCR results before treating them as authoritative content.
+
+---
+
+# PART XVI: BRANDING, DESIGN AND DOCUMENT STYLING
+
+## 36. AI DOCUMENT DESIGN DIRECTOR
+
+Introduce a specialized design capability.
+
+The user should be able to describe the desired appearance conversationally.
+
+Examples:
+
+"Make this look like a premium corporate legal agreement."
+
+"Give this report a minimalist executive presentation."
+
+"Use a traditional legal-document layout."
+
+"Create a visually sophisticated proposal with restrained blue accents."
+
+"Make the cover page more professional without changing the document's content."
+
+The AI must control:
+
+- Typography.
+- Colors.
+- Spacing.
+- Margins.
+- Page composition.
+- Headers.
+- Footers.
+- Cover pages.
+- Section dividers.
+- Tables.
+- Charts.
+- Images.
+- Watermarks.
+- Branding.
+- Visual hierarchy.
+
+### Design presets
+
+Create:
+
+- Corporate Professional.
+- Traditional Legal.
+- Modern Minimalist.
+- Premium Editorial.
+- Executive Report.
+- Academic Research.
+- Technical Documentation.
+- Creative Portfolio.
+- Financial Report.
+- Music Industry Agreement.
+
+Allow users to save custom design presets.
+
+---
+
+## 37. ADVANCED BRAND PROFILE MANAGEMENT
+
+Allow multiple reusable brand profiles.
+
+Store:
+
+- Company name.
+- Logos.
+- Brand colors.
+- Font preferences.
+- Typography hierarchy.
+- Header configuration.
+- Footer configuration.
+- Cover-page configuration.
+- Watermarks.
+- Contact details.
+- Document classification.
+
+Allow the AI to create, update, and apply profiles conversationally.
+
+Example:
+
+"Create a new brand profile for my record label using this logo and these colors."
+
+The AI should configure the actual brand profile and make it available for future documents.
+
+---
+
+# PART XVII: SIGNATURE AND EXECUTION MANAGEMENT
+
+## 38. ADVANCED SIGNATURE BUILDER
+
+Give the AI complete control over signature components.
+
+Support:
+
+- Multiple signatories.
+- Printed names.
+- Titles.
+- Companies.
+- Dates.
+- Initials.
+- Witnesses.
+- Authorized representatives.
+- Signature placement.
+- Signature page generation.
+
+Allow instructions such as:
+
+"Create three signature blocks, one for each collaborator."
+
+"Move the signature section to its own final page."
+
+"Make the signature blocks side by side."
+
+"Add a witness signature beneath Party B."
+
+### Actual electronic signatures
+
+Distinguish between:
+
+- Signature placeholders.
+- Typed signature representations.
+- User-applied signatures.
+- Verified third-party electronic signatures.
+
+Do not represent a visual signature or timestamp as a legally verified electronic-signature transaction.
+
+Use authenticated integrations when actual signing workflows are required.
+
+---
+
+# PART XVIII: DOCUMENT SECURITY AND PRIVACY
+
+## 39. ADVANCED DOCUMENT SECURITY
+
+Implement:
+
+- User-specific document permissions.
+- Private storage.
+- Secure uploads.
+- Access controls.
+- Sharing permissions.
+- Expiring links.
+- Access history.
+- Document recovery.
+- Retention settings.
+- Permanent deletion.
+- Encryption where supported.
+- Sensitive-data detection.
+
+### True redaction
+
+Implement actual content removal.
+
+A black rectangle over text is not sufficient.
+
+Remove the underlying content and relevant metadata.
+
+Verify that redacted information cannot be recovered through normal text extraction, search, or ordinary PDF inspection.
+
+### AI privacy
+
+Ensure AI processing follows the application's privacy and provider configuration.
+
+Never expose private document contents to unauthorized users.
+
+Never expose API credentials in frontend code.
+
+---
+
+# PART XIX: ADVANCED WORKSPACE FEATURES
+
+## 40. DOCUMENT LIBRARY INTELLIGENCE
+
+Expand the document library with:
+
+- Folder creation.
+- Nested folders.
+- Drag-and-drop organization.
+- Document tagging.
+- Favorites.
+- Recent activity.
+- Archived documents.
+- Document search.
+- Content search.
+- Advanced filtering.
+- Bulk actions.
+- Batch export.
+- Batch conversion.
+- Document duplication.
+- Document comparison.
+
+Allow users to instruct the AI to organize their library.
+
+Example:
+
+"Create a folder called Music Agreements and move all my music collaboration documents into it."
+
+The AI must execute the organization operation after verifying the selected documents.
+
+---
+
+## 41. BULK DOCUMENT OPERATIONS
+
+Implement batch processing.
+
+Allow users to:
+
+- Apply branding to multiple documents.
+- Convert multiple files.
+- Rename multiple files.
+- Organize documents.
+- Apply formatting presets.
+- Compare document sets.
+- Generate document packages.
+- Export multiple documents.
+- Validate multiple PDFs.
+
+Provide individual success and failure reports.
+
+A failure affecting one file must not silently destroy or invalidate the remaining files.
+
+---
+
+## 42. DOCUMENT PACKAGE GENERATION
+
+Allow users to combine related documents into professional packages.
+
+Examples:
+
+"Create a complete music collaboration package containing the agreement, split sheet, producer credits, and payment schedule."
+
+"Create an investor package containing the proposal, executive summary, financial tables, and supporting appendix."
+
+Support:
+
+- Combined PDF packages.
+- Individual PDF exports.
+- Cover sheets.
+- Package indexes.
+- Bookmarks.
+- Document separators.
+- Package metadata.
+
+---
+
+# PART XX: AUTOMATION AND WORKFLOW INTELLIGENCE
+
+## 43. DOCUMENT WORKFLOW AUTOMATION
+
+Allow users to create reusable workflows.
+
+Examples:
+
+- Automatically apply company branding.
+- Generate a standard legal agreement.
+- Create a monthly financial report.
+- Convert uploaded documents to PDF.
+- Validate every generated document.
+- Create an executive summary.
+- Produce a document package.
+
+Allow workflows to contain multiple operations.
+
+Support saved workflow templates.
+
+---
+
+## 44. REUSABLE AI INSTRUCTIONS
+
+Create a saved instruction library.
+
+Allow users to save commands such as:
+
+- Format as legal agreement.
+- Preserve source wording.
+- Merge related sections.
+- Reorganize document.
+- Generate professional appendix.
+- Create signature page.
+- Validate entire document.
+- Apply company branding.
+- Prepare print-ready PDF.
+
+Allow users to invoke saved workflows through chat.
+
+---
+
+## 45. ADVANCED AI MEMORY AND DOCUMENT CONTEXT
+
+Maintain persistent context at the document level.
+
+Store:
+
+- User-approved terminology.
+- Document-specific instructions.
+- Formatting preferences.
+- Brand settings.
+- Previous decisions.
+- Revision history.
+- Important constraints.
+- Unresolved questions.
+
+Do not confuse one document's instructions with another document's instructions.
+
+Allow users to inspect and modify document-specific AI instructions.
+
+---
+
+# PART XXI: ADVANCED USER EXPERIENCE
+
+## 46. CHAT AND VISUAL EDITOR SYNCHRONIZATION
+
+The AI chat and visual editor must work together seamlessly.
+
+If the user says:
+
+"Select Section 4 and make it more concise."
+
+The editor should navigate to and highlight Section 4.
+
+If the AI changes a section, the editor should display the updated content.
+
+If the user manually changes a paragraph, the AI must use the updated paragraph in subsequent operations.
+
+If the user clicks an object, the AI should be able to use that selection as context.
+
+Implement:
+
+- Selected-object awareness.
+- Selected-section awareness.
+- Current-page awareness.
+- Current-editor-position awareness.
+- Contextual editing.
+- Chat-to-editor navigation.
+- Editor-to-chat context transfer.
+
+The user should be able to select an object and simply say:
+
+"Make this better."
+
+The AI should understand what "this" refers to.
+
+---
+
+## 47. DOCUMENT OUTLINE AND NAVIGATION
+
+Create an interactive document outline.
+
+Display:
+
+- Sections.
+- Subsections.
+- Nested clauses.
+- Tables.
+- Figures.
+- Appendices.
+- Exhibits.
+
+Support:
+
+- Expand and collapse.
+- Drag-and-drop reordering.
+- Quick navigation.
+- Rename.
+- Add.
+- Delete.
+- Duplicate.
+- Merge.
+- Split.
+
+The outline must always reflect the authoritative document structure.
+
+---
+
+## 48. CONTEXTUAL AI ACTIONS
+
+Add contextual AI commands throughout the application.
+
+Examples:
+
+- Improve this section.
+- Rewrite this paragraph.
+- Expand this clause.
+- Merge selected sections.
+- Split selected section.
+- Explain this provision.
+- Check this table.
+- Find related content.
+- Generate a caption.
+- Reformat this page.
+- Move this content.
+- Compare this section.
+- Restore original wording.
+
+These commands should appear when relevant objects are selected.
+
+They must use the same underlying AI tool system as the primary chat.
+
+---
+
+# PART XXII: ADVANCED QUALITY ASSURANCE
+
+## 49. DOCUMENT INTEGRITY ENGINE
+
+Create a dedicated document-integrity system.
+
+Track:
+
+- Source paragraphs.
+- Source sections.
+- Source clauses.
+- Names.
+- Dates.
+- Figures.
+- Percentages.
+- URLs.
+- Tables.
+- Images.
+- Appendices.
+- Signature blocks.
+
+Support exact-preservation and AI-editing modes.
+
+### Exact preservation
+
+The system must compare actual source content against the document model and exported PDF.
+
+### AI editing
+
+The system must identify:
+
+- Added content.
+- Removed content.
+- Modified content.
+- Reorganized content.
+- Meaning-sensitive modifications.
+
+Allow the user to inspect all changes.
+
+---
+
+## 50. ADVANCED DOCUMENT QUALITY ASSESSMENT
+
+Expand the quality engine to include:
+
+1. Content integrity.
+2. Structural organization.
+3. Formatting consistency.
+4. Typography.
+5. Pagination.
+6. Visual presentation.
+7. Completeness.
+8. Numerical consistency.
+9. Terminology consistency.
+10. Cross-reference integrity.
+11. Technical PDF integrity.
+12. Accessibility.
+13. Source preservation.
+14. Branding consistency.
+15. Signature completeness.
+
+Show individual scores and explain deductions.
+
+Do not use AI-generated scores as a substitute for actual technical verification.
+
+---
+
+## 51. DOCUMENT REGRESSION TESTING
+
+After major modifications, compare the new document against the previous version.
+
+Detect unexpected:
+
+- Missing sections.
+- Deleted content.
+- Broken tables.
+- Missing images.
+- Changed figures.
+- Changed dates.
+- Broken hyperlinks.
+- Incorrect numbering.
+- Formatting regressions.
+- Pagination regressions.
+
+Flag unexpected changes before final export.
+
+---
+
+# PART XXIII: TECHNICAL ARCHITECTURE
+
+## 52. MODULAR APPLICATION ARCHITECTURE
+
+Build the application using modular, maintainable components.
+
+Required systems:
+
+1. Gemini AI integration.
+2. AI conversation manager.
+3. Document command orchestrator.
+4. Document tool registry.
+5. Authoritative document model.
+6. Document operation engine.
+7. Document dependency graph.
+8. Visual editor.
+9. Layout engine.
+10. PDF renderer.
+11. PDF validator.
+12. Source-preservation engine.
+13. Version-control engine.
+14. File ingestion system.
+15. OCR system.
+16. Image manager.
+17. Template manager.
+18. Brand manager.
+19. Document library.
+20. Security and authorization layer.
+21. Workflow automation engine.
+22. Audit and logging system.
+
+Use Base44's supported backend and storage capabilities wherever practical.
+
+External services must be integrated through secure server-side functions.
+
+---
+
+## 53. DOCUMENT DATABASE DESIGN
+
+Expand the data model to support the new capabilities.
+
+### Documents
+
+- document_id
+- owner_id
+- title
+- document_type
+- content_model
+- document_structure
+- current_version
+- formatting_configuration
+- page_configuration
+- brand_profile_id
+- status
+- created_at
+- updated_at
+
+### Document Objects
+
+- object_id
+- document_id
+- parent_id
+- object_type
+- order_index
+- content
+- properties
+- formatting
+- source_reference
+- version_id
+
+### Document Operations
+
+- operation_id
+- document_id
+- user_id
+- operation_type
+- input_parameters
+- execution_plan
+- execution_status
+- result
+- rollback_reference
+- created_at
+- completed_at
+
+### Document Versions
+
+- version_id
+- document_id
+- version_number
+- content_snapshot
+- structure_snapshot
+- formatting_snapshot
+- change_summary
+- created_at
+
+### AI Conversations
+
+- conversation_id
+- document_id
+- user_id
+- messages
+- model_configuration
+- context_metadata
+- created_at
+
+### Document Dependencies
+
+- dependency_id
+- document_id
+- source_object_id
+- target_object_id
+- dependency_type
+- status
+
+### Document Assets
+
+- asset_id
+- document_id
+- owner_id
+- file_location
+- file_type
+- metadata
+- dimensions
+- created_at
+
+### Validation Reports
+
+- report_id
+- document_id
+- export_id
+- validation_results
+- quality_scores
+- findings
+- created_at
+
+### Workflow Templates
+
+- workflow_id
+- owner_id
+- name
+- description
+- operation_sequence
+- configuration
+
+Use proper relationships, indexes, authorization, and validation.
+
+Avoid storing large binary files directly in database records.
+
+---
+
+## 54. AI TOOL EXECUTION SECURITY
+
+Every AI tool must:
+
+- Validate arguments.
+- Verify user authorization.
+- Verify document ownership.
+- Verify object existence.
+- Verify document version.
+- Validate operation dependencies.
+- Return structured results.
+- Handle errors.
+- Log operations.
+- Preserve rollback capability.
+
+The AI must not be able to bypass application permissions.
+
+Do not expose unrestricted database access to the model.
+
+Use narrowly scoped document-operation functions.
+
+---
+
+## 55. LONG-DOCUMENT PROCESSING
+
+Support lengthy documents without depending on a single enormous prompt.
+
+Implement:
+
+- Hierarchical document retrieval.
+- Section-based retrieval.
+- Chunked processing.
+- Semantic indexing.
+- Relevant-context retrieval.
+- Document summaries.
+- Cross-section analysis.
+- Persistent structured storage.
+
+For operations affecting the entire document, retrieve all relevant components and perform a document-wide verification pass.
+
+Do not claim complete-document analysis if only a subset was examined.
+
+---
+
+# PART XXIV: ERROR HANDLING AND RECOVERY
+
+## 56. FAILURE-RESILIENT DOCUMENT OPERATIONS
+
+Handle:
+
+- AI timeouts.
+- API failures.
+- Invalid operations.
+- Missing document objects.
+- Version conflicts.
+- Rendering failures.
+- PDF corruption.
+- Storage failures.
+- OCR failures.
+- Upload failures.
+- Unsupported formats.
+- Large-document processing failures.
+- Partial operation failures.
+
+Preserve the last known valid document state.
+
+If an operation fails:
+
+1. Stop dependent operations.
+2. Identify the failure.
+3. Preserve the current state.
+4. Roll back partial changes where necessary.
+5. Explain the failure.
+6. Offer a safe retry.
+
+Never tell the user an operation succeeded when it only partially completed.
+
+---
+
+# PART XXV: IMPLEMENTATION AND VERIFICATION
+
+## 57. BUILD ON THE EXISTING APPLICATION
+
+IMPORTANT:
+
+AI PDF STUDIO already contains substantial functionality.
+
+Do not discard, replace, or unnecessarily rewrite existing working systems.
+
+First inspect the existing application and identify:
+
+- Implemented functionality.
+- Partially implemented functionality.
+- Placeholder functionality.
+- Mock functionality.
+- Broken functionality.
+- Missing functionality.
+- Existing integrations.
+- Existing database structures.
+- Existing PDF-generation pipeline.
+- Existing Gemini integration.
+
+Build on the current architecture.
+
+Preserve existing working components wherever possible.
+
+Identify overlapping features before creating duplicates.
+
+Prioritize extending the current application rather than rebuilding it from scratch.
+
+---
+
+## 58. IMPLEMENTATION PRIORITIES
+
+### PRIORITY 1: COMPLETE AI DOCUMENT CONTROL
+
+Implement:
+
+- Document command orchestrator.
+- Executable document toolkit.
+- Full document awareness.
+- Section management.
+- Section merging.
+- Section splitting.
+- Content manipulation.
+- Document restructuring.
+- Dynamic numbering.
+- Cross-reference management.
+
+### PRIORITY 2: UNIFIED DOCUMENT ENGINE
+
+Implement:
+
+- Authoritative document model.
+- Object identifiers.
+- Dependency tracking.
+- Transactional operations.
+- Undo and redo.
+- Version management.
+- Editor synchronization.
+
+### PRIORITY 3: ADVANCED DOCUMENT CONSTRUCTION
+
+Implement:
+
+- Build documents from chat.
+- Generate complete document structures.
+- Import multiple sources.
+- Reconstruct documents.
+- Generate appendices.
+- Generate tables.
+- Generate signature pages.
+
+### PRIORITY 4: ADVANCED VISUAL CONTROL
+
+Implement:
+
+- Complete typography control.
+- Image manipulation.
+- Table manipulation.
+- Page management.
+- Layout control.
+- Branding.
+- Pagination.
+
+### PRIORITY 5: DOCUMENT INTELLIGENCE
+
+Implement:
+
+- Conflict detection.
+- Duplicate detection.
+- Missing-section detection.
+- Terminology management.
+- Cross-reference validation.
+- Source traceability.
+- Document-wide analysis.
+
+### PRIORITY 6: PDF PRODUCTION AND VALIDATION
+
+Implement:
+
+- Unified rendering.
+- PDF regeneration.
+- Page inspection.
+- Source comparison.
+- Technical validation.
+- Export management.
+
+### PRIORITY 7: ADVANCED WORKSPACE
+
+Implement:
+
+- Multi-document intelligence.
+- Bulk operations.
+- Workflow automation.
+- Document packages.
+- Advanced library management.
+
+---
+
+# PART XXVI: MANDATORY ACCEPTANCE TESTS
+
+## 59. TEST 1: COMPLETE DOCUMENT CONSTRUCTION
+
+Start with an empty document.
+
+Ask the AI:
+
+"Create a comprehensive corporate collaboration agreement containing 15 major sections, appropriate subsections, definitions, financial provisions, appendices, and signature blocks."
+
+Verify:
+
+- All requested sections exist.
+- The document has a logical hierarchy.
+- Numbering is correct.
+- Content is stored in the document model.
+- The visual editor displays the document.
+- The PDF renders correctly.
+
+## 60. TEST 2: COMPLEX SECTION MERGING
+
+Provide a 20-section agreement.
+
+Ask:
+
+"Merge Sections 3, 5, 8, and 12 into a unified intellectual property and ownership section. Preserve all unique provisions, remove confirmed duplicates, and update references."
+
+Verify:
+
+- All source sections were processed.
+- Unique content was preserved.
+- Duplicate removal was justified.
+- Conflicts were identified.
+- Numbering was updated.
+- References were updated.
+- The document preview reflects the changes.
+
+## 61. TEST 3: COMPLETE DOCUMENT REORGANIZATION
+
+Ask:
+
+"Reorganize the entire document into a more logical structure. Put definitions first, group financial provisions together, place ownership provisions before licensing, and move termination provisions near the end."
+
+Verify every affected section and reference.
+
+## 62. TEST 4: GLOBAL FORMATTING
+
+Ask:
+
+"Apply Times New Roman throughout the document. Make primary headings 16-point bold, secondary headings 13-point bold, and body text 11-point. Use consistent spacing and one-inch margins."
+
+Verify the actual rendered PDF.
+
+## 63. TEST 5: MULTI-DOCUMENT MERGING
+
+Upload three different documents.
+
+Ask:
+
+"Combine these documents into one master agreement. Preserve the primary agreement's structure and incorporate relevant unique provisions from the other two."
+
+Verify:
+
+- Source identification.
+- Content extraction.
+- Conflict detection.
+- Section integration.
+- Source traceability.
+- Final PDF integrity.
+
+## 64. TEST 6: TABLE AND GRAPHIC CONTROL
+
+Ask:
+
+"Combine the two financial tables, insert the uploaded company logo into the header, and add a chart showing the ownership distribution."
+
+Verify actual document objects and exported output.
+
+## 65. TEST 7: ROLLBACK
+
+Perform several modifications.
+
+Ask:
+
+"Restore the document to the version before the section merge."
+
+Verify actual content restoration, not merely a version-label change.
+
+## 66. TEST 8: COMPLETE CONVERSATIONAL CONTROL
+
+Using only the AI chat, instruct the application to:
+
+1. Create a new section.
+2. Merge three existing sections.
+3. Split another section.
+4. Move the resulting sections.
+5. Renumber the document.
+6. Update references.
+7. Merge two tables.
+8. Insert an image.
+9. Modify typography.
+10. Change page orientation.
+11. Add an appendix.
+12. Move signatures to the end.
+13. Generate a PDF.
+14. Validate the PDF.
+15. Save a new version.
+
+All operations must be performed on the actual document.
+
+The user must not have to manually complete these actions in the visual editor.
+
+---
+
+# PART XXVII: FINAL PRODUCT REQUIREMENTS
+
+## 67. WHAT THE FINISHED APPLICATION MUST BECOME
+
+AI PDF STUDIO must function as a complete AI-powered document-production environment.
+
+A user should be able to open the application, start a conversation, and build an entire document without manually constructing its layout.
+
+A user should also be able to upload an existing document and give the AI complete control over restructuring and editing it.
+
+The AI must be capable of understanding complex instructions and executing coordinated operations.
+
+### The defining capabilities
+
+1. Complete document creation.
+2. Complete document editing.
+3. Complete section management.
+4. Intelligent section merging.
+5. Intelligent section splitting.
+6. Complete document restructuring.
+7. Document-wide content editing.
+8. Dynamic numbering.
+9. Cross-reference management.
+10. Table creation and manipulation.
+11. Image and graphic manipulation.
+12. Complete formatting control.
+13. Page and layout control.
+14. Multi-document intelligence.
+15. Document reconstruction.
+16. Document comparison.
+17. Version management.
+18. Undo and rollback.
+19. Document-wide analysis.
+20. Source-content preservation.
+21. Professional PDF generation.
+22. Automated PDF validation.
+23. Document package generation.
+24. Brand management.
+25. Workflow automation.
+26. Secure document management.
+
+---
+
+# 68. THE ULTIMATE USER EXPERIENCE
+
+The following interaction should be possible:
+
+**USER:**
+
+"I've uploaded my original music collaboration agreement. I want you to completely restructure it into a professional legal agreement. Combine the ownership provisions, consolidate the royalty sections, separate the payment responsibilities, add a definitions section at the beginning, create a new distribution section, move termination toward the end, and put all signature blocks on their own final page.
+
+Use my SYNTIENT RECORDS branding. Keep the original wording wherever possible. You can improve the language where necessary, but don't remove any unique contractual provisions. Add an appendix containing the reference URLs. Make the document look like a professionally prepared corporate agreement."
+
+**AI PDF STUDIO MUST:**
+
+1. Read the complete source document.
+2. Extract the complete document structure.
+3. Identify all existing sections.
+4. Analyze the relationships between provisions.
+5. Identify duplicate material.
+6. Identify conflicting material.
+7. Generate a proposed structure.
+8. Reorganize the existing content.
+9. Merge related sections.
+10. Split sections where appropriate.
+11. Create the definitions section.
+12. Create the distribution section.
+13. Consolidate royalty provisions.
+14. Reorganize payment provisions.
+15. Update clause numbering.
+16. Update cross-references.
+17. Preserve original hyperlinks.
+18. Create the requested appendix.
+19. Generate the signature page.
+20. Apply SYNTIENT RECORDS branding.
+21. Format the entire document.
+22. Recalculate pagination.
+23. Update the visual editor.
+24. Generate the PDF.
+25. Inspect every rendered page where supported.
+26. Compare source and final content.
+27. Identify any unresolved discrepancies.
+28. Save a new document version.
+29. Present the finished document for review.
+
+The user should be able to continue:
+
+"Move the distribution section before royalties."
+
+"Make the appendix landscape."
+
+"Merge Sections 6 and 7."
+
+"Change all headings to uppercase."
+
+"Add another signature block."
+
+"Make the cover page more professional."
+
+"Remove the unnecessary blank page."
+
+"Compare this against the original."
+
+"Restore the wording of Section 4."
+
+"Regenerate the PDF."
+
+The AI must execute these instructions directly against the existing document.
+
+It must not simply explain how the user can perform them.
+
+---
+
+# 69. NON-NEGOTIABLE DEVELOPMENT DIRECTIVE
+
+**BUILD THE FUNCTIONAL SYSTEM, NOT JUST THE INTERFACE.**
+
+Do not implement fake buttons, simulated operations, placeholder responses, or AI messages that claim to have modified content without actually modifying the underlying document.
+
+Every advertised operation must connect to an executable application function.
+
+Every successful operation must update the authoritative document model.
+
+Every affected component must synchronize.
+
+Every substantial operation must be recoverable.
+
+Every generated PDF must be validated to the extent supported by the available infrastructure.
+
+Do not remove existing working functionality.
+
+Do not sacrifice source-content integrity for convenience.
+
+Do not silently discard user content.
+
+Do not silently resolve substantive conflicts.
+
+Do not claim an operation was completed unless the actual document state confirms it.
+
+If a feature requires an external service or integration, identify the dependency and provide an integration status rather than pretending it works.
+
+---
+
+# 70. FINAL DEVELOPMENT OBJECTIVE
+
+The finished AI PDF STUDIO should combine the capabilities of:
+
+- An advanced conversational AI assistant.
+- Microsoft Word-style document editing.
+- Professional publishing software.
+- Advanced PDF manipulation software.
+- Intelligent document management.
+- Document comparison and version control.
+- Automated document quality assurance.
+- Corporate document design.
+- Multi-document content intelligence.
+
+However, its defining advantage must be the conversational AI.
+
+**THE USER SHOULD BE ABLE TO CONTROL THE ENTIRE DOCUMENT THROUGH CHAT.**
+
+The AI should have the tools to execute the requested changes, the intelligence to understand their consequences, and the document engine necessary to apply them correctly.
+
+The application should be capable of taking a blank page and building a complete professional document, or taking an existing complicated document and completely reconstructing it.
+
+The user provides the instructions.
+
+The AI plans and executes the operations.
+
+The document engine maintains structural integrity.
+
+The rendering engine produces the PDF.
+
+The validation engine verifies the result.
+
+**AI PDF STUDIO: COMPLETE DOCUMENT CONTROL. ONE CONVERSATION. UNLIMITED DOCUMENT POSSIBILITIES.**
