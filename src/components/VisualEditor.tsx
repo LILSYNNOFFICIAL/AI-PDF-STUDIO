@@ -546,7 +546,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                     } ${cell.align === 'right' ? 'text-right' : ''}`}
                                     style={{
                                       color: tableStyle.bodyTextColor,
-                                      background: (() => { const fill = resolveCellFill(tableStyle, cell, rIdx + 1); return typeof fill === 'string' ? fill : fillToCss(fill); })(),
+                                      background: (() => { const fill = resolveCellFill(tableStyle, cell, rIdx); return typeof fill === 'string' ? fill : fillToCss(fill); })(),
                                       borderColor: tableStyle.gridlineColor
                                     }}
                                   >
