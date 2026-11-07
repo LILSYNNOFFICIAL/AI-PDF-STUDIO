@@ -888,7 +888,6 @@ export default function App() {
         onOpenRedaction={() => setIsRedactionOpen(true)}
         onOpenDesign={() => setIsDesignModalOpen(true)}
         onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
-        onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         onAddSection={handleAddSection}
         onOpenInsertTable={() => {
           setInsertObjectTab('table');
@@ -1017,6 +1016,7 @@ export default function App() {
         document={document}
         activeSectionId={activeSectionId}
         onOpenDesign={() => setIsDesignModalOpen(true)}
+        onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         persona={persona}
         messages={messages}
         isOrchestrating={isOrchestrating}
