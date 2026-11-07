@@ -136,7 +136,7 @@ function explicitSectionReorder(instruction: string): boolean {
 
 
 function explicitDocumentDesign(instruction: string): boolean {
-  return /\b(design|styling|style the document|theme|template|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font|garamond|inter|helvetica|georgia|border|divider|page surface|section background|table style|visual|appearance|polished|sleek|elegant|professional|modern|blue|navy|red|green|black|white|purple|pink|gold|silver|gray|grey|teal|cyan|orange|yellow|beige|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
+  return /\b(design|styling|style the document|theme|template|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font|garamond|inter|helvetica|georgia|border|divider|page surface|section background|table style|visual|appearance|polished|sleek|elegant|professional(?:ly)? formatted|professional (?:look|design|style|template)|modern|blue|navy|red|green|black|white|purple|pink|gold|silver|gray|grey|teal|cyan|orange|yellow|beige|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
 }
 
 function designOnlyInstruction(instruction: string): boolean {
