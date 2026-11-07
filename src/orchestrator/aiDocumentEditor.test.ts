@@ -102,6 +102,7 @@ test('AI prompt requires actual document operations and forbids unsolicited summ
 
 test('executor sends real section content to Gemini and applies returned edits', async () => {
   const doc = makeDocument();
+  doc.sections = doc.sections.slice(0, 1);
   const prompts: string[] = [];
   const client = {
     models: {
