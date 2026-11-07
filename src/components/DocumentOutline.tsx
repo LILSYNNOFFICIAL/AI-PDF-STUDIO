@@ -61,7 +61,7 @@ export const DocumentOutline: React.FC<DocumentOutlineProps> = ({
   });
 
   return (
-    <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col h-full select-none shrink-0 text-slate-300">
+    <aside className="desktop-outline-panel w-72 bg-slate-900 border-r border-slate-800 flex flex-col h-full select-none shrink-0 text-slate-300">
       {/* Header */}
       <div className="p-3 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
