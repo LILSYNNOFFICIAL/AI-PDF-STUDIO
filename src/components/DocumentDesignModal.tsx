@@ -16,6 +16,7 @@ import {
   renameTheme,
   saveTheme,
   deleteTheme,
+  contrastRatio,
   normalizeDocumentDesign,
   type SavedDocumentTheme
 } from '../services/documentDesign';
@@ -124,6 +125,19 @@ const ColorControl: React.FC<{
     </label>
   );
 };
+
+
+function minimumContrastForFill(
+  foreground: string,
+  fill: ColorFill | undefined,
+  fallback: string
+): number {
+  if (!fill) return contrastRatio(foreground, fallback);
+  const colors = fill.type === 'linear-gradient'
+    ? fill.stops.map(stop => stop.color)
+    : [fill.color];
+  return Math.min(...colors.map(color => contrastRatio(foreground, color)));
+}
 
 const ColorFillControl: React.FC<{
   label: string;
@@ -265,6 +279,23 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
   );
   const tables = selectedSection?.tables || [];
   const selectedTable = tables.find(table => table.id === tableId) || tables[0];
+  const contrastWarnings = [
+    minimumContrastForFill(design.colors.bodyText, design.page.background, design.colors.pageSurface) < 4.5
+      ? 'Body text may be difficult to read against the page background.'
+      : '',
+    minimumContrastForFill(design.colors.headingText, design.page.background, design.colors.pageSurface) < 3
+      ? 'Headings may have insufficient contrast against the page background.'
+      : '',
+    minimumContrastForFill(design.colors.bodyText, design.sectionDefaults.background, design.colors.sectionSurface) < 4.5
+      ? 'Default section body text may have insufficient contrast against its background.'
+      : '',
+    minimumContrastForFill(design.tableDefaults.bodyTextColor, design.tableDefaults.bodyBackground, design.colors.pageSurface) < 4.5
+      ? 'Table body text may have insufficient contrast against its background.'
+      : '',
+    minimumContrastForFill(design.tableDefaults.headerTextColor, design.tableDefaults.headerBackground, design.colors.tableHeaderSurface) < 4.5
+      ? 'Table header text may have insufficient contrast against its background.'
+      : ''
+  ].filter(Boolean);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -435,6 +466,15 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
         </nav>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {contrastWarnings.length > 0 && (
+            <div role="status" className="mb-4 rounded-lg border border-amber-700/60 bg-amber-950/30 px-3 py-2">
+              <p className="mb-1 text-[11px] font-semibold text-amber-300">Readability warning</p>
+              <ul className="list-disc space-y-0.5 pl-4 text-[10px] text-amber-200/90">
+                {contrastWarnings.map(warning => <li key={warning}>{warning}</li>)}
+              </ul>
+              <p className="mt-1 text-[10px] text-amber-300/70">These are advisory checks. Your selected colors will not be changed automatically.</p>
+            </div>
+          )}
           {tab === 'presets' && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {DOCUMENT_DESIGN_PRESETS.map(preset => (
