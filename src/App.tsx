@@ -887,6 +887,7 @@ export default function App() {
         onOpenFindReplace={() => setIsFindReplaceOpen(true)}
         onOpenRedaction={() => setIsRedactionOpen(true)}
         onOpenDesign={() => setIsDesignModalOpen(true)}
+        onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         onAddSection={handleAddSection}
         onOpenInsertTable={() => {
           setInsertObjectTab('table');
