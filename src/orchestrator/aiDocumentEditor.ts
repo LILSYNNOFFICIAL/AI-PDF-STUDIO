@@ -241,6 +241,49 @@ function parseModelResponse(text: string | undefined): DocumentEditResponse {
   return parsed as unknown as DocumentEditResponse;
 }
 
+export function prepareLongInstruction(
+  instruction: string,
+  currentDoc: DocumentModel,
+  threshold = 12000
+): { instruction: string; document: DocumentModel } {
+  if (instruction.length <= threshold) return { instruction, document: currentDoc };
+
+  const marker = /(?:source\\s+content|document\\s+content|text\\s+to\\s+include|following\\s+text|following\\s+content|full\\s+text|source)\\s*[:：]\\s*/i;
+  const match = marker.exec(instruction);
+  if (!match || match.index === undefined) {
+    throw new Error(
+      'This message contains a large amount of text but no clear source-content boundary. Add a marker such as "SOURCE CONTENT:" before the material so it can be preserved and processed in chunks. No document changes were applied.'
+    );
+  }
+
+  const sourceStart = match.index + match[0].length;
+  const sourceText = instruction.slice(sourceStart).replace(/^\\s+/, '');
+  if (!sourceText.trim()) {
+    throw new Error('The SOURCE CONTENT marker is present, but no source text follows it. No document changes were applied.');
+  }
+
+  const directive = instruction.slice(0, match.index).trim() || 'Format the supplied source content as a document.';
+  const sectionId = `${currentDoc.id}_source_${currentDoc.version + 1}`;
+  if (currentDoc.sections.some(section => section.id === sectionId)) {
+    throw new Error('A source-content section with this document version already exists. No document changes were applied.');
+  }
+
+  const sourceSection: Section = {
+    id: sectionId,
+    sectionNumber: '',
+    title: 'USER-PROVIDED SOURCE CONTENT',
+    content: sourceText,
+    clauses: [],
+    orderIndex: currentDoc.sections.length + 1,
+    sourceReference: 'User-supplied source content. Preserve verbatim unless a rewrite is explicitly requested.'
+  };
+
+  return {
+    instruction: `${directive}\\n\\nThe complete source text is stored verbatim in section ${sectionId}. Process it in bounded chunks. Do not summarize, condense, omit, or replace the source wording unless the instruction explicitly requests a rewrite.`,
+    document: { ...currentDoc, sections: [...currentDoc.sections, sourceSection] }
+  };
+}
+
 export function buildDocumentEditPrompt(
   instruction: string,
   document: DocumentModel,
