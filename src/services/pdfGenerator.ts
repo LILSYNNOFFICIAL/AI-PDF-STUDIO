@@ -39,6 +39,11 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   };
   const primaryFont = fontMap[design.typography.bodyFontFamily] || fontMap[doc.styles.fontFamily] || 'times';
   const headingFont = fontMap[design.typography.headingFontFamily] || fontMap[doc.styles.headingFont] || 'times';
+  const applyHeadingCase = (value: string): string => {
+    if (design.typography.headingCase === 'uppercase') return value.toUpperCase();
+    if (design.typography.headingCase === 'capitalize') return value.toLowerCase().replace(/\b\p{L}/gu, character => character.toUpperCase());
+    return value;
+  };
 
   const colorToRgb = (color: string): [number, number, number] => {
     const raw = color.replace('#', '');
@@ -248,13 +253,18 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       const height = maxLines * headerLineHeight + cellPadding * 2;
       ensureSpace(height);
       drawColorFill(tableStyle.headerBackground, margins.left, cursorY, contentWidth, height, 10);
+      for (let index = 0; index < colCount; index++) {
+        const headerCell = headerCells[index];
+        if (headerCell?.bg) drawColorFill({ type: 'solid', color: headerCell.bg }, margins.left + colOffsets[index], cursorY, colWidths[index], height, 6);
+      }
       pdf.setDrawColor(...colorToRgb(tableStyle.gridlineColor));
       pdf.setLineWidth(tableStyle.gridlineWidth * 0.264583);
       pdf.rect(margins.left, cursorY, contentWidth, height, 'S');
+      for (let index = 1; index < colCount; index++) {
+        pdf.line(margins.left + colOffsets[index], cursorY, margins.left + colOffsets[index], cursorY + height);
+      }
       for (let index = 0; index < colCount; index++) {
-        if (index > 0) pdf.line(margins.left + colOffsets[index], cursorY, margins.left + colOffsets[index], cursorY + height);
         const headerCell = headerCells[index];
-        if (headerCell?.bg) drawColorFill({ type: 'solid', color: headerCell.bg }, margins.left + colOffsets[index], cursorY, colWidths[index], height, 6);
         setTextStyle(primaryFont, 'bold', headerFontSize, colorToRgb(headerCell?.isHeader === false ? tableStyle.bodyTextColor : tableStyle.headerTextColor));
         lines[index].forEach((line, lineIndex) => {
           pdf.text(line, margins.left + colOffsets[index] + cellPadding, cursorY + cellPadding + 3.2 + lineIndex * headerLineHeight);
@@ -276,7 +286,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
     drawHeader();
 
-    for (const row of table.rows) {
+    for (const [rowIndex, row] of table.rows.entries()) {
       const cellLines = wrapCells(row, tableFontSize, false);
       const rowLineCount = Math.max(1, ...cellLines.map(cell => cell.length));
       let lineOffset = 0;
@@ -292,17 +302,23 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
         const segmentLines = Math.min(rowLineCount - lineOffset, linesAvailable);
         const segmentHeight = segmentLines * tableLineHeight + cellPadding * 2;
+        for (let index = 0; index < colCount; index++) {
+          const cell = row[index];
+          const rowCell = cell || { id: 'empty-' + index, content: '' };
+          const cellFill = resolveCellFill(tableStyle, rowCell, rowIndex);
+          drawColorFill(typeof cellFill === 'string' ? { type: 'solid', color: cellFill } : cellFill,
+            margins.left + colOffsets[index], cursorY, colWidths[index], segmentHeight, 6);
+        }
+
         pdf.setDrawColor(...colorToRgb(tableStyle.gridlineColor));
         pdf.setLineWidth(tableStyle.gridlineWidth * 0.264583);
         pdf.rect(margins.left, cursorY, contentWidth, segmentHeight, 'S');
+        for (let index = 1; index < colCount; index++) {
+          pdf.line(margins.left + colOffsets[index], cursorY, margins.left + colOffsets[index], cursorY + segmentHeight);
+        }
 
         for (let index = 0; index < colCount; index++) {
-          if (index > 0) pdf.line(margins.left + colOffsets[index], cursorY, margins.left + colOffsets[index], cursorY + segmentHeight);
           const cell = row[index];
-          const rowCell = cell || { id: 'empty-' + index, content: '' };
-          const cellFill = resolveCellFill(tableStyle, rowCell, rowLineCount > 0 ? table.rows.indexOf(row) + 1 : 0);
-          drawColorFill(typeof cellFill === 'string' ? { type: 'solid', color: cellFill } : cellFill,
-            margins.left + colOffsets[index], cursorY, colWidths[index], segmentHeight, 6);
           setTextStyle(primaryFont, cell?.bold ? 'bold' : 'normal', tableFontSize, colorToRgb(tableStyle.bodyTextColor));
           const visibleLines = cellLines[index].slice(lineOffset, lineOffset + segmentLines);
           visibleLines.forEach((line, lineIndex) => {
@@ -322,7 +338,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   };
 
   // Document title and metadata
-  const title = design.typography.headingCase === 'uppercase' ? doc.title.toUpperCase() : doc.title;
+  const title = applyHeadingCase(doc.title);
   drawWrappedText(title, margins.left, contentWidth, {
     font: headingFont, style: 'bold', size: design.typography.heading1Size || doc.styles.heading1Size || 18,
     color: colorToRgb(design.colors.headingText), lineHeight: 8, after: 2, align: 'center'
@@ -349,7 +365,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     if (section.forcePageBreakBefore) addPage();
     else ensureSpace(12);
 
-    drawWrappedText(`${section.sectionNumber} ${section.title.toUpperCase()}`, sectionX, sectionWidth, {
+    drawWrappedText(applyHeadingCase(`${section.sectionNumber} ${section.title}`), sectionX, sectionWidth, {
       font: headingFont, style: 'bold', size: design.typography.heading2Size || doc.styles.heading2Size || 13,
       color: colorToRgb(sectionStyle.headingColor), lineHeight: 6, after: 2,
       background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
@@ -358,7 +374,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     if (section.content) {
       drawWrappedText(section.content, sectionX, sectionWidth, {
         font: primaryFont, size: design.typography.bodyFontSize || doc.styles.fontSize || 10.5,
-        color: colorToRgb(sectionStyle.bodyTextColor), lineHeight: 5, after: 3,
+        color: colorToRgb(sectionStyle.bodyTextColor),
+        lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
+        after: design.typography.paragraphSpacing * 0.264583,
         background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
       });
     }
@@ -367,7 +385,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       const heading = clause.heading ? `${clause.heading}: ` : '';
       drawWrappedText(`${clause.clauseNumber}  ${heading}${clause.content}`, sectionX + 4, Math.max(8, sectionWidth - 4), {
         font: primaryFont, size: design.typography.bodyFontSize || doc.styles.fontSize || 10.5,
-        color: colorToRgb(sectionStyle.bodyTextColor), lineHeight: 5, after: 2,
+        color: colorToRgb(sectionStyle.bodyTextColor),
+        lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
+        after: design.typography.paragraphSpacing * 0.264583,
         background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
       });
     }
