@@ -411,7 +411,9 @@ export function fillToCss(fill: ColorFill | undefined, fallback = 'transparent')
   return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + fill.opacity + ')';
 }
 
-export function borderToCss(border: BorderConfig): string {
+export function borderToCss(border: BorderConfig, side?: BorderSide): string {
+  if (side && border.sides?.length && !border.sides.includes(side)) return 'none';
+  if (border.style === 'none' || border.width <= 0) return 'none';
   return border.width + 'px ' + border.style + ' ' + border.color;
 }
 
