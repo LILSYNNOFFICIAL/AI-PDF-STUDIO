@@ -12,6 +12,109 @@ export type DocumentType =
 
 export type Alignment = 'left' | 'center' | 'right' | 'justify';
 
+export type BorderStyle = 'none' | 'solid' | 'dashed' | 'dotted' | 'double';
+export type BorderSide = 'top' | 'right' | 'bottom' | 'left';
+
+export interface GradientStop {
+  color: string;
+  position: number;
+}
+
+export type ColorFill =
+  | { type: 'solid'; color: string; opacity?: number }
+  | { type: 'linear-gradient'; angle: number; stops: GradientStop[] };
+
+export interface BorderConfig {
+  style: BorderStyle;
+  color: string;
+  width: number;
+  sides?: BorderSide[];
+}
+
+export interface DesignColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  bodyText: string;
+  mutedText: string;
+  headingText: string;
+  pageSurface: string;
+  sectionSurface: string;
+  border: string;
+  tableHeaderSurface: string;
+  tableHeaderText: string;
+  tableBodyText: string;
+  tableAlternateRowSurface: string;
+}
+
+export interface DesignTypography {
+  bodyFontFamily: StyleConfig['fontFamily'];
+  bodyFontSize: number;
+  bodyLineHeight: number;
+  paragraphSpacing: number;
+  headingFontFamily: StyleConfig['headingFont'];
+  heading1Size: number;
+  heading2Size: number;
+  heading3Size: number;
+  headingCase: StyleConfig['headingCase'];
+  bodyBold?: boolean;
+  bodyItalic?: boolean;
+}
+
+export interface DesignTableDefaults {
+  headerBackground: ColorFill;
+  headerTextColor: string;
+  bodyBackground: ColorFill;
+  bodyTextColor: string;
+  alternateRowBackground?: ColorFill;
+  gridlineColor: string;
+  gridlineWidth: number;
+  captionColor: string;
+}
+
+export interface DocumentDesign {
+  schemaVersion: 1;
+  presetId: string;
+  name: string;
+  colors: DesignColors;
+  typography: DesignTypography;
+  page: {
+    background: ColorFill;
+    firstPageBackground?: ColorFill;
+  };
+  sectionDefaults: {
+    background?: ColorFill;
+    padding: number;
+    border: BorderConfig;
+  };
+  tableDefaults: DesignTableDefaults;
+  pageFurniture: {
+    headerTextColor: string;
+    footerTextColor: string;
+    dividerColor: string;
+    dividerWidth: number;
+  };
+}
+
+export interface SectionDesign {
+  background?: ColorFill;
+  bodyTextColor?: string;
+  headingColor?: string;
+  border?: BorderConfig;
+  padding?: number;
+}
+
+export interface TableDesign {
+  headerBackground?: ColorFill;
+  headerTextColor?: string;
+  bodyBackground?: ColorFill;
+  bodyTextColor?: string;
+  alternateRowBackground?: ColorFill;
+  gridlineColor?: string;
+  gridlineWidth?: number;
+  captionColor?: string;
+}
+
 export interface StyleConfig {
   fontFamily: 'Times New Roman' | 'Garamond' | 'Inter' | 'Helvetica' | 'Georgia' | 'Courier New';
   fontSize: number; // in pt (e.g. 11)
@@ -74,6 +177,7 @@ export interface TableCell {
 
 export interface TableBlock {
   id: string;
+  design?: TableDesign;
   title?: string;
   caption?: string;
   headers: TableCell[];
@@ -133,6 +237,7 @@ export interface Clause {
 
 export interface Section {
   id: string;
+  design?: SectionDesign;
   sectionNumber: string; // e.g. "1.0", "SECTION 4"
   title: string;
   content?: string;
@@ -180,6 +285,7 @@ export interface DocumentModel {
   author: string;
   brandProfileId?: string;
   styles: StyleConfig;
+  design?: DocumentDesign;
   pageConfig: PageConfig;
   sections: Section[];
   signatures?: SignatureBlock;
