@@ -575,9 +575,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Chart Visual Block */}
                   {section.charts && section.charts.map((chart) => (
-                    <div key={chart.id} className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center">
-                      <div className="text-xs font-bold text-slate-800 mb-3 flex items-center gap-1.5">
-                        <PieChart className="w-4 h-4 text-blue-600" />
+                    <div key={chart.id} className="mt-4 p-4 rounded-lg flex flex-col items-center" style={{ background: fillToCss(documentDesign.colors.sectionSurface), border: `1px solid ${documentDesign.colors.border}` }}>
+                      <div className="text-xs font-bold mb-3 flex items-center gap-1.5" style={{ color: documentDesign.colors.headingText }}>
+                        <PieChart className="w-4 h-4" style={{ color: documentDesign.colors.accent }} />
                         <span>{chart.title}</span>
                       </div>
                       
@@ -585,18 +585,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       <div className="flex items-center justify-center gap-8 w-full max-w-md">
                         <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 36 36">
                           <path
-                            className="text-blue-200"
                             strokeWidth="5"
                             stroke="currentColor"
+                            style={{ color: documentDesign.colors.border }}
                             fill="none"
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           />
                           <path
-                            className="text-blue-600"
                             strokeDasharray="50, 100"
                             strokeWidth="5"
                             strokeLinecap="round"
                             stroke="currentColor"
+                            style={{ color: documentDesign.colors.accent }}
                             fill="none"
                             d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                           />
@@ -605,9 +605,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         <div className="space-y-2 text-xs">
                           {chart.labels.map((lbl, idx) => (
                             <div key={idx} className="flex items-center gap-2">
-                              <span className={`w-3 h-3 rounded-full ${idx === 0 ? 'bg-blue-600' : 'bg-blue-300'}`} />
-                              <span className="font-medium text-slate-700">{lbl}:</span>
-                              <span className="font-bold text-slate-900">{chart.values[idx]}%</span>
+                              <span className="w-3 h-3 rounded-full" style={{ background: [documentDesign.colors.accent, documentDesign.colors.secondary, documentDesign.colors.primary, documentDesign.colors.border][idx % 4] }} />
+                              <span className="font-medium" style={{ color: documentDesign.colors.bodyText }}>{lbl}:</span>
+                              <span className="font-bold" style={{ color: documentDesign.colors.headingText }}>{chart.values[idx]}%</span>
                             </div>
                           ))}
                         </div>
@@ -621,11 +621,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       <img 
                         src={img.url} 
                         alt={img.altText || 'Document Artwork'} 
-                        className="rounded border border-slate-300 shadow-sm max-h-60 object-contain"
-                        style={{ width: `${img.widthPercent || 80}%` }}
+                        className="rounded shadow-sm max-h-60 object-contain"
+                        style={{ width: `${img.widthPercent || 80}%`, border: `1px solid ${documentDesign.colors.border}` }}
                       />
                       {img.caption && (
-                        <p className="text-[11px] text-slate-500 italic mt-1.5 text-center font-sans">
+                        <p className="text-[11px] italic mt-1.5 text-center font-sans" style={{ color: documentDesign.colors.mutedText }}>
                           {img.caption}
                         </p>
                       )}
@@ -640,48 +640,51 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           {document.signatures && (
             <div 
               id="section_signatures" 
-              className={`mt-12 pt-8 border-t-2 border-slate-900 ${
+              className={`mt-12 pt-8 ${
                 document.signatures.onDedicatedPage ? 'page-break-before pt-16' : ''
               }`}
+              style={{ borderTop: `2px solid ${documentDesign.pageFurniture.dividerColor}` }}
             >
               <div className="text-center mb-6">
-                <h2 className="font-bold text-sm tracking-wider uppercase text-slate-950">
+                <h2 className="font-bold text-sm tracking-wider uppercase" style={{ color: documentDesign.colors.headingText }}>
                   {document.signatures.title || 'SIGNATURES & EXECUTION'}
                 </h2>
-                <p className="text-xs text-slate-500 italic mt-1">
+                <p className="text-xs italic mt-1" style={{ color: documentDesign.colors.mutedText }}>
                   IN WITNESS WHEREOF, the Parties have executed this Agreement by their duly authorized representatives.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-6">
                 {document.signatures.parties.map((party: SignatureParty, idx: number) => (
-                  <div key={party.id} className="border border-slate-200 rounded p-4 bg-slate-50/50">
+                  <div key={party.id} className="rounded p-4" style={{ border: `1px solid ${documentDesign.colors.border}`, background: fillToCss(documentDesign.colors.sectionSurface) }}>
                     <input
                       type="text"
                       value={party.role}
                       onChange={(e) => handleUpdateParty(idx, 'role', e.target.value)}
-                      className="text-[11px] font-bold text-slate-700 block mb-3 uppercase tracking-wide bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full"
+                      className="text-[11px] font-bold block mb-3 uppercase tracking-wide bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full"
+                      style={{ color: documentDesign.colors.headingText }}
                     />
 
                     {/* Signature Line */}
-                    <div className="border-b border-slate-800 pb-1 mb-2 h-10 flex items-end">
-                      <span className="font-mono italic text-blue-900 text-sm">
+                    <div className="pb-1 mb-2 h-10 flex items-end" style={{ borderBottom: `1px solid ${documentDesign.colors.primary}` }}>
+                      <span className="font-mono italic text-sm" style={{ color: documentDesign.colors.accent }}>
                         {party.signaturePlaceholder || `/s/ ${party.name}`}
                       </span>
                     </div>
 
-                    <div className="text-xs space-y-1.5 text-slate-600">
+                    <div className="text-xs space-y-1.5" style={{ color: documentDesign.colors.bodyText }}>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-slate-800 shrink-0">By:</strong>
+                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>By:</strong>
                         <input
                           type="text"
                           value={party.name}
                           onChange={(e) => handleUpdateParty(idx, 'name', e.target.value)}
-                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-slate-900 flex-1 px-1 rounded"
+                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none flex-1 px-1 rounded"
+                          style={{ color: documentDesign.colors.bodyText }}
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-slate-800 shrink-0">Title:</strong>
+                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>Title:</strong>
                         <input
                           type="text"
                           value={party.title || ''}
@@ -690,7 +693,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-slate-800 shrink-0">Company:</strong>
+                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>Company:</strong>
                         <input
                           type="text"
                           value={party.company || ''}
@@ -699,7 +702,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <strong className="text-slate-800 shrink-0">Date:</strong>
+                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>Date:</strong>
                         <input
                           type="text"
                           value={party.date || ''}
