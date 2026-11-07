@@ -205,7 +205,7 @@ export default function App() {
 
     setIsOrchestrating(true);
     try {
-      const apiBase = String((import.meta as any).env?.VITE_API_BASE_URL || '').replace(/\\/+$/, '');
+      const apiBase = String((import.meta as any).env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
       const response = await fetch(`${apiBase}/api/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
