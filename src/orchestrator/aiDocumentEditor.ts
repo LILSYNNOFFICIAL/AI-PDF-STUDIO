@@ -1086,7 +1086,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
       config: { responseMimeType: 'application/json' }
     });
     let structuralResponse = parseModelResponse(structuralResult.text);
-    const requiresBoundedRange = /\\b(everything from|all content from|from .+ to the box above|contained within|inside the .+ box|within the .+ box)\\b/i.test(instruction);
+    const requiresBoundedRange = /\b(everything from|all content from|from .+ to the box above|contained within|inside the .+ box|within the .+ box)\b/i.test(instruction);
     const hasOperations = (response: DocumentEditResponse) => Boolean(
       response.sectionRangeMoves?.length ||
       response.documentPatch?.length ||
