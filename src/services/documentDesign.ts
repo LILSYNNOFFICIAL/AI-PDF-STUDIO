@@ -220,6 +220,10 @@ export function validateTableDesign(design: TableDesign): void {
 export function validateDocumentDesign(design: DocumentDesign): void {
   if (!design || typeof design !== 'object') throw new Error('Document design must be an object.');
   if (design.schemaVersion !== 1) throw new Error('Unsupported document design schema version.');
+  if (typeof design.presetId !== 'string' || !design.presetId.trim()) throw new Error('Document design presetId must be a non-empty string.');
+  if (typeof design.name !== 'string' || !design.name.trim()) throw new Error('Document design name must be a non-empty string.');
+  if (design.typography?.bodyBold !== undefined && typeof design.typography.bodyBold !== 'boolean') throw new Error('typography.bodyBold must be a boolean.');
+  if (design.typography?.bodyItalic !== undefined && typeof design.typography.bodyItalic !== 'boolean') throw new Error('typography.bodyItalic must be a boolean.');
   for (const [key, value] of Object.entries(design.colors || {})) validateColor(value, 'colors.' + key);
   const requiredColors = ['primary', 'secondary', 'accent', 'bodyText', 'mutedText', 'headingText', 'pageSurface', 'sectionSurface', 'border', 'tableHeaderSurface', 'tableHeaderText', 'tableBodyText', 'tableAlternateRowSurface'];
   for (const key of requiredColors) {
