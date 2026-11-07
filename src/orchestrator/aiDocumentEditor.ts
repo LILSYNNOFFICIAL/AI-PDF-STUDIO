@@ -752,13 +752,13 @@ function applyDocumentJsonPatch(
   if (!patch.length || patch.length > 500) throw new Error('JSON Patch must contain between 1 and 500 operations.');
   if (
     response.sectionUpdates.length ||
-    response.sectionOrder !== undefined ||
-    response.sectionRangeMoves?.length ||
-    response.styles !== undefined ||
-    response.pageConfig !== undefined ||
-    response.design !== undefined ||
-    response.sectionDesignUpdates?.length ||
-    response.tableDesignUpdates?.length
+    (response.sectionOrder?.length || 0) > 0 ||
+    (response.sectionRangeMoves?.length || 0) > 0 ||
+    Object.keys(response.styles || {}).length > 0 ||
+    Object.keys(response.pageConfig || {}).length > 0 ||
+    (response.design !== undefined && Object.keys(response.design as Record<string, unknown>).length > 0) ||
+    (response.sectionDesignUpdates?.length || 0) > 0 ||
+    (response.tableDesignUpdates?.length || 0) > 0
   ) {
     throw new Error('JSON Patch cannot be mixed with other document-edit operation formats. No changes were applied.');
   }
