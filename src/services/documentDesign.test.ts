@@ -141,7 +141,7 @@ test('clearing overrides is explicit and removes only styling overrides', () => 
 test('saved themes round-trip, rename, delete, and recover from corrupt storage', () => {
   const storage = new MemoryStorage();
   const design = DOCUMENT_DESIGN_PRESETS[0];
-  saveTheme(storage as any, { id: 'theme-1', name: 'My Theme', design });
+  saveTheme(storage as any, { id: 'theme-1', name: 'My Theme', design, updatedAt: new Date().toISOString() });
   assert.equal(listSavedThemes(storage as any)[0].name, 'My Theme');
   renameTheme(storage as any, 'theme-1', 'Renamed');
   assert.equal(listSavedThemes(storage as any)[0].name, 'Renamed');
