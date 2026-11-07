@@ -10,26 +10,37 @@ const base = {
   sections: []
 } as unknown as DocumentModel;
 
-test('imports numbered agreement sections and appendix without losing nested headings or text', () => {
-  const source = [
-    '# MUSIC COLLABORATION AGREEMENT', '## “SHADOWS”', '',
-    '## 1. PARTIES', 'Party A text.', '',
-    '## 2. PROJECT', 'Project text.', '',
-    '## 17. CHARACTER REFERENCE', '### 1. PRESERVE IDENTITY', 'Nested content.', '',
-    '# APPENDIX A. REFERENCES', 'https://example.com', '',
-    '# IMPORTANT REVIEW NOTE', 'Review text.'
-  ].join('\n');
+test('renders ordinary pasted text even when it has no recognized heading syntax', () => {
+  const source = 'Collaboration Agreement\n\nThe parties agree to collaborate.\n\nPayment is due within thirty days.';
   const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
-  assert.equal(doc.title, 'MUSIC COLLABORATION AGREEMENT “SHADOWS”');
-  assert.equal(doc.sections.length, 5);
-  assert.equal(doc.sections[0].sectionNumber, '1.0');
-  assert.equal(doc.sections[2].content, '### 1. PRESERVE IDENTITY\nNested content.');
-  assert.equal(doc.sections[3].isAppendix, true);
-  assert.equal(doc.sections[3].content, 'https://example.com');
-  assert.equal(doc.sections[4].title, 'IMPORTANT REVIEW NOTE');
+  assert.equal(doc.sourceText, source);
+  assert.equal(doc.sections.length, 1);
+  assert.match(doc.sections[0].content || '', /The parties agree to collaborate/);
+  assert.match(doc.sections[0].content || '', /Payment is due within thirty days/);
 });
 
-test('rejects empty and unstructured input instead of silently importing a blank document', () => {
+test('recognizes common heading styles while preserving every source line in the source of truth', () => {
+  const source = [
+    'MUSIC COLLABORATION AGREEMENT', '',
+    '1. PARTIES', 'Party A and Party B agree.', '',
+    '2.1 Ownership and Rights', 'The parties own the work equally.', '',
+    'PAYMENT TERMS', 'Payment is due within thirty days.', '',
+    'SIGNATURES', 'Artist: ____________________', 'Producer: ____________________'
+  ].join('\n');
+  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+  assert.equal(doc.sourceText, source);
+  assert.ok(doc.sections.length >= 3);
+  assert.ok(doc.sections.some(section => /PARTIES/i.test(section.title)));
+  assert.ok(doc.sections.some(section => /Ownership and Rights/i.test(section.title)));
+  assert.ok(doc.sections.some(section => /PAYMENT TERMS/i.test(section.title)));
+  const represented = doc.sections.map(section => [section.sourceHeading || '', section.content || ''].join('\n')).join('\n');
+  for (const required of ['Party A and Party B agree.', 'The parties own the work equally.', 'Payment is due within thirty days.', 'Artist: ____________________', 'Producer: ____________________']) {
+    assert.ok(represented.includes(required), 'missing source content: ' + required);
+  }
+});
+
+test('rejects only empty input and does not require a numbered section heading', () => {
   assert.throws(() => parseTextDocument('  ', base), /empty/i);
-  assert.throws(() => parseTextDocument('Just a paragraph', base), /No numbered sections/i);
+  const doc = parseTextDocument('A single unstructured paragraph that must survive.', base);
+  assert.match(doc.sections[0].content || '', /must survive/);
 });
