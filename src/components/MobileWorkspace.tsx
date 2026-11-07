@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { DocumentModel, AIPersona, Section } from '../types/document';
 import { VisualEditor } from './VisualEditor';
+import { FormattingRibbon } from './FormattingRibbon';
 import { DocumentOutline } from './DocumentOutline';
 import { AIChatOrchestrator, ChatMessage } from './AIChatOrchestrator';
 import { PERSONA_LABELS } from './Navbar';
@@ -26,6 +27,10 @@ interface MobileWorkspaceProps {
   onUndo: () => void;
   onRedo: () => void;
   onOpenPdfPreview: () => void;
+  onUpdateStyles: (styles: Partial<DocumentModel['styles']>) => void;
+  onUpdatePageConfig: (config: Partial<DocumentModel['pageConfig']>) => void;
+  onAddClause: () => void;
+  onInsertChart: () => void;
   onOpenValidation: () => void;
   onOpenMultiDoc: () => void;
   onNewDocument: () => void;
@@ -131,6 +136,17 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
               <button onClick={props.onOpenValidation}><ShieldCheck size={15}/> Audit</button>
               <button onClick={() => selectTab('outline')}><ListTree size={15}/> Outline</button>
             </div>
+            <div className="mobile-ribbon">
+              <FormattingRibbon document={props.document}
+                onUpdateStyles={props.onUpdateStyles} onUpdatePageConfig={props.onUpdatePageConfig}
+                canUndo={props.canUndo} canRedo={props.canRedo} onUndo={props.onUndo} onRedo={props.onRedo}
+                onOpenFindReplace={props.onFindReplace} onOpenRedaction={props.onRedaction}
+                onOpenInsertTable={props.onInsertTable} onOpenInsertChart={props.onInsertChart}
+                onOpenInsertImage={props.onInsertImage} onAddClause={props.onAddClause}
+                onAddSection={props.onAddSection} onOpenMetadata={props.onMetadata}
+                onOpenClauseLibrary={props.onClauseLibrary} onOpenWatermarkCustomizer={props.onWatermark}
+                onOpenReadability={props.onReadability}/>
+            </div>
             <VisualEditor document={props.document} activeSectionId={props.activeSectionId}
               onUpdateSection={props.onUpdateSection} onDeleteSection={props.onDeleteSection}
               onDuplicateSection={props.onDuplicateSection} onUpdateSignatures={props.onUpdateSignatures}
@@ -167,6 +183,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
               {tool('Redact text', <Scissors size={20}/>, props.onRedaction)}
               {tool('Insert table', <Table2 size={20}/>, props.onInsertTable)}
               {tool('Insert image', <Image size={20}/>, props.onInsertImage)}
+              {tool('Insert chart', <Layers size={20}/>, props.onInsertChart)}
               {tool('Clause library', <BookOpen size={20}/>, props.onClauseLibrary)}
               {tool('Watermark', <Stamp size={20}/>, props.onWatermark)}
               {tool('Readability', <ClipboardCheck size={20}/>, props.onReadability)}
