@@ -863,7 +863,7 @@ function applyDocumentJsonPatch(
   return { updatedDoc: candidate, summary };
 }
 
-function applyDocumentEditResponse(
+export function applyDocumentEditResponse(
   currentDoc: DocumentModel,
   response: DocumentEditResponse,
   instruction: string
