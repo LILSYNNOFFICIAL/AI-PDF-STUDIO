@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Palette, Save, Trash2, X } from 'lucide-react';
 import type {
   ColorFill,
+  BorderSide,
   DocumentDesign,
   DocumentModel,
   SectionDesign,
@@ -499,10 +500,10 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                           type="checkbox"
                           checked={sectionDraft.border?.sides ? sectionDraft.border.sides.includes(side) : true}
                           onChange={event => setSectionDraft(current => {
-                            const nextSides = new Set(current.border?.sides || ['top', 'right', 'bottom', 'left']);
+                            const allSides: BorderSide[] = ['top', 'right', 'bottom', 'left'];
+                            const nextSides = new Set<BorderSide>(current.border?.sides || allSides);
                             if (event.target.checked) nextSides.add(side);
                             else nextSides.delete(side);
-                            const allSides = ['top', 'right', 'bottom', 'left'];
                             return {
                               ...current,
                               border: {
