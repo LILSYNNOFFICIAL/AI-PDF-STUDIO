@@ -34,6 +34,6 @@ The repository includes `render.yaml` for the existing Express API.
 
 GitHub Pages serves static files only. It cannot run Express routes. The browser calls the separate Render API through `VITE_API_BASE_URL`. If the API is unreachable, missing its key, or rejects an operation, the UI reports the error and leaves the current document unchanged.
 
-The API currently accepts JSON requests up to 20 MB. AI requests are split into bounded section chunks. A single section larger than the configured safe chunk limit is rejected with an explicit error rather than silently truncated. Split very large sections into smaller clauses/content blocks before retrying.
+The API currently accepts JSON requests up to 20 MB. Large pasted messages must clearly separate instructions from source material with a marker such as `SOURCE CONTENT:`. The source text is stored verbatim in the document model, then processed in bounded chunks. Oversized section text and clause text are split into ordered excerpts for AI analysis; excerpt responses cannot replace the full source field. Oversized non-text blocks such as complex tables, charts, or images are rejected explicitly rather than silently omitted. If a request exceeds the 20 MB HTTP limit, it must be split into smaller submissions.
 
 Render free web services may spin down after inactivity. The first request after an idle period can take longer while the service starts.
