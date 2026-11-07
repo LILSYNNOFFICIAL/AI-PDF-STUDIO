@@ -692,6 +692,10 @@ export default function App() {
         onUndo={handleUndo}
         onRedo={handleRedo}
         onOpenPdfPreview={() => setIsPdfPreviewOpen(true)}
+        onUpdateStyles={handleUpdateStyles}
+        onUpdatePageConfig={handleUpdatePageConfig}
+        onAddClause={handleAddClause}
+        onInsertChart={() => { setInsertObjectTab('chart'); setIsInsertObjectOpen(true); }}
         onOpenValidation={() => setIsValidationOpen(true)}
         onOpenMultiDoc={() => setIsMultiDocOpen(true)}
         onOpenBrandModal={() => {}}
