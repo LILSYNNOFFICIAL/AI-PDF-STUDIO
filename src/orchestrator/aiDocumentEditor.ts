@@ -741,7 +741,7 @@ function validatePatchedDocument(document: DocumentModel): void {
     if (section.design) validateSectionDesign(section.design);
     section.tables?.forEach(table => { if (table.design) validateTableDesign(table.design); });
   }
-  if (document.design) validateDocumentDesign(document.design);
+  if (document.design !== undefined) validateDocumentDesign(document.design);
 }
 
 function applyDocumentJsonPatch(
@@ -778,14 +778,37 @@ function applyDocumentJsonPatch(
       }
       patchAdd(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
     } else if (operation.op === 'remove') {
-      if (!/\b(delete|remove|erase|clear|drop|omit|eliminate|discard|merge|combine|consolidate)\b/i.test(instructionText)) {
+      const explicitDeletion = /\b(delete|remove|erase|clear|drop|omit|eliminate|discard)\b/i.test(instructionText);
+      const mergeIntent = /\b(merge|combine|consolidate)\b/i.test(instructionText);
+      if (!explicitDeletion && !mergeIntent) {
         throw new Error('The instruction does not authorize deleting document content. No changes were applied.');
+      }
+      if (mergeIntent && !explicitDeletion && /^\/sections\/\d+$/.test(operation.path)) {
+        const sourceSection = patchGet(candidate as unknown as Record<string, unknown>, operation.path) as Section;
+        const hasUnmovedContent = Boolean(sourceSection.content?.trim()) ||
+          (sourceSection.clauses?.length || 0) > 0 ||
+          (sourceSection.tables?.length || 0) > 0 ||
+          (sourceSection.charts?.length || 0) > 0 ||
+          (sourceSection.images?.length || 0) > 0;
+        if (hasUnmovedContent) {
+          throw new Error('A section cannot be removed during a merge until all of its content and blocks have been transferred. Use a safe range move or transfer every block first. No changes were applied.');
+        }
       }
       patchRemove(candidate as unknown as Record<string, unknown>, operation.path);
     } else if (operation.op === 'replace') {
       if (!/\b(replace|rewrite|rename|change|update|modify|edit|set|correct|fix|format|style|design)\b/i.test(instructionText) &&
           !(operation.path.endsWith('/id') && /\b(copy|duplicate|clone)\b/i.test(instructionText))) {
         throw new Error('The instruction does not authorize replacing document content. No changes were applied.');
+      }
+      if (/^\/sections\/\d+\/content$/.test(operation.path) ||
+          /^\/sections\/\d+\/clauses\/\d+\/content$/.test(operation.path)) {
+        if (!/\b(rewrite|reword|replace|change|update|modify|edit|correct|fix)\b/i.test(instructionText)) {
+          throw new Error('Replacing source wording requires an explicit text-edit instruction. No changes were applied.');
+        }
+      }
+      if (/^\/sections(?:\/\d+)?$/.test(operation.path) &&
+          !/\b(replace|rewrite|rebuild|overwrite)\b.{0,40}\b(section|document)\b/i.test(instructionText)) {
+        throw new Error('Replacing an entire section collection requires an explicit full-section or full-document replacement request.');
       }
       if (!('value' in operation)) throw new Error('JSON Patch replace operation is missing its value.');
       patchReplace(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
