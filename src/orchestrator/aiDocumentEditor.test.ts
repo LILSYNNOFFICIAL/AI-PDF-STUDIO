@@ -1,0 +1,100 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { buildDocumentFromPrompt } from './orchestrator';
+import {
+  applyDocumentEditResponse,
+  buildDocumentEditPrompt,
+  type DocumentEditResponse
+} from './aiDocumentEditor';
+
+function makeDocument() {
+  const doc = buildDocumentFromPrompt('Agreement').updatedDoc;
+  doc.sections[0].content = 'SOURCE-BEGIN alpha original wording. SOURCE-MIDDLE preserve every word. SOURCE-END omega.';
+  return doc;
+}
+
+test('AI formatting edits preserve all untouched document text exactly', () => {
+  const doc = makeDocument();
+  const originalOtherSections = doc.sections.slice(1).map(section => JSON.stringify(section));
+  const response: DocumentEditResponse = {
+    operationTitle: 'Reformat first section',
+    details: ['Updated the first section heading'],
+    sectionUpdates: [{ sectionId: doc.sections[0].id, title: 'REFORMATTED TITLE' }]
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Format the first section heading only.');
+
+  assert.equal(result.updatedDoc.sections[0].title, 'REFORMATTED TITLE');
+  assert.equal(result.updatedDoc.sections[0].content, doc.sections[0].content);
+  assert.deepEqual(result.updatedDoc.sections.slice(1).map(section => JSON.stringify(section)), originalOtherSections);
+  assert.match(result.updatedDoc.sections[0].content || '', /SOURCE-BEGIN.*SOURCE-MIDDLE.*SOURCE-END/);
+});
+
+test('AI cannot rewrite source text unless the user explicitly requests a rewrite', () => {
+  const doc = makeDocument();
+  const response: DocumentEditResponse = {
+    operationTitle: 'Unexpected rewrite',
+    details: [],
+    sectionUpdates: [{ sectionId: doc.sections[0].id, content: 'Condensed replacement text.' }]
+  };
+
+  assert.throws(
+    () => applyDocumentEditResponse(doc, response, 'Make the page look more professional.'),
+    /explicitly request.*text|text.*not authorized/i
+  );
+});
+
+test('explicit rewrite changes only the targeted section', () => {
+  const doc = makeDocument();
+  const untouched = doc.sections.slice(1).map(section => JSON.stringify(section));
+  const response: DocumentEditResponse = {
+    operationTitle: 'Rewrite requested paragraph',
+    details: ['Rewrote the requested paragraph'],
+    sectionUpdates: [{ sectionId: doc.sections[0].id, content: 'User-authorized rewritten paragraph.' }]
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Rewrite the text in the first section.');
+
+  assert.equal(result.updatedDoc.sections[0].content, 'User-authorized rewritten paragraph.');
+  assert.deepEqual(result.updatedDoc.sections.slice(1).map(section => JSON.stringify(section)), untouched);
+});
+
+test('rejects AI updates that reference unknown sections', () => {
+  const doc = makeDocument();
+  const response: DocumentEditResponse = {
+    operationTitle: 'Invalid update',
+    details: [],
+    sectionUpdates: [{ sectionId: 'not-a-real-section', title: 'Injected section' }]
+  };
+
+  assert.throws(() => applyDocumentEditResponse(doc, response, 'Rename a section.'), /unknown section/i);
+});
+
+test('section reordering must be a complete permutation and preserves section content', () => {
+  const doc = makeDocument();
+  const response: DocumentEditResponse = {
+    operationTitle: 'Reorder sections',
+    details: ['Moved sections'],
+    sectionUpdates: [],
+    sectionOrder: [...doc.sections].reverse().map(section => section.id)
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Reorganize the document sections.');
+  assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [...doc.sections].reverse().map(section => section.id));
+  assert.deepEqual(
+    result.updatedDoc.sections.map(section => section.content),
+    [...doc.sections].reverse().map(section => section.content)
+  );
+
+  const invalid = { ...response, sectionOrder: response.sectionOrder!.slice(1) };
+  assert.throws(() => applyDocumentEditResponse(doc, invalid, 'Reorganize the document sections.'), /complete permutation/i);
+});
+
+test('AI prompt requires actual document operations and forbids unsolicited summarization', () => {
+  const doc = makeDocument();
+  const prompt = buildDocumentEditPrompt('Format the document without changing wording.', doc, 'music_specialist', doc.sections);
+  assert.match(prompt, /execute.*instruction.*document/i);
+  assert.match(prompt, /never summarize|do not summarize/i);
+  assert.match(prompt, /sectionUpdates/);
+  assert.match(prompt, /SOURCE-BEGIN/);
+});
