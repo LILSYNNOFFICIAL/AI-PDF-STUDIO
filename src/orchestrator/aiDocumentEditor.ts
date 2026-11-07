@@ -93,7 +93,7 @@ function explicitTextEdit(instruction: string): boolean {
 }
 
 function explicitSectionReorder(instruction: string): boolean {
-  return /\\b(reorder|re-organize|reorganize|rearrange|rearrangement|change the order of (?:the )?sections|change section order|sort the sections|move (?:the )?sections?)\\b/i.test(instruction);
+  return /\b(reorder|re-organize|reorganize|rearrange|rearrangement|change the order of (?:the )?sections|change section order|sort the sections|move (?:the )?sections?)\b/i.test(instruction);
 }
 
 
