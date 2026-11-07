@@ -10,6 +10,7 @@ import {
   renameTheme,
   deleteTheme,
   normalizeDocumentDesign,
+  syncLegacyStyleChanges,
   resolveSectionDesign,
   resolveTableDesign,
   resolveCellFill,
@@ -185,4 +186,44 @@ test('gradient opacity outside the supported range is rejected', () => {
       }
     }
   } as any), /opacity/i);
+});
+
+
+test('legacy formatting changes continue to synchronize into an existing document theme', () => {
+  const previous = normalizeDocumentDesign(buildDocumentFromPrompt('Agreement').updatedDoc);
+  const next = {
+    ...previous,
+    styles: {
+      ...previous.styles,
+      fontFamily: 'Garamond' as const,
+      fontSize: 13,
+      heading2Size: 16,
+      primaryColor: '#202020',
+      accentColor: '#aa3344',
+      textColor: '#304050'
+    }
+  };
+  const synchronized = syncLegacyStyleChanges(previous, next);
+
+  assert.equal(synchronized.design?.typography.bodyFontFamily, 'Garamond');
+  assert.equal(synchronized.design?.typography.bodyFontSize, 13);
+  assert.equal(synchronized.design?.typography.heading2Size, 16);
+  assert.equal(synchronized.design?.colors.primary, '#202020');
+  assert.equal(synchronized.design?.colors.headingText, '#202020');
+  assert.equal(synchronized.design?.colors.accent, '#aa3344');
+  assert.equal(synchronized.design?.colors.bodyText, '#304050');
+  assert.deepEqual(synchronized.sections, previous.sections);
+});
+
+test('explicit theme updates remain authoritative over unchanged legacy style values', () => {
+  const previous = normalizeDocumentDesign(buildDocumentFromPrompt('Agreement').updatedDoc);
+  const next = {
+    ...previous,
+    design: {
+      ...previous.design!,
+      typography: { ...previous.design!.typography, bodyFontFamily: 'Georgia' as const }
+    }
+  };
+  const synchronized = syncLegacyStyleChanges(previous, next);
+  assert.equal(synchronized.design?.typography.bodyFontFamily, 'Georgia');
 });
