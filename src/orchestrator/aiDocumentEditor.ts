@@ -156,13 +156,11 @@ function explicitDocumentDesign(instruction: string): boolean {
 }
 
 function designOnlyInstruction(instruction: string): boolean {
-  // Quoted section titles can contain words like "visual" or "design".
-  // Structural intent takes precedence over keyword-based design detection.
-  if (requiresStructuralContext(instruction)) return false;
-  if (!explicitDocumentDesign(instruction) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
-  return !/\b(merge|split|reorganize|re-order|reorder|rearrange|move section|add section|delete section|remove section|insert section)\b/i.test(instruction);
+  // Ignore quoted section names when classifying visual-design intent.
+  const intent = instruction.replace(/(["']).*?\\1/g, ' ');
+  if (!explicitDocumentDesign(intent) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
+  return !/\\b(add|create|remove|delete|rename|copy|duplicate|move|merge|split|reorganize|re-order|reorder|rearrange|insert|extract|transfer|relocate)\\b.{0,60}\\b(section|clause|table|chart|image|paragraph|sentence|heading|title|row|column|appendix|exhibit|schedule|signature|content|text)\\b/i.test(intent);
 }
-
 function mergePatch<T>(base: T, patch: unknown): T {
   if (patch === undefined) return deepCloneDesign(base);
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return patch as T;
@@ -418,27 +416,29 @@ function applySectionRangeMoves(
 }
 
 function requiresStructuralContext(instruction: string): boolean {
-  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|duplicate|everything from|move all)\b/i.test(instruction);
+  return /\\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|remove|duplicate|copy|create|add|rename|everything from|move all)\\b/i.test(instruction) ||
+    /\\b(change|update|modify|edit|replace)\\b.{0,40}\\b(section|clause|table|chart|image|heading|title|row|column|appendix|exhibit|schedule|signature)\\b/i.test(instruction);
 }
-
 export function buildStructuralEditPrompt(
   instruction: string,
   document: DocumentModel,
   persona: AIPersona | string
 ): string {
-  const inventory = document.sections.map(section => ({
+  const inventory = document.sections.map((section, sectionIndex) => ({
+    sectionIndex,
     sectionId: section.id,
     sectionNumber: section.sectionNumber,
     title: section.title,
     contentPreview: (section.content || '').slice(0, 1800),
-    clauses: (section.clauses || []).map(clause => ({
+    clauses: (section.clauses || []).map((clause, clauseIndex) => ({
+      clauseIndex,
       clauseId: clause.id,
       heading: clause.heading || '',
       contentPreview: clause.content.slice(0, 500)
     })),
-    tables: (section.tables || []).map(table => ({ tableId: table.id, title: table.title || table.caption || '' })),
-    charts: (section.charts || []).map(chart => ({ chartId: chart.id, title: chart.title })),
-    images: (section.images || []).map(image => ({ imageId: image.id, caption: image.caption || '', altText: image.altText || '' }))
+    tables: (section.tables || []).map((table, tableIndex) => ({ tableIndex, tableId: table.id, title: table.title || table.caption || '' })),
+    charts: (section.charts || []).map((chart, chartIndex) => ({ chartIndex, chartId: chart.id, title: chart.title })),
+    images: (section.images || []).map((image, imageIndex) => ({ imageIndex, imageId: image.id, caption: image.caption || '', altText: image.altText || '' }))
   }));
 
   return [
@@ -448,6 +448,8 @@ export function buildStructuralEditPrompt(
     'For a request such as "everything from heading A up to the box above heading B belongs inside heading A", return one sectionRangeMoves item: startSectionId is heading A, endBeforeSectionId is heading B (exclusive), targetSectionId is the destination box. Do not include the boundary section.',
     'A sectionRangeMoves operation preserves original wording, clauses, tables, charts, images, and IDs. It removes the absorbed source sections only after all blocks are transferred.',
     'For pure section reordering, return sectionOrder as a complete permutation of every section ID. Do not return sectionOrder for other requests.',
+    'For all other document-wide structural changes, use documentPatch as an RFC 6902 JSON Patch operation list. Supported operations are add, remove, replace, move, copy, and test. Use the sectionIndex, clauseIndex, tableIndex, chartIndex, and imageIndex values from the inventory to construct exact JSON Pointer paths. Only target supported document roots such as /sections, /title, /styles, /design, /pageConfig, /signatures, /definitions, /dependencies, and /redactions. Never modify protected app metadata or invent IDs.',
+    'Use add/create only when the user asks to add or create. Use remove only when the user explicitly asks to delete/remove. Use copy only for copy/duplicate requests. Use move only for move/transfer/reorder requests. Use replace only for explicit change/rename/rewrite/update requests. Do not mix documentPatch with sectionUpdates or other operation formats.',
     'Use sectionUpdates only for explicit title or wording changes. Never rewrite text to imitate moving, merging, or grouping.',
     'Do not invent IDs. Do not delete or omit source material. If the target or boundary is ambiguous, return no operations and explain exactly what is ambiguous.',
     'Return strict JSON only, using this schema: {"operationTitle":"...","details":["..."],"sectionUpdates":[],"sectionOrder":["only for explicit reorder"],"sectionRangeMoves":[{"startSectionId":"...","endBeforeSectionId":"...","targetSectionId":"..."}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[],"tableDesignUpdates":[]}.',
@@ -589,10 +591,11 @@ export function buildDocumentEditPrompt(
     'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
     'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
     'Do not include sectionOrder at all unless the user explicitly asks to reorder, rearrange, or change the order of document sections. For every other task, omit sectionOrder completely.',
+    'For document-wide structural CRUD or block-level moves not covered by the existing fields, return documentPatch as an RFC 6902 JSON Patch array with add, remove, replace, move, copy, and test operations. Use only supported document roots and exact IDs/paths from the supplied section inventory. Never modify protected metadata or invent IDs.',
     'For structural requests that move a continuous range of sections into one existing section/container, return sectionRangeMoves. Identify startSectionId from the first named heading, endBeforeSectionId from the boundary heading that must remain outside the move, and targetSectionId from the destination box. The start is inclusive and the end boundary is exclusive. The target must be inside the selected range. The application moves the original structured blocks without rewriting their wording.',
     'Never simulate a move by rewriting content. Use sectionRangeMoves for heading-bounded consolidation and sectionOrder only for pure reordering. Preserve tables, charts, images, clauses, IDs, source references, and all original wording.',
     'Return one JSON object and no markdown fences with this exact shape:',
-    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"sectionRangeMoves":[{"startSectionId":"inclusive-start-id","endBeforeSectionId":"exclusive-boundary-id","targetSectionId":"existing-destination-id"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
+    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"sectionRangeMoves":[{"startSectionId":"inclusive-start-id","endBeforeSectionId":"exclusive-boundary-id","targetSectionId":"existing-destination-id"}],"documentPatch":[{"op":"move","from":"/sections/0/clauses/0","path":"/sections/1/clauses/-"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
     'Use empty arrays/omit optional fields when no changes are needed. Do not claim an operation was completed unless you return the corresponding update.',
     `Persona: ${persona}`,
     `User instruction: ${instruction}`,
