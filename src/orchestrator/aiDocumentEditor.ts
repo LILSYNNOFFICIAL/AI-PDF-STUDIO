@@ -57,7 +57,7 @@ const GEMINI_MAX_ATTEMPTS = 3;
 function isTransientGeminiError(error: unknown): boolean {
   const value = error as { status?: unknown; statusCode?: unknown; code?: unknown; message?: unknown } | null;
   const status = Number(value?.status ?? value?.statusCode ?? value?.code);
-  const message = String(value?.message || error || '');
+  const message = [value?.message, value?.code, error].map(item => String(item || '')).join(' ');
   return status === 408 || status === 429 || status === 500 || status === 502 ||
     status === 503 || status === 504 ||
     /\b(UNAVAILABLE|RESOURCE_EXHAUSTED|DEADLINE_EXCEEDED|temporarily unavailable|high demand|rate limit)\b/i.test(message);
