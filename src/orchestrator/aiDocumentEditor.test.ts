@@ -682,3 +682,50 @@ test('generic document patch cannot replace source wording unless the user expli
   );
   assert.equal(JSON.stringify(doc), before);
 });
+
+
+test('structural executor applies generic JSON Patch operations returned by Gemini', async () => {
+  const doc = makeDocument();
+  const created = {
+    id: 'sec_created_by_ai',
+    sectionNumber: '',
+    title: 'ADDED SECTION',
+    content: 'Added exactly as requested.',
+    clauses: [],
+    orderIndex: doc.sections.length + 1
+  };
+  let calls = 0;
+  const client = {
+    models: {
+      generateContent: async () => {
+        calls += 1;
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Add requested section',
+            details: ['Created the new section.'],
+            sectionUpdates: [],
+            sectionOrder: [],
+            sectionRangeMoves: [],
+            documentPatch: [{ op: 'add', path: '/sections/-', value: created }],
+            styles: {},
+            pageConfig: {},
+            design: {},
+            sectionDesignUpdates: [],
+            tableDesignUpdates: []
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: 'Add a new section titled ADDED SECTION.',
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.updatedDoc.sections.at(-1)?.id, created.id);
+  assert.equal(result.updatedDoc.sections.at(-1)?.content, created.content);
+  assert.ok(result.summary.verifications.every(check => check.passed));
+});
