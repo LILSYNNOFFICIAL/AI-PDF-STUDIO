@@ -3,7 +3,7 @@ services:
     name: ai-pdf-studio-api
     runtime: bun
     plan: free
-    buildCommand: bun install --frozen-lockfile && bun run lint && bun run test
+    buildCommand: bun install --frozen-lockfile && bun run test && bun run lint && bun run build
     startCommand: bun run start
     healthCheckPath: /api/health
     envVars:
