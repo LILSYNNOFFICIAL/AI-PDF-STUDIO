@@ -28,6 +28,7 @@ interface MobileWorkspaceProps {
   onRedo: () => void;
   onOpenPdfPreview: () => void;
   onOpenDesign: () => void;
+  onOpenSourceTruth: () => void;
   onUpdateStyles: (styles: Partial<DocumentModel['styles']>) => void;
   onUpdatePageConfig: (config: Partial<DocumentModel['pageConfig']>) => void;
   onAddClause: () => void;
@@ -178,6 +179,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
               <button aria-label="Close tools" onClick={() => selectTab('editor')}><X size={19}/></button>
             </div>
             <div className="mobile-tools-grid">
+              {tool('Source of Truth / Render', <FileText size={20}/>, props.onOpenSourceTruth)}
               {tool('Document design', <Palette size={20}/>, props.onOpenDesign)}
               {tool('New document', <FilePlus2 size={20}/>, props.onNewDocument)}
               {tool('Blank document', <FileText size={20}/>, props.onNewBlankDocument)}
