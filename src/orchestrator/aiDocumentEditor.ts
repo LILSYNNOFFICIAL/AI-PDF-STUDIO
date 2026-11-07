@@ -1074,6 +1074,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     });
     const structuralResponse = parseModelResponse(structuralResult.text);
     const hasStructuralOperations = structuralResponse.sectionRangeMoves?.length ||
+      structuralResponse.documentPatch?.length ||
       structuralResponse.sectionOrder !== undefined ||
       structuralResponse.sectionUpdates.length > 0 ||
       (structuralResponse.sectionDesignUpdates?.length || 0) > 0 ||
