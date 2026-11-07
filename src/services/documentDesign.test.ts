@@ -15,6 +15,7 @@ import {
   resolveTableDesign,
   resolveCellFill,
   fillToCss,
+  contrastRatio,
   validateDocumentDesign
 } from './documentDesign';
 
@@ -226,4 +227,11 @@ test('explicit theme updates remain authoritative over unchanged legacy style va
   };
   const synchronized = syncLegacyStyleChanges(previous, next);
   assert.equal(synchronized.design?.typography.bodyFontFamily, 'Georgia');
+});
+
+
+test('contrast ratio helper distinguishes accessible and low-contrast pairs', () => {
+  assert.equal(contrastRatio('#000000', '#ffffff'), 21);
+  assert.equal(contrastRatio('#ffffff', '#ffffff'), 1);
+  assert.ok(contrastRatio('#777777', '#ffffff') < 4.5);
 });
