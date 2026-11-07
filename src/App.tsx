@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { MobileWorkspace } from './components/MobileWorkspace';
 import { MenuBar } from './components/MenuBar';
@@ -90,6 +90,7 @@ export default function App() {
     }
   ]);
   const [isOrchestrating, setIsOrchestrating] = useState(false);
+  const orchestrationInFlight = useRef(false);
 
   // Snapshot on meaningful update
   const pushHistory = (newDoc: DocumentModel) => {
@@ -190,6 +191,7 @@ export default function App() {
 
   // Central Natural-Language Orchestration Dispatcher
   const handleSendMessage = async (instruction: string) => {
+    if (orchestrationInFlight.current) return;
     const userMsg: ChatMessage = {
       id: `usr_${Date.now()}`,
       sender: 'user',
@@ -204,13 +206,22 @@ export default function App() {
       return;
     }
 
+    orchestrationInFlight.current = true;
     setIsOrchestrating(true);
+    const controller = new AbortController();
+    const requestTimeout = window.setTimeout(() => controller.abort(), 120000);
     try {
-      const apiBase = String((import.meta as any).env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+      const configuredApiBase = String((import.meta as any).env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+      const apiBase = configuredApiBase || (
+        window.location.hostname.endsWith('github.io')
+          ? 'https://ai-pdf-studio-api.onrender.com'
+          : ''
+      );
       const response = await fetch(`${apiBase}/api/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, currentDoc: document, persona })
+        body: JSON.stringify({ instruction, currentDoc: document, persona }),
+        signal: controller.signal
       });
 
       const data = await response.json().catch(() => ({}));
@@ -229,9 +240,14 @@ export default function App() {
       );
     } catch (err: any) {
       console.error('AI document editing failed:', err);
-      addAiMessage(`I could not apply that instruction. No document changes were made. ${err?.message || 'The document service is unavailable.'}`);
+      const message = err?.name === 'AbortError'
+        ? 'The AI request exceeded the 120-second limit. The document was not changed. Please retry, or split a very large document into smaller operations.'
+        : (err?.message || 'The document service is unavailable.');
+      addAiMessage(`I could not apply that instruction. No document changes were made. ${message}`);
       showToast('Document unchanged: AI operation failed');
     } finally {
+      window.clearTimeout(requestTimeout);
+      orchestrationInFlight.current = false;
       setIsOrchestrating(false);
     }
   };

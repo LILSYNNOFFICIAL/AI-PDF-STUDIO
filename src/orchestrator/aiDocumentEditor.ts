@@ -50,7 +50,39 @@ export interface ExecuteDocumentEditOptions {
   allowNoop?: boolean;
 }
 
+
 const DEFAULT_CHUNK_CHARS = 18000;
+const GEMINI_MAX_ATTEMPTS = 3;
+
+function isTransientGeminiError(error: unknown): boolean {
+  const value = error as { status?: unknown; statusCode?: unknown; code?: unknown; message?: unknown } | null;
+  const status = Number(value?.status ?? value?.statusCode ?? value?.code);
+  const message = [value?.message, value?.code, error].map(item => String(item || '')).join(' ');
+  return status === 408 || status === 429 || status === 500 || status === 502 ||
+    status === 503 || status === 504 ||
+    /\b(UNAVAILABLE|RESOURCE_EXHAUSTED|DEADLINE_EXCEEDED|temporarily unavailable|high demand|rate limit)\b/i.test(message);
+}
+
+async function generateGeminiContentWithRetry(
+  aiClient: GeminiEditorClient,
+  args: { model: string; contents: string; config?: { responseMimeType?: string } }
+): Promise<{ text?: string }> {
+  for (let attempt = 1; attempt <= GEMINI_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await aiClient.models.generateContent(args);
+    } catch (error) {
+      if (!isTransientGeminiError(error) || attempt === GEMINI_MAX_ATTEMPTS) {
+        if (isTransientGeminiError(error)) {
+          throw new Error('Gemini is temporarily overloaded after 3 attempts. Please wait a moment and retry. No document changes were applied.');
+        }
+        throw error;
+      }
+      const delayMs = Math.min(4000, 500 * (2 ** (attempt - 1)));
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  throw new Error('Gemini request failed unexpectedly. No document changes were applied.');
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -472,7 +504,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     chunk.partialSectionIds.forEach(id => partialSectionIds.add(id));
     chunk.partialClauseIds.forEach(id => partialClauseIds.add(id));
     const prompt = buildDocumentEditPrompt(instruction, currentDoc, persona, chunk.sections);
-    const result = await aiClient.models.generateContent({
+    const result = await generateGeminiContentWithRetry(aiClient, {
       model: options.model || 'gemini-3.8-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' }
@@ -503,8 +535,40 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0;
-  if (!hasActionableUpdates && !options.allowNoop) {
-    throw new Error('Gemini returned an execution summary without any actionable document updates. The document was not changed.');
+  if (!hasActionableUpdates && !options.allowNoop && chunks.length === 1) {
+    const correctionPrompt = [
+      buildDocumentEditPrompt(instruction, currentDoc, persona, chunks[0].sections),
+      'CORRECTION REQUIRED: Your previous response described the task but returned no executable changes.',
+      'Re-evaluate the user instruction. Return the exact sectionUpdates, sectionOrder, styles, or pageConfig operations needed to perform it.',
+      'If the instruction genuinely requires no document change, return empty operations and do not claim completion.'
+    ].join('\n\n');
+    const correction = await generateGeminiContentWithRetry(aiClient, {
+      model: options.model || 'gemini-3.8-flash',
+      contents: correctionPrompt,
+      config: { responseMimeType: 'application/json' }
+    });
+    const corrected = parseModelResponse(correction.text);
+    const allowedIds = new Set(chunks[0].sections.map(section => section.id));
+    for (const update of corrected.sectionUpdates) {
+      if (!allowedIds.has(update.sectionId)) {
+        throw new Error(`Gemini returned an update outside the current chunk: ${update.sectionId}. No changes were applied.`);
+      }
+    }
+    aggregated.operationTitle = corrected.operationTitle || aggregated.operationTitle;
+    aggregated.details = corrected.details;
+    aggregated.sectionUpdates = mergeSectionUpdates(corrected.sectionUpdates);
+    aggregated.sectionOrder = corrected.sectionOrder;
+    aggregated.styles = corrected.styles;
+    aggregated.pageConfig = corrected.pageConfig;
+  }
+
+  const correctedHasActionableUpdates =
+    aggregated.sectionUpdates.length > 0 ||
+    aggregated.sectionOrder !== undefined ||
+    Object.keys(aggregated.styles || {}).length > 0 ||
+    Object.keys(aggregated.pageConfig || {}).length > 0;
+  if (!correctedHasActionableUpdates && !options.allowNoop) {
+    throw new Error('Gemini returned an execution summary without any actionable document updates after a correction attempt. The document was not changed.');
   }
   for (const update of aggregated.sectionUpdates) {
     if (partialSectionIds.has(update.sectionId) && update.content !== undefined) {

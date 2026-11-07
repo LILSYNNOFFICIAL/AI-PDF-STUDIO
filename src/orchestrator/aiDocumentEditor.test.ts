@@ -219,3 +219,80 @@ test('AI summary without document operations is rejected as a no-op', async () =
     /without any actionable document updates/i
   );
 });
+
+
+test('executor retries transient Gemini 503 responses before applying the edit', async () => {
+  const doc = makeDocument();
+  doc.sections = doc.sections.slice(0, 1);
+  let calls = 0;
+  const client = {
+    models: {
+      generateContent: async () => {
+        calls += 1;
+        if (calls === 1) {
+          throw Object.assign(new Error('The model is currently experiencing high demand'), {
+            status: 503,
+            code: 503
+          });
+        }
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Updated heading after retry',
+            details: ['Updated the requested heading'],
+            sectionUpdates: [{ sectionId: doc.sections[0].id, title: 'RETRIED HEADING' }]
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: 'Rename the first section heading.',
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client
+  });
+
+  assert.equal(calls, 2);
+  assert.equal(result.updatedDoc.sections[0].title, 'RETRIED HEADING');
+});
+
+
+test('executor asks Gemini to correct a summary-only response before failing the operation', async () => {
+  const doc = makeDocument();
+  doc.sections = doc.sections.slice(0, 1);
+  let calls = 0;
+  const client = {
+    models: {
+      generateContent: async () => {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            text: JSON.stringify({
+              operationTitle: 'I will rename the heading',
+              details: ['The heading will be renamed'],
+              sectionUpdates: []
+            })
+          };
+        }
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Heading renamed',
+            details: ['Renamed the first heading'],
+            sectionUpdates: [{ sectionId: doc.sections[0].id, title: 'CORRECTED HEADING' }]
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: 'Rename the first section heading.',
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client
+  });
+
+  assert.equal(calls, 2);
+  assert.equal(result.updatedDoc.sections[0].title, 'CORRECTED HEADING');
+});
