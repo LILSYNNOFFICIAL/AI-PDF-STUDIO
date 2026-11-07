@@ -625,7 +625,7 @@ function jsonPointerTokens(path: string): string[] {
 
 function arrayIndex(token: string, length: number, allowEnd: boolean): number {
   if (allowEnd && token === '-') return length;
-  if (!/^(0|[1-9]\\d*)$/.test(token)) throw new Error('JSON Patch contains an invalid array index.');
+  if (!/^(0|[1-9]\d*)$/.test(token)) throw new Error('JSON Patch contains an invalid array index.');
   const index = Number(token);
   if (!Number.isSafeInteger(index) || index < 0 || index > (allowEnd ? length : length - 1)) {
     throw new Error('JSON Patch array index does not exist or is out of range.');
@@ -757,23 +757,23 @@ function applyDocumentJsonPatch(
     const path = jsonPointerTokens(operation.path);
     void path;
     if (operation.op === 'add') {
-      if (!/\\b(add|create|insert|append|include|build)\\b/i.test(instructionText)) {
+      if (!/\b(add|create|insert|append|include|build)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize adding document content. No changes were applied.');
       }
       patchAdd(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
     } else if (operation.op === 'remove') {
-      if (!/\\b(delete|remove|erase|clear|drop|omit)\\b/i.test(instructionText)) {
+      if (!/\b(delete|remove|erase|clear|drop|omit)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize deleting document content. No changes were applied.');
       }
       patchRemove(candidate as unknown as Record<string, unknown>, operation.path);
     } else if (operation.op === 'replace') {
-      if (!/\\b(replace|rewrite|rename|change|update|modify|edit|set|correct|fix|format|style|design)\\b/i.test(instructionText)) {
+      if (!/\b(replace|rewrite|rename|change|update|modify|edit|set|correct|fix|format|style|design)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize replacing document content. No changes were applied.');
       }
       if (!('value' in operation)) throw new Error('JSON Patch replace operation is missing its value.');
       patchReplace(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
     } else if (operation.op === 'move') {
-      if (!/\\b(move|transfer|relocate|reorder|rearrange|place|put|group|consolidate|merge|contain|inside|within)\\b/i.test(instructionText)) {
+      if (!/\b(move|transfer|relocate|reorder|rearrange|place|put|group|consolidate|merge|contain|inside|within)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize moving document content. No changes were applied.');
       }
       const fromTokens = jsonPointerTokens(operation.from);
@@ -784,7 +784,7 @@ function applyDocumentJsonPatch(
       const value = patchRemove(candidate as unknown as Record<string, unknown>, operation.from);
       patchAdd(candidate as unknown as Record<string, unknown>, operation.path, value);
     } else if (operation.op === 'copy') {
-      if (!/\\b(copy|duplicate|clone)\\b/i.test(instructionText)) {
+      if (!/\b(copy|duplicate|clone)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize copying document content. No changes were applied.');
       }
       patchAdd(candidate as unknown as Record<string, unknown>, operation.path, patchGet(candidate as unknown as Record<string, unknown>, operation.from));
