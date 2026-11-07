@@ -216,17 +216,39 @@ test('legacy formatting changes continue to synchronize into an existing documen
   assert.deepEqual(synchronized.sections, previous.sections);
 });
 
-test('explicit theme updates remain authoritative over unchanged legacy style values', () => {
+test('explicit theme updates remain authoritative and synchronize legacy ribbon values', () => {
   const previous = normalizeDocumentDesign(buildDocumentFromPrompt('Agreement').updatedDoc);
   const next = {
     ...previous,
     design: {
       ...previous.design!,
-      typography: { ...previous.design!.typography, bodyFontFamily: 'Georgia' as const }
+      presetId: 'luxury-executive',
+      typography: {
+        ...previous.design!.typography,
+        bodyFontFamily: 'Garamond' as const,
+        bodyFontSize: 11.5,
+        headingFontFamily: 'Garamond' as const,
+        heading2Size: 15,
+        headingCase: 'none' as const
+      },
+      colors: {
+        ...previous.design!.colors,
+        primary: '#25211d',
+        accent: '#b08a45',
+        bodyText: '#403a33'
+      }
     }
   };
   const synchronized = syncLegacyStyleChanges(previous, next);
-  assert.equal(synchronized.design?.typography.bodyFontFamily, 'Georgia');
+  assert.equal(synchronized.design?.typography.bodyFontFamily, 'Garamond');
+  assert.equal(synchronized.styles.fontFamily, 'Garamond');
+  assert.equal(synchronized.styles.fontSize, 11.5);
+  assert.equal(synchronized.styles.headingFont, 'Garamond');
+  assert.equal(synchronized.styles.heading2Size, 15);
+  assert.equal(synchronized.styles.headingCase, 'none');
+  assert.equal(synchronized.styles.primaryColor, '#25211d');
+  assert.equal(synchronized.styles.accentColor, '#b08a45');
+  assert.equal(synchronized.styles.textColor, '#403a33');
 });
 
 
