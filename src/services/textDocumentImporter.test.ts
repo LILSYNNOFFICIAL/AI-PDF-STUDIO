@@ -63,3 +63,17 @@ test('converts Markdown tables and explicit signature parties into editable docu
   assert.equal(doc.signatures?.parties[1].role, 'PRODUCER');
   assert.equal(doc.sourceText, source);
 });
+
+test('keeps explicit Markdown section numbering and classifies Markdown appendices', () => {
+  const source = [
+    '# Contract', '',
+    '## 4. PARTIES', 'The parties are identified here.', '',
+    '# APPENDIX A. EXHIBITS', 'Exhibit A is attached.'
+  ].join('\n');
+  const doc = parseTextDocument(source, base);
+  const mainSection = doc.sections.find(section => /PARTIES/.test(section.title));
+  const appendix = doc.sections.find(section => /APPENDIX A/.test(section.title));
+  assert.equal(mainSection?.sectionNumber, '4');
+  assert.equal(appendix?.isAppendix, true);
+  assert.match(appendix?.content || '', /Exhibit A is attached/);
+});
