@@ -136,7 +136,7 @@ function explicitSectionReorder(instruction: string): boolean {
 
 
 function explicitDocumentDesign(instruction: string): boolean {
-  return /\b(design|styling|style the document|theme|template|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font|garamond|inter|helvetica|georgia|heading|border|divider|page surface|section background|table style|visual|appearance|polished|sleek|elegant|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
+  return /\b(design|styling|style the document|theme|template|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font|garamond|inter|helvetica|georgia|border|divider|page surface|section background|table style|visual|appearance|polished|sleek|elegant|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
 }
 
 function designOnlyInstruction(instruction: string): boolean {
@@ -489,7 +489,7 @@ export function applyDocumentEditResponse(
     response.styles !== undefined ||
     response.pageConfig !== undefined
   )) {
-    throw new Error('A design-only instruction cannot modify text, section order, legacy formatting, or page layout. No changes were applied.');
+    throw new Error('Text edits are not authorized for a design-only instruction. Section order, legacy formatting, and page layout cannot be changed in this operation. No changes were applied.');
   }
 
   for (const update of response.sectionUpdates) {
@@ -687,7 +687,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
       (designResponse.sectionDesignUpdates?.length || 0) > 0 ||
       (designResponse.tableDesignUpdates?.length || 0) > 0;
     if (!hasDesignOperations) {
-      throw new Error('Gemini did not return any executable design changes. The document was not changed.');
+      throw new Error('Gemini returned no executable design changes or actionable document updates. The document was not changed.');
     }
     return applyDocumentEditResponse(currentDoc, designResponse, instruction);
   }
