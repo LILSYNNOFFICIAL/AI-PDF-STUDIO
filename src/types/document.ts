@@ -250,6 +250,7 @@ export interface Section {
   appendixCode?: string; // e.g. "APPENDIX A"
   forcePageBreakBefore?: boolean;
   sourceReference?: string;
+  sourceHeading?: string;
 }
 
 export interface DocumentDependency {
@@ -293,6 +294,16 @@ export interface DocumentModel {
   dependencies?: DocumentDependency[];
   redactions?: RedactionRecord[];
   changeSummary?: string;
+  /** Exact, unmodified user-provided source used to render this document. */
+  sourceText?: string;
+  sourceIntegrity?: {
+    characterCount: number;
+    wordCount: number;
+    sectionCount: number;
+    detectedSignatureSection: boolean;
+    detectedTableRows: number;
+    detectedListItems: number;
+  };
 }
 
 export interface ExecutionPlanStep {
