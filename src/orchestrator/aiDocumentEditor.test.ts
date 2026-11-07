@@ -132,23 +132,37 @@ test('executor sends real section content to Gemini and applies returned edits',
   assert.equal(result.updatedDoc.sections[0].content, doc.sections[0].content);
 });
 
-test('oversized individual sections are rejected instead of being silently truncated', async () => {
+test('very large section source is processed in ordered chunks without losing text', async () => {
   const doc = makeDocument();
-  doc.sections[0].content = 'LONG-SOURCE-'.repeat(3000);
+  doc.sections = doc.sections.slice(0, 1);
+  const original = `LONG-SOURCE-BEGIN ${'Preserve every source sentence exactly. '.repeat(3000)} LONG-SOURCE-END`;
+  doc.sections[0].content = original;
+  let calls = 0;
   const client = {
     models: {
-      generateContent: async () => ({ text: '{}' })
+      generateContent: async () => {
+        calls += 1;
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Large source inspected in chunks',
+            details: ['Processed one source fragment'],
+            sectionUpdates: []
+          })
+        };
+      }
     }
   };
 
-  await assert.rejects(
-    executeAiDocumentEdit({
-      instruction: 'Format the document.',
-      currentDoc: doc,
-      persona: 'auto_architect',
-      aiClient: client,
-      maxChunkChars: 2000
-    }),
-    /safe AI chunk limit.*No document changes were applied/i
-  );
+  const result = await executeAiDocumentEdit({
+    instruction: 'Format the section without changing its wording.',
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client,
+    maxChunkChars: 2000
+  });
+
+  assert.ok(calls > 1, 'Expected the oversized source to be processed through multiple AI calls');
+  assert.equal(result.updatedDoc.sections[0].content, original);
+  assert.match(result.updatedDoc.sections[0].content || '', /^LONG-SOURCE-BEGIN/);
+  assert.match(result.updatedDoc.sections[0].content || '', /LONG-SOURCE-END$/);
 });
