@@ -165,7 +165,7 @@ async function startServer() {
   // socket timeout aligned with the browser's 90-minute orchestration ceiling.
   server.timeout = 90 * 60 * 1000;
   server.requestTimeout = 90 * 60 * 1000;
-  server.headersTimeout = 90 * 60 * 1000 + 1000;
+  server.headersTimeout = 60 * 1000;
 }
 
 startServer();
