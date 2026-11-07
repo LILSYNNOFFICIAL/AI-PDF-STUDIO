@@ -296,3 +296,35 @@ test('executor asks Gemini to correct a summary-only response before failing the
   assert.equal(calls, 2);
   assert.equal(result.updatedDoc.sections[0].title, 'CORRECTED HEADING');
 });
+
+
+test('executor ignores an unsolicited incomplete section order during a non-reordering edit', async () => {
+  const doc = makeDocument();
+  const target = doc.sections[0];
+  const client = {
+    models: {
+      generateContent: async () => ({
+        text: JSON.stringify({
+          operationTitle: 'Updated document formatting',
+          details: ['Updated the requested heading'],
+          sectionUpdates: [{ sectionId: target.id, title: 'FORMATTED HEADING' }],
+          sectionOrder: [target.id]
+        })
+      })
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: 'Make the document formatting more professional without changing its wording.',
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client
+  });
+
+  assert.equal(result.updatedDoc.sections.length, doc.sections.length);
+  assert.equal(result.updatedDoc.sections[0].title, 'FORMATTED HEADING');
+  assert.deepEqual(
+    result.updatedDoc.sections.map(section => section.id),
+    doc.sections.map(section => section.id)
+  );
+});

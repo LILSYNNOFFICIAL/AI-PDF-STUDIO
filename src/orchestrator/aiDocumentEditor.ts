@@ -92,6 +92,11 @@ function explicitTextEdit(instruction: string): boolean {
   return /\b(rewrite|reword|paraphrase|revise the wording|edit the wording|proofread|correct grammar|fix grammar|replace the text|change the wording|expand the text|shorten the text|summarize|condense|delete text|remove text|add (?:a |an |the )?(?:clause|paragraph|sentence|provision|section))\b/i.test(instruction);
 }
 
+function explicitSectionReorder(instruction: string): boolean {
+  return /\b(reorder|re-organize|reorganize|rearrange|rearrangement|change the order of (?:the )?sections|change section order|sort the sections|move (?:the )?sections?)\b/i.test(instruction);
+}
+
+
 interface SectionChunk {
   sections: Section[];
   partialSectionIds: Set<string>;
@@ -349,6 +354,7 @@ export function buildDocumentEditPrompt(
     'Only update section IDs and clause IDs included in the supplied chunk. Never invent IDs.',
     'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
     'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
+    'Do not include sectionOrder at all unless the user explicitly asks to reorder, rearrange, or change the order of document sections. For every other task, omit sectionOrder completely.',
     'Return one JSON object and no markdown fences with this exact shape:',
     '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"styles":{},"pageConfig":{}}',
     'Use empty arrays/omit optional fields when no changes are needed. Do not claim an operation was completed unless you return the corresponding update.',
@@ -519,7 +525,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     }
     aggregated.details.push(...parsed.details);
     if (parsed.operationTitle) aggregated.operationTitle = parsed.operationTitle;
-    if (parsed.sectionOrder) {
+    if (parsed.sectionOrder && explicitSectionReorder(instruction)) {
       if (aggregated.sectionOrder && JSON.stringify(aggregated.sectionOrder) !== JSON.stringify(parsed.sectionOrder)) {
         throw new Error('Gemini returned conflicting section-order operations. No changes were applied.');
       }
@@ -557,7 +563,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     aggregated.operationTitle = corrected.operationTitle || aggregated.operationTitle;
     aggregated.details = corrected.details;
     aggregated.sectionUpdates = mergeSectionUpdates(corrected.sectionUpdates);
-    aggregated.sectionOrder = corrected.sectionOrder;
+    aggregated.sectionOrder = explicitSectionReorder(instruction) ? corrected.sectionOrder : undefined;
     aggregated.styles = corrected.styles;
     aggregated.pageConfig = corrected.pageConfig;
   }
