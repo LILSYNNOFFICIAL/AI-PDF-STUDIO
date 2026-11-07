@@ -80,7 +80,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   };
 
   const drawTable = (table: TableBlock) => {
-    const colCount = Math.max(1, table.headers.length);
+    const colCount = Math.max(1, table.headers.length, ...table.rows.map(row => row.length));
     const colWidths = table.columnWidths?.length === colCount
       ? table.columnWidths.map(value => contentWidth * value / 100)
       : Array.from({ length: colCount }, () => contentWidth / colCount);
