@@ -301,6 +301,7 @@ export interface DocumentModel {
     wordCount: number;
     sectionCount: number;
     detectedSignatureSection: boolean;
+    signaturePartyCount: number;
     detectedTableRows: number;
     detectedListItems: number;
   };
