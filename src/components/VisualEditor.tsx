@@ -47,6 +47,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onQuickAIAction
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [selectedTableCell, setSelectedTableCell] = useState<{
+    sectionId: string;
+    tableId: string;
+    rowIndex: number;
+    columnIndex: number;
+  } | null>(null);
   const documentDesign = resolveDocumentDesign(document);
 
   // Elongation & Section Extension helpers
@@ -127,6 +133,36 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (!section.tables) return;
     const updatedTables = section.tables.filter((_, idx) => idx !== tableIndex);
     onUpdateSection({ ...section, tables: updatedTables });
+  };
+
+  const handleUpdateCellBackground = (
+    section: Section,
+    tableIndex: number,
+    rowIndex: number,
+    columnIndex: number,
+    color?: string
+  ) => {
+    if (!section.tables?.[tableIndex]) return;
+    const updatedTables = [...section.tables];
+    const table = updatedTables[tableIndex];
+    if (rowIndex < 0) {
+      const headers = [...table.headers];
+      if (!headers[columnIndex]) return;
+      headers[columnIndex] = { ...headers[columnIndex], bg: color };
+      updatedTables[tableIndex] = { ...table, headers };
+    } else {
+      const rows = table.rows.map(row => [...row]);
+      if (!rows[rowIndex]?.[columnIndex]) return;
+      rows[rowIndex][columnIndex] = { ...rows[rowIndex][columnIndex], bg: color };
+      updatedTables[tableIndex] = { ...table, rows };
+    }
+    onUpdateSection({ ...section, tables: updatedTables });
+  };
+
+  const colorForPicker = (value: string): string => {
+    if (/^#[0-9a-f]{6}$/i.test(value)) return value;
+    if (/^#[0-9a-f]{3}$/i.test(value)) return '#' + value.slice(1).split('').map(char => char + char).join('');
+    return '#ffffff';
   };
 
   // Clause manipulation helpers
@@ -504,13 +540,58 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         </div>
                       </div>
 
+                      {selectedTableCell?.sectionId === section.id && selectedTableCell.tableId === table.id && (() => {
+                        const cell = selectedTableCell.rowIndex < 0
+                          ? table.headers[selectedTableCell.columnIndex]
+                          : table.rows[selectedTableCell.rowIndex]?.[selectedTableCell.columnIndex];
+                        const inherited = selectedTableCell.rowIndex < 0
+                          ? tableStyle.headerBackground
+                          : resolveCellFill(tableStyle, cell || {}, selectedTableCell.rowIndex);
+                        const inheritedColor = typeof inherited === 'string'
+                          ? inherited
+                          : inherited.type === 'solid'
+                            ? inherited.color
+                            : (inherited.stops[0]?.color || '#ffffff');
+                        return (
+                          <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2 text-[10px]" style={{ background: documentDesign.colors.sectionSurface, borderColor: documentDesign.colors.border }}>
+                            <span className="font-semibold" style={{ color: documentDesign.colors.headingText }}>
+                              {selectedTableCell.rowIndex < 0 ? 'Header cell' : 'Table cell'} background
+                            </span>
+                            <input
+                              type="color"
+                              aria-label="Selected table cell background"
+                              value={colorForPicker(cell?.bg || inheritedColor)}
+                              onChange={event => handleUpdateCellBackground(section, tIdx, selectedTableCell.rowIndex, selectedTableCell.columnIndex, event.target.value)}
+                              className="h-6 w-8 cursor-pointer rounded border bg-transparent p-0"
+                            />
+                            <span className="font-mono" style={{ color: documentDesign.colors.mutedText }}>
+                              {cell?.bg || 'Inherited'}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={!cell?.bg}
+                              onClick={() => handleUpdateCellBackground(section, tIdx, selectedTableCell.rowIndex, selectedTableCell.columnIndex, undefined)}
+                              className="rounded border px-2 py-1 disabled:opacity-40"
+                              style={{ borderColor: documentDesign.colors.border, color: documentDesign.colors.bodyText }}
+                            >
+                              Clear cell override
+                            </button>
+                          </div>
+                        );
+                      })()}
+
                       {/* Render Table Grid */}
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs">
                           <thead>
                             <tr style={{ background: fillToCss(tableStyle.headerBackground), borderBottom: `${tableStyle.gridlineWidth}px solid ${tableStyle.gridlineColor}` }}>
                               {table.headers.map((h, hIdx) => (
-                                <th key={h.id} className="p-2 font-bold border-r last:border-none" style={{ color: tableStyle.headerTextColor, borderColor: tableStyle.gridlineColor, background: h.bg || fillToCss(tableStyle.headerBackground) }}>
+                                <th
+                                  key={h.id}
+                                  onClick={() => setSelectedTableCell({ sectionId: section.id, tableId: table.id, rowIndex: -1, columnIndex: hIdx })}
+                                  className="p-2 font-bold border-r last:border-none"
+                                  style={{ color: tableStyle.headerTextColor, borderColor: tableStyle.gridlineColor, background: h.bg || fillToCss(tableStyle.headerBackground) }}
+                                >
                                   <input
                                     type="text"
                                     value={h.content}
@@ -534,7 +615,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                               <tr key={rIdx} className="border-b last:border-none hover:bg-blue-50/20 group/row" style={{ borderColor: tableStyle.gridlineColor }}>
                                 {row.map((cell, cIdx) => (
                                   <td 
-                                    key={cell.id} 
+                                    key={cell.id}
+                                    onClick={() => setSelectedTableCell({ sectionId: section.id, tableId: table.id, rowIndex: rIdx, columnIndex: cIdx })}
                                     contentEditable
                                     suppressContentEditableWarning
                                     onBlur={(e) => {
