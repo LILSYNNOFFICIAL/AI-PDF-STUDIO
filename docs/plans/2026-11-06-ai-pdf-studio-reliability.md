@@ -103,7 +103,7 @@ Commit only the files in this task with message `feat: configure separate Render
 **Interfaces:**
 - `executeAiDocumentEdit({ instruction, currentDoc, persona, aiClient })` returns `{ updatedDoc, summary, plan }` or throws a typed error without changing the input.
 - AI response contract is JSON with a short `operationTitle`, `details`, and `sectionUpdates`; each update identifies an existing section by ID and may provide approved structural fields.
-- The editor receives the complete relevant section data in bounded sequential chunks. Each chunk response must account for its supplied section IDs exactly once.
+- The editor receives complete relevant section data in bounded sequential chunks. Oversized section and clause text is split into ordered, offset-labelled excerpts; excerpt responses may not replace the complete source field. Oversized non-text blocks are rejected explicitly.
 - Untouched text fields remain byte-for-byte unchanged unless the instruction explicitly requests rewriting those fields.
 
 - [ ] **Step 1: Add failing tests for the current defect**
@@ -112,7 +112,7 @@ Add tests with a long document and unique markers at the beginning, middle, and 
 
 - [ ] **Step 2: Implement bounded AI edit contract**
 
-Create a typed request/response contract and sequential chunk builder that never splits a single section payload. Use the configured Gemini model with JSON output. Prompt explicitly: execute the requested document operation; never return only a summary; do not rewrite text unless requested; return only updates for supplied section IDs. Validate parsed output and reject unknown, duplicate, or missing IDs.
+Create a typed request/response contract and sequential chunk builder. Split oversized section content and clause content into ordered excerpts with source offsets, prohibit excerpt replacement, and reject oversized non-text blocks rather than omitting them. For pasted messages above the configured instruction threshold, require an explicit `SOURCE CONTENT:` boundary and store the full trailing source text verbatim in a document section before chunking. Use Gemini JSON output. Prompt explicitly: execute the requested document operation; never return only a summary; do not rewrite text unless requested; return only updates for supplied section IDs. Validate parsed output and reject unknown, duplicate, or missing IDs.
 
 - [ ] **Step 3: Apply operations transactionally**
 
