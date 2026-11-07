@@ -133,10 +133,10 @@ test('executor sends real section content to Gemini and applies returned edits',
   assert.equal(result.updatedDoc.sections[0].content, doc.sections[0].content);
 });
 
-test('very large section source is processed in ordered chunks without losing text', async () => {
+test('500-page-scale section source is processed in ordered chunks without losing text', async () => {
   const doc = makeDocument();
   doc.sections = doc.sections.slice(0, 1);
-  const original = `LONG-SOURCE-BEGIN ${'Preserve every source sentence exactly. '.repeat(3000)} LONG-SOURCE-END`;
+  const original = `LONG-SOURCE-BEGIN ${'Preserve every source sentence exactly. '.repeat(30000)} LONG-SOURCE-END`;
   doc.sections[0].content = original;
   let calls = 0;
   const client = {
@@ -160,10 +160,10 @@ test('very large section source is processed in ordered chunks without losing te
     currentDoc: doc,
     persona: 'auto_architect',
     aiClient: client,
-    maxChunkChars: 2000
+    maxChunkChars: 18000
   });
 
-  assert.ok(calls > 1, 'Expected the oversized source to be processed through multiple AI calls');
+  assert.ok(calls > 50, 'Expected 500-page-scale source to be processed through many bounded AI calls');
   assert.equal(result.updatedDoc.sections[0].content, original);
   assert.equal(result.updatedDoc.styles.fontSize, 12);
   assert.match(result.updatedDoc.sections[0].content || '', /^LONG-SOURCE-BEGIN/);
