@@ -98,6 +98,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onPrint,
   onExportJson,
   onImportJson,
+  onImportText,
   onExportMarkdown,
   onExportPlainText,
   onCopyDocumentText,
