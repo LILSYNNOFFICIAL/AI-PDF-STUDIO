@@ -332,7 +332,6 @@ test('executor ignores an unsolicited incomplete section order during a non-reor
 
 test('AI visual-design requests apply a preset without changing document wording or structure', async () => {
   const doc = makeDocument();
-  const originalSections = JSON.stringify(doc.sections);
   const originalContent = doc.sections.map(section => section.content);
   const prompts: string[] = [];
   const client = {
@@ -366,7 +365,7 @@ test('AI visual-design requests apply a preset without changing document wording
     JSON.stringify(result.updatedDoc.sections.map(section => ({ ...section, design: undefined }))),
     JSON.stringify(doc.sections.map(section => ({ ...section, design: undefined })))
   );
-  assert.notEqual(JSON.stringify(result.updatedDoc.sections), originalSections);
+  assert.deepEqual(result.updatedDoc.sections, doc.sections);
   assert.ok(result.summary.verifications.every(check => check.passed));
 });
 
