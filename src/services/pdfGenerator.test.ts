@@ -62,6 +62,8 @@ test('design presets, page gradients, section fills, borders and table overrides
     normalizeDocumentDesign
   } = await import('./documentDesign');
   const doc = normalizeDocumentDesign(buildDocumentFromPrompt('Agreement').updatedDoc);
+  doc.pageConfig.headerText = 'DESIGN THEME HEADER';
+  doc.pageConfig.footerText = 'DESIGN THEME FOOTER';
   doc.design = {
     ...doc.design!,
     page: {
@@ -107,7 +109,7 @@ test('design presets, page gradients, section fills, borders and table overrides
         { id: 'h2', content: 'DESIGN COLUMN B' }
       ],
       rows: [
-        [{ id: 'r1c1', content: 'DESIGN CELL ONE' }, { id: 'r1c2', content: 'DESIGN CELL TWO' }],
+        [{ id: 'r1c1', content: 'DESIGN CELL ONE', bg: '#ffeedd' }, { id: 'r1c2', content: 'DESIGN CELL TWO' }],
         [{ id: 'r2c1', content: 'DESIGN CELL THREE' }, { id: 'r2c2', content: 'DESIGN CELL FOUR' }]
       ],
       design: {
@@ -122,6 +124,21 @@ test('design presets, page gradients, section fills, borders and table overrides
       }
     }]
   }];
+  doc.signatures = {
+    id: 'design-signatures',
+    title: 'DESIGN SIGNATURES',
+    layout: 'stacked',
+    onDedicatedPage: true,
+    parties: [{
+      id: 'design-signer',
+      role: 'ARTIST',
+      name: 'DESIGN SIGNER',
+      title: 'Recording Artist',
+      company: 'Example Music LLC',
+      date: 'November 7, 2026',
+      signaturePlaceholder: '/s/ DESIGN SIGNER'
+    }]
+  };
   const presetDesign = applyDocumentPreset(doc, 'technology-professional').design!;
   doc.design = {
     ...presetDesign,
@@ -148,7 +165,11 @@ test('design presets, page gradients, section fills, borders and table overrides
     'DESIGN-PDF-END',
     'DESIGN TABLE TITLE',
     'DESIGN COLUMN A',
-    'DESIGN CELL FOUR'
+    'DESIGN CELL FOUR',
+    'DESIGN THEME HEADER',
+    'DESIGN THEME FOOTER',
+    'DESIGN SIGNATURES',
+    'DESIGN SIGNER'
   ]) {
     assert.ok(output.includes(marker), 'Expected exported PDF to contain ' + marker);
   }
