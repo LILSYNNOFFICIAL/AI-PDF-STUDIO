@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
+import { MobileWorkspace } from './components/MobileWorkspace';
 import { MenuBar } from './components/MenuBar';
 import { FormattingRibbon } from './components/FormattingRibbon';
 import { DocumentOutline } from './components/DocumentOutline';
@@ -667,7 +668,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100 relative">
+    <div className="app-root flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100 relative">
+      <div className="desktop-workspace">
       {/* 1. Top Navbar */}
       <Navbar
         document={document}
@@ -838,6 +840,67 @@ export default function App() {
         )}
       </div>
 
+      </div>
+      <MobileWorkspace
+        document={document}
+        activeSectionId={activeSectionId}
+        persona={persona}
+        messages={messages}
+        isOrchestrating={isOrchestrating}
+        canUndo={historyIndex >= 0}
+        canRedo={historyIndex < history.length - 1}
+        onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
+        onSelectPersona={setPersona}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onOpenPdfPreview={() => setIsPdfPreviewOpen(true)}
+        onOpenValidation={() => setIsValidationOpen(true)}
+        onOpenMultiDoc={() => setIsMultiDocOpen(true)}
+        onNewDocument={handleNewDocument}
+        onNewBlankDocument={handleNewBlankDocument}
+        onOpenTemplate={handleOpenTemplate}
+        onExportJson={handleExportJson}
+        onImportJson={handleImportJson}
+        onExportMarkdown={handleExportMarkdown}
+        onExportPlainText={handleExportPlainText}
+        onCopyDocumentText={handleCopyDocumentText}
+        onPrint={handlePrint}
+        onFindReplace={() => setIsFindReplaceOpen(true)}
+        onRedaction={() => setIsRedactionOpen(true)}
+        onInsertTable={() => { setInsertObjectTab('table'); setIsInsertObjectOpen(true); }}
+        onInsertImage={() => { setInsertObjectTab('image'); setIsInsertObjectOpen(true); }}
+        onMetadata={() => setIsMetadataOpen(true)}
+        onClauseLibrary={() => setIsClauseLibraryOpen(true)}
+        onWatermark={() => setIsWatermarkCustomizerOpen(true)}
+        onReadability={() => setIsReadabilityOpen(true)}
+        onSelectSection={(id) => {
+          setActiveSectionId(id);
+          const el = window.document.getElementById(id);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }}
+        onUpdateSection={(updatedSection) => {
+          const sections = document.sections.map(s => s.id === updatedSection.id ? updatedSection : s);
+          setDocument(prev => ({ ...prev, sections, updatedAt: new Date().toISOString() }));
+        }}
+        onDeleteSection={handleDeleteSection}
+        onDuplicateSection={handleDuplicateSection}
+        onQuickAIAction={handleQuickAIAction}
+        onMoveSection={handleMoveSection}
+        onMergeWithNext={handleMergeWithNext}
+        onSplitSection={handleSplitSection}
+        onAddSection={handleAddSection}
+        onUpdateSignatures={(signatures) => setDocument(prev => ({ ...prev, signatures, updatedAt: new Date().toISOString() }))}
+        onSendMessage={handleSendMessage}
+        onRollbackToVersion={(v) => {
+          const snapshot = history.find(h => h.version === v) || history[0];
+          if (snapshot) {
+            const res = rollbackDocument(document, snapshot);
+            pushHistory(res.updatedDoc);
+            addAiMessage(`Rolled back to version ${v}.`, undefined, res.summary);
+          }
+        }}
+        onRunAudit={() => setIsValidationOpen(true)}
+      />
       {/* 5. Modals */}
       <PDFPreviewModal
         document={document}
