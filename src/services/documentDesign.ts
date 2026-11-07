@@ -416,6 +416,22 @@ export function fillToCss(fill: ColorFill | undefined, fallback = 'transparent')
   return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + fill.opacity + ')';
 }
 
+export function contrastRatio(foreground: string, background: string): number {
+  const luminance = (hex: string): number => {
+    validateColor(hex, 'contrast color');
+    const raw = hex.replace('#', '');
+    const expanded = raw.length === 3 ? raw.split('').map(char => char + char).join('') : raw;
+    const channels = [0, 2, 4].map(offset => parseInt(expanded.slice(offset, offset + 2), 16) / 255)
+      .map(channel => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2);
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  const first = luminance(foreground);
+  const second = luminance(background);
+  const lighter = Math.max(first, second);
+  const darker = Math.min(first, second);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 export function borderToCss(border: BorderConfig, side?: BorderSide): string {
   if (side && border.sides?.length && !border.sides.includes(side)) return 'none';
   if (border.style === 'none' || border.width <= 0) return 'none';
