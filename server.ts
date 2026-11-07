@@ -26,6 +26,33 @@ const port = parseInt(process.env.PORT || '3000', 10);
 
 app.use(express.json({ limit: '20mb' }));
 
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin) return next();
+
+  const localDevelopmentOrigin =
+    process.env.NODE_ENV !== 'production' &&
+    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
+
+  if (!allowedOrigins.has(origin) && !localDevelopmentOrigin) {
+    return res.status(403).json({ error: 'Origin is not allowed.' });
+  }
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  return next();
+});
+
 // Initialize Google GenAI
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = new GoogleGenAI({
@@ -95,7 +122,7 @@ app.post('/api/quality-report', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  res.json({ status: 'ok', time: new Date().toISOString(), geminiConfigured: Boolean(apiKey) });
 });
 
 // Setup Vite middleware in dev or static files in production
