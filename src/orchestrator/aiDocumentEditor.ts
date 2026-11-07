@@ -744,7 +744,9 @@ export function applyDocumentEditResponse(
     changeSummary: response.operationTitle
   };
 
-  const updatedDoc = response.sectionOrder ? recalculateNumbering(candidate) : candidate;
+  const updatedDoc = response.sectionOrder || response.sectionRangeMoves?.length
+    ? recalculateNumbering(candidate)
+    : candidate;
   const summary: ExecutionResultSummary = {
     operationTitle: response.operationTitle || 'Document updated',
     details: response.details,
