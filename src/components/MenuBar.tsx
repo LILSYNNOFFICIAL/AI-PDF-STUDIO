@@ -183,7 +183,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             File
           </button>
           {activeMenu === 'file' && (
-            <div className="absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onNewBlankDocument)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
@@ -199,54 +199,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
                 <span className="text-[10px] text-slate-400">Ctrl+N</span>
               </button>
               
-              <div className="border-t border-slate-800 my-1" />
-              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Music Industry Templates</div>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('music'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>🎵</span> Music Collaboration Master (50/50 Split)
-              </button>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('beat_license'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>🎹</span> Exclusive Beat License &amp; Producer Royalty
-              </button>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('featured_artist'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>🎤</span> Featured Vocalist Performance &amp; Clearance
-              </button>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('sync_license'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>🎧</span> Sync Master &amp; Synchronization (Film/TV)
-              </button>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('label_360'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>💿</span> Record Label 360 &amp; Digital Distribution
-              </button>
-
-              <div className="border-t border-slate-800 my-1" />
-              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Commercial &amp; Venture Templates</div>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('saas'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>💻</span> Enterprise SaaS Master Agreement (99.9% SLA)
-              </button>
-              <button 
-                onClick={() => executeAction(() => onOpenTemplate('term_sheet'))}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <span>📊</span> Series A Preferred Stock Investment Term Sheet
-              </button>
-
               <div className="border-t border-slate-800 my-1" />
               <button 
                 onClick={() => executeAction(onExportPdf)}
@@ -327,7 +279,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Edit
           </button>
           {activeMenu === 'edit' && (
-            <div className="absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-52 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onUndo)}
                 disabled={!canUndo}
@@ -375,7 +327,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Insert
           </button>
           {activeMenu === 'insert' && (
-            <div className="absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onAddSection)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
@@ -449,7 +401,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Format
           </button>
           {activeMenu === 'format' && (
-            <div className="absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button
                 onClick={() => executeAction(onOpenDesign)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
@@ -457,6 +409,56 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               >
                 <Palette className="w-3.5 h-3.5 text-blue-300" /> Document Design
               </button>
+              <div className="border-t border-slate-800 my-1" />
+              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Document Templates</div>
+              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500 mt-1">Music Industry Templates</div>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('music'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>🎵</span> Music Collaboration Master (50/50 Split)
+              </button>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('beat_license'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>🎹</span> Exclusive Beat License &amp; Producer Royalty
+              </button>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('featured_artist'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>🎤</span> Featured Vocalist Performance &amp; Clearance
+              </button>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('sync_license'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>🎧</span> Sync Master &amp; Synchronization (Film/TV)
+              </button>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('label_360'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>💿</span> Record Label 360 &amp; Digital Distribution
+              </button>
+
+              <div className="border-t border-slate-800 my-1" />
+              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Commercial &amp; Venture Templates</div>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('saas'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>💻</span> Enterprise SaaS Master Agreement (99.9% SLA)
+              </button>
+              <button 
+                onClick={() => executeAction(() => onOpenTemplate('term_sheet'))}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <span>📊</span> Series A Preferred Stock Investment Term Sheet
+              </button>
+
+
               <div className="border-t border-slate-800 my-1" />
               <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Font Families</div>
               {['Times New Roman', 'Garamond', 'Inter', 'Helvetica', 'Georgia', 'Courier New'].map((f) => (
@@ -502,7 +504,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Tools
           </button>
           {activeMenu === 'tools' && (
-            <div className="absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-64 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onOpenClauseLibrary)}
                 className="w-full text-left px-3 py-1.5 hover:bg-emerald-600 hover:text-white flex items-center gap-2"
@@ -577,7 +579,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             View
           </button>
           {activeMenu === 'view' && (
-            <div className="absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-52 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(toggleOutline)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
