@@ -38,7 +38,7 @@ jobs:
         run: bun run build
         env:
           VITE_BASE_PATH: /AI-PDF-STUDIO/
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_API_BASE_URL: https://ai-pdf-studio-api.onrender.com
       - name: Verify Pages artifact
         run: bun run verify:pages
         env:
