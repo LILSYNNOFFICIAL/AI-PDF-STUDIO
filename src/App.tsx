@@ -1150,6 +1150,17 @@ export default function App() {
         onClose={() => setIsReadabilityOpen(false)}
       />
 
+      <SourceOfTruthModal
+        isOpen={isSourceTruthOpen}
+        source={sourceTruthText}
+        selectedPresetId={sourceTruthPresetId}
+        onSourceChange={setSourceTruthText}
+        onPresetChange={setSourceTruthPresetId}
+        onRender={handleRenderSourceTruth}
+        onClose={() => setIsSourceTruthOpen(false)}
+        isRendering={isRenderingSource}
+      />
+
       <DocumentDesignModal
         document={document}
         activeSectionId={activeSectionId}
