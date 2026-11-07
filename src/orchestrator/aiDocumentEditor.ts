@@ -257,7 +257,7 @@ export function prepareLongInstruction(
   }
 
   const sourceStart = match.index + match[0].length;
-  const sourceText = instruction.slice(sourceStart).replace(/^\s+/, '');
+  const sourceText = instruction.slice(sourceStart);
   if (!sourceText.trim()) {
     throw new Error('The SOURCE CONTENT marker is present, but no source text follows it. No document changes were applied.');
   }
