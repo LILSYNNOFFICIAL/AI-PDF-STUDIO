@@ -971,6 +971,7 @@ export default function App() {
       <MobileWorkspace
         document={document}
         activeSectionId={activeSectionId}
+        onOpenDesign={() => setIsDesignModalOpen(true)}
         persona={persona}
         messages={messages}
         isOrchestrating={isOrchestrating}
