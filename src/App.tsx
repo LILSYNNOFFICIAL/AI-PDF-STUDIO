@@ -79,7 +79,7 @@ export default function App() {
   const [isWatermarkCustomizerOpen, setIsWatermarkCustomizerOpen] = useState(false);
   const [isReadabilityOpen, setIsReadabilityOpen] = useState(false);
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
-  const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(false);
+  const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(true);
   const [sourceTruthText, setSourceTruthText] = useState('');
   const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
   const [isRenderingSource, setIsRenderingSource] = useState(false);
