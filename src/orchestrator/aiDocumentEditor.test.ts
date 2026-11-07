@@ -5,6 +5,7 @@ import {
   applyDocumentEditResponse,
   buildDocumentEditPrompt,
   executeAiDocumentEdit,
+  prepareLongInstruction,
   type DocumentEditResponse
 } from './aiDocumentEditor';
 
@@ -165,4 +166,28 @@ test('very large section source is processed in ordered chunks without losing te
   assert.equal(result.updatedDoc.sections[0].content, original);
   assert.match(result.updatedDoc.sections[0].content || '', /^LONG-SOURCE-BEGIN/);
   assert.match(result.updatedDoc.sections[0].content || '', /LONG-SOURCE-END$/);
+});
+
+test('large pasted source content is separated from the instruction and stored verbatim', () => {
+  const doc = makeDocument();
+  const source = `\n\nSOURCE-START ${'Keep every supplied sentence. '.repeat(600)} SOURCE-END  \n`;
+  const prepared = prepareLongInstruction(
+    `Create a professionally formatted PDF from the following source content:${source}`,
+    doc,
+    100
+  );
+  const sourceSection = prepared.document.sections.at(-1)!;
+
+  assert.equal(sourceSection.title, 'USER-PROVIDED SOURCE CONTENT');
+  assert.equal(sourceSection.content, source);
+  assert.ok(prepared.instruction.includes(sourceSection.id));
+  assert.ok(!prepared.instruction.includes('Keep every supplied sentence.'));
+});
+
+test('large pasted content without an explicit source boundary is rejected, not silently clipped', () => {
+  const doc = makeDocument();
+  assert.throws(
+    () => prepareLongInstruction('Unstructured long input '.repeat(1000), doc, 100),
+    /SOURCE CONTENT.*No document changes were applied/i
+  );
 });
