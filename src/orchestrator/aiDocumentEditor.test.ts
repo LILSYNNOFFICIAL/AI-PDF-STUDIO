@@ -442,6 +442,7 @@ test('AI can move a heading-bounded section range into one existing target box w
   const target = doc.sections[0];
   target.title = 'WRITTEN DESCRIPTION + VISUAL REFERENCE';
   target.content = 'Target box original text.';
+  target.clauses = [];
   const middle = { ...doc.sections[1], id: 'sec_middle', title: 'VISUAL DETAILS', content: 'Middle section exact wording.', clauses: [{ id: 'cl_middle', clauseNumber: '2.1', heading: 'Details', content: 'Clause wording stays exact.', orderIndex: 1 }] };
   const boundary = { ...doc.sections[2], id: 'sec_boundary', title: 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY', content: 'Boundary must remain outside the move.' };
   target.tables = [{ id: 'target-table', headers: [{ id: 'th', content: 'Existing' }], rows: [] }];
