@@ -510,6 +510,10 @@ test('structural executor gives Gemini the complete section inventory and applie
             operationTitle: 'Consolidated written description',
             details: ['Moved the bounded section range into the destination section.'],
             sectionUpdates: [],
+            sectionOrder: [],
+            documentPatch: [],
+            styles: {},
+            pageConfig: {},
             sectionRangeMoves: [{
               startSectionId: target.id,
               endBeforeSectionId: boundary.id,
