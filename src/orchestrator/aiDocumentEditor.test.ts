@@ -4,6 +4,7 @@ import { buildDocumentFromPrompt } from './orchestrator';
 import {
   applyDocumentEditResponse,
   buildDocumentEditPrompt,
+  executeAiDocumentEdit,
   type DocumentEditResponse
 } from './aiDocumentEditor';
 
@@ -97,4 +98,56 @@ test('AI prompt requires actual document operations and forbids unsolicited summ
   assert.match(prompt, /never summarize|do not summarize/i);
   assert.match(prompt, /sectionUpdates/);
   assert.match(prompt, /SOURCE-BEGIN/);
+});
+
+test('executor sends real section content to Gemini and applies returned edits', async () => {
+  const doc = makeDocument();
+  const prompts: string[] = [];
+  const client = {
+    models: {
+      generateContent: async ({ contents }: { model: string; contents: string; config?: { responseMimeType?: string } }) => {
+        prompts.push(contents);
+        return {
+          text: JSON.stringify({
+            operationTitle: 'AI updated the requested heading',
+            details: ['Updated the requested heading'],
+            sectionUpdates: [{ sectionId: doc.sections[0].id, title: 'AI-EDITED HEADING' }]
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: 'Format the first section heading only.',
+    currentDoc: doc,
+    persona: 'music_specialist',
+    aiClient: client
+  });
+
+  assert.equal(prompts.length, 1);
+  assert.ok(prompts[0].includes('SOURCE-BEGIN'));
+  assert.equal(result.updatedDoc.sections[0].title, 'AI-EDITED HEADING');
+  assert.equal(result.updatedDoc.sections[0].content, doc.sections[0].content);
+});
+
+test('oversized individual sections are rejected instead of being silently truncated', async () => {
+  const doc = makeDocument();
+  doc.sections[0].content = 'LONG-SOURCE-'.repeat(3000);
+  const client = {
+    models: {
+      generateContent: async () => ({ text: '{}' })
+    }
+  };
+
+  await assert.rejects(
+    executeAiDocumentEdit({
+      instruction: 'Format the document.',
+      currentDoc: doc,
+      persona: 'auto_architect',
+      aiClient: client,
+      maxChunkChars: 2000
+    }),
+    /safe AI chunk limit.*No document changes were applied/i
+  );
 });
