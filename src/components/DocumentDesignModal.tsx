@@ -117,6 +117,102 @@ const ColorControl: React.FC<{
   );
 };
 
+const ColorFillControl: React.FC<{
+  label: string;
+  value?: ColorFill;
+  fallback: string;
+  onChange: (value: ColorFill) => void;
+}> = ({ label, value, fallback, onChange }) => {
+  const fill: ColorFill = value || { type: 'solid', color: fallback, opacity: 1 };
+  const isGradient = fill.type === 'linear-gradient';
+  const gradient = isGradient ? fill : null;
+  const stops = gradient?.stops || [
+    { color: fill.type === 'solid' ? fill.color : fallback, position: 0 },
+    { color: fill.type === 'solid' ? fill.color : fallback, position: 100 }
+  ];
+  const opacity = fill.opacity ?? 1;
+
+  const setGradientStop = (index: number, color: string) => {
+    const nextStops = [...stops];
+    nextStops[index] = { ...nextStops[index], color };
+    onChange({
+      type: 'linear-gradient',
+      angle: gradient?.angle ?? 135,
+      stops: nextStops,
+      opacity
+    });
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+      <label className="block text-[11px] text-slate-300">
+        {label} fill type
+        <select
+          value={isGradient ? 'gradient' : 'solid'}
+          onChange={event => {
+            if (event.target.value === 'gradient') {
+              const base = fillColor(fill, fallback);
+              onChange({
+                type: 'linear-gradient',
+                angle: 135,
+                stops: [{ color: base, position: 0 }, { color: '#e2e8f0', position: 100 }],
+                opacity
+              });
+            } else {
+              onChange({ type: 'solid', color: fillColor(fill, fallback), opacity });
+            }
+          }}
+          className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-slate-100"
+        >
+          <option value="solid">Solid color</option>
+          <option value="gradient">Linear gradient</option>
+        </select>
+      </label>
+
+      {isGradient ? (
+        <>
+          <ColorControl label="Gradient start" value={stops[0]?.color || fallback} onChange={color => setGradientStop(0, color)} />
+          <ColorControl label="Gradient end" value={stops[1]?.color || '#e2e8f0'} onChange={color => setGradientStop(1, color)} />
+          <label className="block text-[11px] text-slate-300">
+            Gradient angle
+            <input
+              type="number"
+              min="-360"
+              max="360"
+              value={gradient?.angle ?? 135}
+              onChange={event => onChange({
+                type: 'linear-gradient',
+                angle: Number(event.target.value),
+                stops,
+                opacity
+              })}
+              className="ml-2 w-24 rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-slate-100"
+            />
+          </label>
+        </>
+      ) : (
+        <ColorControl
+          label={label + ' color'}
+          value={fill.type === 'solid' ? fill.color : fallback}
+          onChange={color => onChange({ type: 'solid', color, opacity })}
+        />
+      )}
+
+      <label className="block text-[11px] text-slate-300">
+        Transparency ({Math.round((1 - opacity) * 100)}%)
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={Math.round(opacity * 100)}
+          onChange={event => onChange({ ...fill, opacity: Number(event.target.value) / 100 })}
+          className="mt-1 w-full accent-blue-500"
+        />
+      </label>
+    </div>
+  );
+};
+
 function fillColor(fill: ColorFill | undefined, fallback: string): string {
   if (!fill) return fallback;
   return fill.type === 'solid' ? fill.color : (fill.stops[0]?.color || fallback);
@@ -322,26 +418,27 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
             <div className="grid gap-6 md:grid-cols-2">
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Page Background</h3>
-                <label className="flex flex-col gap-1 text-[11px] text-slate-300">
-                  <span>Fill type</span>
-                  <select value={isGradient ? 'gradient' : 'solid'} onChange={event => {
-                    if (event.target.value === 'gradient') updatePageFill({ type: 'linear-gradient', angle: 135, stops: [{ color: '#f8fafc', position: 0 }, { color: '#e2e8f0', position: 100 }] });
-                    else updatePageFill({ type: 'solid', color: fillColor(pageFill, '#ffffff'), opacity: 1 });
-                  }} className="rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100">
-                    <option value="solid">Solid color</option><option value="gradient">Linear gradient</option>
-                  </select>
+                <ColorFillControl
+                  label="All page backgrounds"
+                  value={design.page.background}
+                  fallback="#ffffff"
+                  onChange={updatePageFill}
+                />
+                <label className="block text-[11px] text-slate-300">
+                  Use a different first-page background
+                  <input type="checkbox" checked={!!design.page.firstPageBackground} onChange={event => setDesign(current => ({
+                    ...current,
+                    page: { ...current.page, firstPageBackground: event.target.checked ? current.page.background : undefined }
+                  }))} className="ml-2 accent-blue-500" />
                 </label>
-                {!isGradient ? (
-                  <ColorControl label="Page color" value={fillColor(pageFill, '#ffffff')} onChange={color => updatePageFill({ type: 'solid', color, opacity: (pageFill as { opacity?: number }).opacity ?? 1 })} />
-                ) : (
-                  <>
-                    <ColorControl label="Gradient start" value={gradientStops[0]?.color || '#ffffff'} onChange={color => updatePageFill({ type: 'linear-gradient', angle: (pageFill as Extract<ColorFill, { type: 'linear-gradient' }>).angle, stops: [{ color, position: 0 }, { color: gradientStops[1]?.color || '#ffffff', position: 100 }] })} />
-                    <ColorControl label="Gradient end" value={gradientStops[1]?.color || '#e2e8f0'} onChange={color => updatePageFill({ type: 'linear-gradient', angle: (pageFill as Extract<ColorFill, { type: 'linear-gradient' }>).angle, stops: [{ color: gradientStops[0]?.color || '#ffffff', position: 0 }, { color, position: 100 }] })} />
-                    <label className="block text-[11px] text-slate-300">Gradient angle <input type="number" min="-360" max="360" value={(pageFill as Extract<ColorFill, { type: 'linear-gradient' }>).angle} onChange={event => updatePageFill({ ...pageFill, angle: Number(event.target.value) })} className="ml-2 w-20 rounded border border-slate-700 bg-slate-950 px-2 py-1.5" /></label>
-                  </>
+                {design.page.firstPageBackground && (
+                  <ColorFillControl
+                    label="First page background"
+                    value={design.page.firstPageBackground}
+                    fallback="#ffffff"
+                    onChange={fill => setDesign(current => ({ ...current, page: { ...current.page, firstPageBackground: fill } }))}
+                  />
                 )}
-                <label className="block text-[11px] text-slate-300">First page background <input type="checkbox" checked={!!design.page.firstPageBackground} onChange={event => setDesign(current => ({ ...current, page: { ...current.page, firstPageBackground: event.target.checked ? current.page.background : undefined } }))} className="ml-2 accent-blue-500" /></label>
-                {design.page.firstPageBackground && <ColorControl label="First page color" value={fillColor(design.page.firstPageBackground, '#ffffff')} onChange={color => setDesign(current => ({ ...current, page: { ...current.page, firstPageBackground: { type: 'solid', color } } }))} />}
               </section>
               <section className="grid content-start gap-3 sm:grid-cols-2">
                 <h3 className="col-span-full text-xs font-semibold uppercase tracking-wide text-slate-400">Document Palette</h3>
@@ -391,7 +488,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <select value={sectionId} onChange={event => setSectionId(event.target.value)} className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100">
                   {document.sections.map(section => <option key={section.id} value={section.id}>{section.sectionNumber} {section.title}</option>)}
                 </select>
-                <ColorControl label="Section background" value={fillColor(sectionDraft.background, design.colors.sectionSurface)} onChange={color => setSectionDraft(current => ({ ...current, background: { type: 'solid', color } }))} />
+                <ColorFillControl label="Section background" value={sectionDraft.background} fallback={design.colors.sectionSurface} onChange={fill => setSectionDraft(current => ({ ...current, background: fill }))} />
                 <ColorControl label="Section heading color" value={sectionDraft.headingColor || design.colors.headingText} onChange={color => setSectionDraft(current => ({ ...current, headingColor: color }))} />
                 <ColorControl label="Section body text" value={sectionDraft.bodyTextColor || design.colors.bodyText} onChange={color => setSectionDraft(current => ({ ...current, bodyTextColor: color }))} />
               </section>
@@ -399,7 +496,37 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Section Border & Spacing</h3>
                 <ColorControl label="Border color" value={sectionDraft.border?.color || design.colors.border} onChange={color => setSectionDraft(current => ({ ...current, border: { style: current.border?.style || 'solid', color, width: current.border?.width ?? 1, sides: current.border?.sides } }))} />
                 <label className="block text-[11px] text-slate-300">Border style<select value={sectionDraft.border?.style || 'none'} onChange={event => setSectionDraft(current => ({ ...current, border: { style: event.target.value as any, color: current.border?.color || design.colors.border, width: current.border?.width ?? 1, sides: current.border?.sides } }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100"><option value="none">None</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option><option value="double">Double</option></select></label>
-                <label className="block text-[11px] text-slate-300">Border width<input type="number" min="0" max="20" value={sectionDraft.border?.width ?? 1} onChange={event => setSectionDraft(current => ({ ...current, border: { style: current.border?.style || 'solid', color: current.border?.color || design.colors.border, width: Number(event.target.value) } }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100" /></label>
+                <label className="block text-[11px] text-slate-300">Border width<input type="number" min="0" max="20" step="0.5" value={sectionDraft.border?.width ?? 1} onChange={event => setSectionDraft(current => ({ ...current, border: { style: current.border?.style || 'solid', color: current.border?.color || design.colors.border, width: Number(event.target.value), sides: current.border?.sides } }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100" /></label>
+                <div className="space-y-1">
+                  <span className="block text-[11px] text-slate-300">Border sides</span>
+                  <div className="flex flex-wrap gap-3">
+                    {(['top', 'right', 'bottom', 'left'] as const).map(side => (
+                      <label key={side} className="flex items-center gap-1 text-[10px] capitalize text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={sectionDraft.border?.sides ? sectionDraft.border.sides.includes(side) : true}
+                          onChange={event => setSectionDraft(current => {
+                            const nextSides = new Set(current.border?.sides || ['top', 'right', 'bottom', 'left']);
+                            if (event.target.checked) nextSides.add(side);
+                            else nextSides.delete(side);
+                            const allSides = ['top', 'right', 'bottom', 'left'];
+                            return {
+                              ...current,
+                              border: {
+                                style: current.border?.style || 'solid',
+                                color: current.border?.color || design.colors.border,
+                                width: current.border?.width ?? 1,
+                                sides: allSides.every(item => nextSides.has(item)) ? undefined : Array.from(nextSides)
+                              }
+                            };
+                          })}
+                          className="accent-blue-500"
+                        />
+                        {side}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 <label className="block text-[11px] text-slate-300">Section padding<input type="number" min="0" max="100" value={sectionDraft.padding ?? design.sectionDefaults.padding} onChange={event => setSectionDraft(current => ({ ...current, padding: Number(event.target.value) }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100" /></label>
               </section>
               <div className="col-span-full flex flex-wrap gap-2">
@@ -414,17 +541,27 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
             <div className="grid gap-5 md:grid-cols-2">
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Table Target</h3>
-                <select value={tableId} onChange={event => setTableId(event.target.value)} className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100">
+                <label className="block text-[11px] text-slate-300">
+                  Section
+                  <select value={sectionId} onChange={event => setSectionId(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100">
+                    {document.sections.map(section => <option key={section.id} value={section.id}>{section.sectionNumber} {section.title}</option>)}
+                  </select>
+                </label>
+                <label className="block text-[11px] text-slate-300">
+                  Table
+                  <select value={tableId} onChange={event => setTableId(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100">
                   {tables.map(table => <option key={table.id} value={table.id}>{table.title || 'Untitled table'}</option>)}
-                </select>
+                  </select>
+                </label>
                 {selectedTable && <p className="text-[10px] text-slate-500">{selectedSection?.title}</p>}
-                <ColorControl label="Table header background" value={fillColor(tableDraft.headerBackground, design.colors.tableHeaderSurface)} onChange={color => setTableDraft(current => ({ ...current, headerBackground: { type: 'solid', color } }))} />
+                <ColorFillControl label="Table header background" value={tableDraft.headerBackground} fallback={design.colors.tableHeaderSurface} onChange={fill => setTableDraft(current => ({ ...current, headerBackground: fill }))} />
+                <ColorFillControl label="Table body background" value={tableDraft.bodyBackground} fallback={design.colors.pageSurface} onChange={fill => setTableDraft(current => ({ ...current, bodyBackground: fill }))} />
                 <ColorControl label="Table header text" value={tableDraft.headerTextColor || design.colors.tableHeaderText} onChange={color => setTableDraft(current => ({ ...current, headerTextColor: color }))} />
                 <ColorControl label="Table body text" value={tableDraft.bodyTextColor || design.colors.tableBodyText} onChange={color => setTableDraft(current => ({ ...current, bodyTextColor: color }))} />
               </section>
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Rows & Grid</h3>
-                <ColorControl label="Alternate row background" value={fillColor(tableDraft.alternateRowBackground, design.colors.tableAlternateRowSurface)} onChange={color => setTableDraft(current => ({ ...current, alternateRowBackground: { type: 'solid', color } }))} />
+                <ColorFillControl label="Alternate row background" value={tableDraft.alternateRowBackground} fallback={design.colors.tableAlternateRowSurface} onChange={fill => setTableDraft(current => ({ ...current, alternateRowBackground: fill }))} />
                 <ColorControl label="Gridline color" value={tableDraft.gridlineColor || design.colors.border} onChange={color => setTableDraft(current => ({ ...current, gridlineColor: color }))} />
                 <ColorControl label="Caption color" value={tableDraft.captionColor || design.colors.mutedText} onChange={color => setTableDraft(current => ({ ...current, captionColor: color }))} />
                 <label className="block text-[11px] text-slate-300">Gridline width<input type="number" min="0" max="10" step="0.1" value={tableDraft.gridlineWidth ?? design.tableDefaults.gridlineWidth} onChange={event => setTableDraft(current => ({ ...current, gridlineWidth: Number(event.target.value) }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100" /></label>
