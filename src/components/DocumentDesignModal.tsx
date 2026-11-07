@@ -310,13 +310,6 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
     setDesign(current => setNestedDesign(current, 'page', { background: fill }));
   };
 
-  const pageFill = design.page.background;
-  const isGradient = pageFill.type === 'linear-gradient';
-  const gradientStops = isGradient ? pageFill.stops : [
-    { color: pageFill.color, position: 0 },
-    { color: pageFill.color, position: 100 }
-  ];
-
   const applySavedTheme = (theme: SavedDocumentTheme) => {
     setDesign(deepCloneDesign(theme.design));
     setTab('page');
@@ -550,7 +543,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <label className="block text-[11px] text-slate-300">
                   Table
                   <select value={tableId} onChange={event => setTableId(event.target.value)} className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100">
-                  {tables.map(table => <option key={table.id} value={table.id}>{table.title || 'Untitled table'}</option>)}
+                    {tables.map(table => <option key={table.id} value={table.id}>{table.title || 'Untitled table'}</option>)}
                   </select>
                 </label>
                 {selectedTable && <p className="text-[10px] text-slate-500">{selectedSection?.title}</p>}
