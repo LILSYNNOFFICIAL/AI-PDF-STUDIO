@@ -117,6 +117,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), geminiConfigured: Boolean(apiKey) });
 });
 
+// Normalize JSON parser errors so oversized requests fail clearly without mutating documents.
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err?.type === 'entity.too.large') {
+    return res.status(413).json({
+      error: 'The submitted request exceeds the 20 MB API limit. Split the source into smaller submissions. No document changes were applied.',
+      documentUnchanged: true
+    });
+  }
+  console.error('Unhandled API request error:', err?.message || err);
+  return res.status(400).json({ error: 'The request could not be parsed. No document changes were applied.', documentUnchanged: true });
+});
+
 // Setup Vite middleware in dev or static files in production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
