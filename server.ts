@@ -79,6 +79,7 @@ app.post('/api/orchestrate', async (req, res) => {
       currentDoc: prepared.document,
       persona: persona || 'auto_architect',
       aiClient: ai,
+      allowNoop: prepared.document !== doc,
       model: process.env.GEMINI_MODEL || 'gemini-3.8-flash'
     });
 
