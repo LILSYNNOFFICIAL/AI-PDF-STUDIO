@@ -27,7 +27,16 @@ function detectHeadings(lines: string[], firstContentLine: number): HeadingMatch
     if (!value) continue;
     const markdown = MARKDOWN_HEADING.exec(value);
     if (markdown) {
-      headings.push({ line: index, text: cleanHeading(markdown[2]), level: markdown[1].length });
+      const markdownText = cleanHeading(markdown[2]);
+      const markdownAppendix = APPENDIX_HEADING.exec(markdownText);
+      const markdownNumbered = NUMBERED_HEADING.exec(markdownText);
+      if (markdownAppendix) {
+        headings.push({ line: index, text: markdownText, level: markdown[1].length, appendix: true });
+      } else if (markdownNumbered) {
+        headings.push({ line: index, text: cleanHeading(markdownNumbered[2]), level: markdown[1].length, sectionNumber: markdownNumbered[1] });
+      } else {
+        headings.push({ line: index, text: markdownText, level: markdown[1].length });
+      }
       continue;
     }
     const appendix = APPENDIX_HEADING.exec(value);
