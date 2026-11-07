@@ -409,7 +409,7 @@ function applySectionRangeMoves(
 }
 
 function requiresStructuralContext(instruction: string): boolean {
-  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|transfer|relocate|extract|insert|delete|duplicate|everything from)\b/i.test(instruction);
+  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|duplicate|everything from|move all)\b/i.test(instruction);
 }
 
 export function buildStructuralEditPrompt(
@@ -752,8 +752,10 @@ export function applyDocumentEditResponse(
       {
         name: 'Existing section identity',
         passed: updatedDoc.sections.length === originalIds.length - rangeMoveResult.movedToTarget.size &&
+          new Set(updatedDoc.sections.map(section => section.id)).size === updatedDoc.sections.length &&
           updatedDoc.sections.every(section => knownIds.has(section.id)) &&
-          updatedDoc.sections.every(section => !rangeMoveResult.movedToTarget.has(section.id))
+          updatedDoc.sections.every(section => !rangeMoveResult.movedToTarget.has(section.id)) &&
+          originalIds.filter(id => !rangeMoveResult.movedToTarget.has(id)).every(id => updatedDoc.sections.some(section => section.id === id))
       },
       {
         name: 'Untouched and transferred source content preservation',
@@ -765,6 +767,7 @@ export function applyDocumentEditResponse(
           if (explicitlyUpdated?.content !== undefined && mayEditText) return true;
           if (rangeMoveResult.movedToTarget.has(before.id) || response.sectionRangeMoves?.some(move => move.targetSectionId === before.id)) {
             if (before.content && !(after.content || '').includes(before.content)) return false;
+            if (before.id !== targetId && before.title && !(after.content || '').includes(before.title)) return false;
             for (const clause of before.clauses || []) {
               const retained = after.clauses.find(item => item.id === clause.id);
               if (!retained || retained.content !== clause.content) return false;
@@ -921,6 +924,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
   aggregated.sectionUpdates = mergeSectionUpdates(aggregated.sectionUpdates);
   const hasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
+    (aggregated.sectionRangeMoves?.length || 0) > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0 ||
@@ -959,6 +963,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
 
   const correctedHasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
+    (aggregated.sectionRangeMoves?.length || 0) > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0 ||
