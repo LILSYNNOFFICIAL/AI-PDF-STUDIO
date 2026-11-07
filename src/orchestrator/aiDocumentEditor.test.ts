@@ -435,3 +435,102 @@ test('design-only instructions cannot smuggle in content edits', () => {
     /Text edits are not authorized/i
   );
 });
+
+
+test('AI can move a heading-bounded section range into one existing target box without losing content', () => {
+  const doc = makeDocument();
+  const target = doc.sections[0];
+  target.title = 'WRITTEN DESCRIPTION + VISUAL REFERENCE';
+  target.content = 'Target box original text.';
+  target.clauses = [];
+  const middle = { ...doc.sections[1], id: 'sec_middle', title: 'VISUAL DETAILS', content: 'Middle section exact wording.', clauses: [{ id: 'cl_middle', clauseNumber: '2.1', heading: 'Details', content: 'Clause wording stays exact.', orderIndex: 1 }] };
+  const boundary = { ...doc.sections[2], id: 'sec_boundary', title: 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY', content: 'Boundary must remain outside the move.' };
+  target.tables = [{ id: 'target-table', headers: [{ id: 'th', content: 'Existing' }], rows: [] }];
+  middle.tables = [{ id: 'middle-table', headers: [{ id: 'mth', content: 'Moved table' }], rows: [] }];
+  doc.sections = [target, middle, boundary];
+
+  const response: DocumentEditResponse = {
+    operationTitle: 'Consolidate written description content',
+    details: ['Moved all content before the representations section into the written description box.'],
+    sectionUpdates: [],
+    sectionRangeMoves: [{
+      startSectionId: target.id,
+      endBeforeSectionId: boundary.id,
+      targetSectionId: target.id
+    }]
+  };
+
+  const result = applyDocumentEditResponse(
+    doc,
+    response,
+    "Everything from 'WRITTEN DESCRIPTION + VISUAL REFERENCE' to the box above 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY' needs to all be contained within the 'WRITTEN DESCRIPTION + VISUAL REFERENCE' box."
+  );
+
+  assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [target.id, boundary.id]);
+  assert.equal(result.updatedDoc.sections[0].content, 'Target box original text.\n\nVISUAL DETAILS\nMiddle section exact wording.');
+  assert.deepEqual(result.updatedDoc.sections[0].clauses.map(clause => clause.content), ['Clause wording stays exact.']);
+  assert.deepEqual(result.updatedDoc.sections[0].tables?.map(table => table.id), ['target-table', 'middle-table']);
+  assert.equal(result.updatedDoc.sections[1].content, 'Boundary must remain outside the move.');
+  assert.equal(JSON.stringify(doc.sections[1]).includes('Middle section exact wording.'), true, 'The input document remains unchanged');
+  assert.ok(result.summary.verifications.every(check => check.passed));
+});
+
+test('AI rejects ambiguous or destructive section-range moves without mutating the source document', () => {
+  const doc = makeDocument();
+  const before = JSON.stringify(doc);
+  const response: DocumentEditResponse = {
+    operationTitle: 'Invalid range move',
+    details: [],
+    sectionUpdates: [],
+    sectionRangeMoves: [{
+      startSectionId: 'missing-start',
+      endBeforeSectionId: doc.sections[1].id,
+      targetSectionId: doc.sections[0].id
+    }]
+  };
+  assert.throws(() => applyDocumentEditResponse(doc, response, 'Move the requested section range.'), /unknown section|range/i);
+  assert.equal(JSON.stringify(doc), before);
+});
+
+
+test('structural executor gives Gemini the complete section inventory and applies range operations in one planning pass', async () => {
+  const doc = makeDocument();
+  const target = doc.sections[0];
+  target.title = 'WRITTEN DESCRIPTION + VISUAL REFERENCE';
+  const middle = { ...doc.sections[1], id: 'range-middle', title: 'ADDITIONAL VISUAL DETAILS', content: 'All additional detail.' };
+  const boundary = { ...doc.sections[2], id: 'range-boundary', title: 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY' };
+  doc.sections = [target, middle, boundary];
+  const prompts: string[] = [];
+  const client = {
+    models: {
+      generateContent: async ({ contents }: { model: string; contents: string; config?: { responseMimeType?: string } }) => {
+        prompts.push(contents);
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Consolidated written description',
+            details: ['Moved the bounded section range into the destination section.'],
+            sectionUpdates: [],
+            sectionRangeMoves: [{
+              startSectionId: target.id,
+              endBeforeSectionId: boundary.id,
+              targetSectionId: target.id
+            }]
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: "Everything from 'WRITTEN DESCRIPTION + VISUAL REFERENCE' to the box above 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY' belongs in the first box.",
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client
+  });
+
+  assert.equal(prompts.length, 1);
+  assert.match(prompts[0], /WRITTEN DESCRIPTION \+ VISUAL REFERENCE/);
+  assert.match(prompts[0], /REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY/);
+  assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [target.id, boundary.id]);
+  assert.match(result.updatedDoc.sections[0].content || '', /All additional detail\./);
+});
