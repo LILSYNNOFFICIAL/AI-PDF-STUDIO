@@ -333,7 +333,7 @@ export function resolveTableDesign(doc: DocumentModel, section: Section, table: 
   return {
     headerBackground: table.design?.headerBackground || design.tableDefaults.headerBackground,
     headerTextColor: table.design?.headerTextColor || section.design?.headingColor || design.tableDefaults.headerTextColor,
-    bodyBackground: table.design?.bodyBackground || section.design?.background || design.tableDefaults.bodyBackground,
+    bodyBackground: table.design?.bodyBackground || sectionStyle.background || design.tableDefaults.bodyBackground,
     bodyTextColor: table.design?.bodyTextColor || sectionStyle.bodyTextColor || design.tableDefaults.bodyTextColor,
     alternateRowBackground: table.design?.alternateRowBackground || design.tableDefaults.alternateRowBackground,
     gridlineColor: table.design?.gridlineColor || design.tableDefaults.gridlineColor,
