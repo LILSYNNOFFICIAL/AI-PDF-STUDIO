@@ -13,6 +13,7 @@ import {
   resolveSectionDesign,
   resolveTableDesign,
   resolveCellFill,
+  fillToCss,
   validateDocumentDesign
 } from './documentDesign';
 
@@ -150,4 +151,38 @@ test('saved themes round-trip, rename, delete, and recover from corrupt storage'
 
   storage.setItem('ai-pdf-studio.saved-themes.v1', '{broken json');
   assert.deepEqual(listSavedThemes(storage as any), []);
+});
+
+
+test('gradient fill CSS preserves opacity and ordered color stops', () => {
+  const css = fillToCss({
+    type: 'linear-gradient',
+    angle: 135,
+    opacity: 0.4,
+    stops: [
+      { color: '#112233', position: 0 },
+      { color: '#aabbcc', position: 100 }
+    ]
+  });
+  assert.match(css, /^linear-gradient\(135deg,/);
+  assert.match(css, /rgba\(17, 34, 51, 0\.4\) 0%/);
+  assert.match(css, /rgba\(170, 187, 204, 0\.4\) 100%/);
+});
+
+test('gradient opacity outside the supported range is rejected', () => {
+  const preset = DOCUMENT_DESIGN_PRESETS[0];
+  assert.throws(() => validateDocumentDesign({
+    ...preset,
+    page: {
+      background: {
+        type: 'linear-gradient',
+        angle: 45,
+        opacity: 1.1,
+        stops: [
+          { color: '#ffffff', position: 0 },
+          { color: '#000000', position: 100 }
+        ]
+      }
+    }
+  } as any), /opacity/i);
 });
