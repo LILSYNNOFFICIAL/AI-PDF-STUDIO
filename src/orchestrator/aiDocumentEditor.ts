@@ -136,7 +136,7 @@ function explicitSectionReorder(instruction: string): boolean {
 
 
 function explicitDocumentDesign(instruction: string): boolean {
-  return /\b(design|styling|style the document|theme|template style|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font family|font size|heading color|border|divider|page surface|section background|table style|visual appearance|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
+  return /\b(design|styling|style the document|theme|template|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font|garamond|inter|helvetica|georgia|heading|border|divider|page surface|section background|table style|visual|appearance|polished|sleek|elegant|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
 }
 
 function designOnlyInstruction(instruction: string): boolean {
@@ -160,26 +160,6 @@ function mergePatch<T>(base: T, patch: unknown): T {
       : deepCloneDesign(value);
   }
   return result as T;
-}
-
-function mergeCompatiblePatches<T>(existing: T | undefined, incoming: T | undefined, label: string): T | undefined {
-  if (incoming === undefined) return existing;
-  if (existing === undefined) return deepCloneDesign(incoming);
-  const compare = (left: unknown, right: unknown, path: string): unknown => {
-    if (left && right && typeof left === 'object' && typeof right === 'object' &&
-      !Array.isArray(left) && !Array.isArray(right)) {
-      const result: Record<string, unknown> = { ...(left as Record<string, unknown>) };
-      for (const [key, value] of Object.entries(right as Record<string, unknown>)) {
-        result[key] = key in result ? compare(result[key], value, path + '.' + key) : deepCloneDesign(value);
-      }
-      return result;
-    }
-    if (JSON.stringify(left) !== JSON.stringify(right)) {
-      throw new Error('Gemini returned conflicting ' + label + ' values at ' + path + '. No document changes were applied.');
-    }
-    return deepCloneDesign(left);
-  };
-  return compare(existing, incoming, label) as T;
 }
 
 export function buildDocumentDesignPrompt(
@@ -584,7 +564,8 @@ export function applyDocumentEditResponse(
     if (update.design === null) {
       target.design = undefined;
     } else {
-      target.design = mergePatch(target.design || {}, update.design || {});
+      if (!update.design || !isRecord(update.design)) throw new Error('AI returned an invalid section design patch. No changes were applied.');
+      target.design = mergePatch<SectionDesign>(target.design || {}, update.design);
       validateSectionDesign(target.design);
     }
   }
@@ -603,7 +584,8 @@ export function applyDocumentEditResponse(
     if (update.design === null) {
       targetTable.design = undefined;
     } else {
-      targetTable.design = mergePatch(targetTable.design || {}, update.design || {});
+      if (!update.design || !isRecord(update.design)) throw new Error('AI returned an invalid table design patch. No changes were applied.');
+      targetTable.design = mergePatch<TableDesign>(targetTable.design || {}, update.design);
       validateTableDesign(targetTable.design);
     }
   }
@@ -618,7 +600,7 @@ export function applyDocumentEditResponse(
       if (!preset) throw new Error('AI returned an unknown document design preset. No changes were applied.');
       design = deepCloneDesign(preset);
     }
-    design = mergePatch(design, response.design);
+    design = mergePatch<DocumentDesign>(design, response.design);
     validateDocumentDesign(design);
   }
 
@@ -675,7 +657,6 @@ export function applyDocumentEditResponse(
             return false;
           }
         })()
-      }
       }
     ],
     timestamp: new Date().toLocaleTimeString(),
