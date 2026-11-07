@@ -18,7 +18,7 @@ import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal'
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
 import { DocumentDesignModal } from './components/DocumentDesignModal';
 import { SourceOfTruthModal } from './components/SourceOfTruthModal';
-import { parseTextDocument } from './services/textDocumentImporter';
+import { parseTextDocument, getSourceIntegrityReport } from './services/textDocumentImporter';
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
 import { 
   DocumentModel, 
@@ -246,7 +246,7 @@ export default function App() {
         throw new Error('The AI service did not return an updated document. No changes were applied.');
       }
 
-      pushHistory(data.updatedDoc);
+      pushHistory({\n        ...data.updatedDoc,\n        sourceText: data.updatedDoc.sourceText ?? document.sourceText,\n        sourceIntegrity: data.updatedDoc.sourceIntegrity ?? document.sourceIntegrity\n      });
       addAiMessage(
         data.summary?.operationTitle || 'Document updated',
         data.plan,
@@ -702,9 +702,9 @@ export default function App() {
       setDocument(rendered);
       setActiveSectionId(rendered.sections[0]?.id || null);
       setIsSourceTruthOpen(false);
-      const integrity = rendered.sourceIntegrity;
+      const integrity = rendered.sourceIntegrity;\n      const report = getSourceIntegrityReport(rendered);
       addAiMessage(
-        `Rendered "${rendered.title}" from the Source of Truth. ${integrity?.wordCount.toLocaleString() || 0} source words and ${integrity?.characterCount.toLocaleString() || 0} characters retained. Built ${rendered.sections.length} editable sections. ${integrity?.detectedSignatureSection ? 'A signature/execution section was detected in the source.' : 'No dedicated signature heading was detected; signature text remains in the source content.'} Detected ${integrity?.detectedTableRows || 0} Markdown table rows and ${integrity?.detectedListItems || 0} list items. The original source is stored separately and has not been rewritten.`
+        `Rendered "${rendered.title}" from the Source of Truth. ${integrity?.wordCount.toLocaleString() || 0} source words and ${integrity?.characterCount.toLocaleString() || 0} characters retained. Built ${rendered.sections.length} editable sections. ${integrity?.detectedSignatureSection ? 'A signature/execution section was detected in the source.' : 'No dedicated signature heading was detected; signature text remains in the source content.'} Detected ${integrity?.detectedTableRows || 0} Markdown table rows and ${integrity?.detectedListItems || 0} list items. Rendered structure contains ${report.renderedWords.toLocaleString()} words across the title, sections, tables, and signature fields. The original source is stored separately and has not been rewritten.`
       );
       showToast(`Rendered ${rendered.sections.length} sections from source`);
     } catch (error: any) {
