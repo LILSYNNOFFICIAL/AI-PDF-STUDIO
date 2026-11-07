@@ -56,11 +56,21 @@ export interface DocumentDesignUpdate {
   pageFurniture?: Partial<DocumentDesign['pageFurniture']>;
 }
 
+export interface SectionRangeMove {
+  /** First section included in the inclusive range. */
+  startSectionId: string;
+  /** First section excluded from the range. */
+  endBeforeSectionId: string;
+  /** Existing section that receives every block in the selected range. */
+  targetSectionId: string;
+}
+
 export interface DocumentEditResponse {
   operationTitle: string;
   details: string[];
   sectionUpdates: SectionEdit[];
   sectionOrder?: string[];
+  sectionRangeMoves?: SectionRangeMove[];
   styles?: Partial<StyleConfig>;
   pageConfig?: Partial<PageConfig>;
   design?: DocumentDesignUpdate;
@@ -327,6 +337,119 @@ function chunkSections(sections: Section[], maxChars: number): SectionChunk[] {
   return chunks;
 }
 
+
+function applySectionRangeMoves(
+  sections: Section[],
+  moves: SectionRangeMove[]
+): { sections: Section[]; movedToTarget: Map<string, string> } {
+  let working = [...sections];
+  const movedToTarget = new Map<string, string>();
+  const usedSections = new Set<string>();
+
+  for (const move of moves) {
+    const startIndex = working.findIndex(section => section.id === move.startSectionId);
+    const endIndex = working.findIndex(section => section.id === move.endBeforeSectionId);
+    if (startIndex < 0 || endIndex < 0 || endIndex <= startIndex) {
+      throw new Error('AI section-range move references an unknown or invalid range boundary. No changes were applied.');
+    }
+    const range = working.slice(startIndex, endIndex);
+    const target = range.find(section => section.id === move.targetSectionId);
+    if (!target) {
+      throw new Error('AI section-range destination must be inside the selected range. No changes were applied.');
+    }
+    if (range.some(section => usedSections.has(section.id))) {
+      throw new Error('AI returned overlapping section-range moves. No changes were applied.');
+    }
+    range.forEach(section => usedSections.add(section.id));
+
+    const mergedContent = range.map(section => {
+      if (section.id === target.id) return section.content || '';
+      const heading = section.title ? section.title : '';
+      return [heading, section.content || ''].filter(Boolean).join('\n');
+    }).filter(value => value.length > 0).join('\n\n');
+
+    const mergedClauses = range.flatMap(section => section.clauses || []);
+    const mergedTables = range.flatMap(section => section.tables || []);
+    const mergedCharts = range.flatMap(section => section.charts || []);
+    const mergedImages = range.flatMap(section => section.images || []);
+
+    const assertUnique = (items: Array<{ id: string }>, label: string) => {
+      const ids = items.map(item => item.id);
+      if (new Set(ids).size !== ids.length) {
+        throw new Error(`AI section-range move contains duplicate ${label} IDs. No changes were applied.`);
+      }
+    };
+    assertUnique(mergedClauses, 'clause');
+    assertUnique(mergedTables, 'table');
+    assertUnique(mergedCharts, 'chart');
+    assertUnique(mergedImages, 'image');
+
+    const mergedTarget: Section = {
+      ...target,
+      content: mergedContent,
+      clauses: mergedClauses,
+      ...(mergedTables.length ? { tables: mergedTables } : { tables: undefined }),
+      ...(mergedCharts.length ? { charts: mergedCharts } : { charts: undefined }),
+      ...(mergedImages.length ? { images: mergedImages } : { images: undefined })
+    };
+
+    const rangeIds = new Set(range.map(section => section.id));
+    working = working
+      .filter(section => !rangeIds.has(section.id) || section.id === target.id)
+      .map(section => section.id === target.id ? mergedTarget : section);
+    range.forEach(section => {
+      if (section.id !== target.id) movedToTarget.set(section.id, target.id);
+    });
+  }
+
+  return {
+    sections: working.map((section, index) => ({ ...section, orderIndex: index + 1 })),
+    movedToTarget
+  };
+}
+
+function requiresStructuralContext(instruction: string): boolean {
+  return /\\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|transfer|relocate|extract|insert|delete|duplicate|everything from)\\b/i.test(instruction);
+}
+
+export function buildStructuralEditPrompt(
+  instruction: string,
+  document: DocumentModel,
+  persona: AIPersona | string
+): string {
+  const inventory = document.sections.map(section => ({
+    sectionId: section.id,
+    sectionNumber: section.sectionNumber,
+    title: section.title,
+    contentPreview: (section.content || '').slice(0, 1800),
+    clauses: (section.clauses || []).map(clause => ({
+      clauseId: clause.id,
+      heading: clause.heading || '',
+      contentPreview: clause.content.slice(0, 500)
+    })),
+    tables: (section.tables || []).map(table => ({ tableId: table.id, title: table.title || table.caption || '' })),
+    charts: (section.charts || []).map(chart => ({ chartId: chart.id, title: chart.title })),
+    images: (section.images || []).map(image => ({ imageId: image.id, caption: image.caption || '', altText: image.altText || '' }))
+  }));
+
+  return [
+    'You are the structural document-control engine for AI PDF Studio.',
+    'Interpret the complete user request and return executable, validated operations, not a summary or a plan.',
+    'You have the complete section inventory. The application has the complete original content and will move structured blocks deterministically by ID.',
+    'For a request such as "everything from heading A up to the box above heading B belongs inside heading A", return one sectionRangeMoves item: startSectionId is heading A, endBeforeSectionId is heading B (exclusive), targetSectionId is the destination box. Do not include the boundary section.',
+    'A sectionRangeMoves operation preserves original wording, clauses, tables, charts, images, and IDs. It removes the absorbed source sections only after all blocks are transferred.',
+    'For pure section reordering, return sectionOrder as a complete permutation of every section ID. Do not return sectionOrder for other requests.',
+    'Use sectionUpdates only for explicit title or wording changes. Never rewrite text to imitate moving, merging, or grouping.',
+    'Do not invent IDs. Do not delete or omit source material. If the target or boundary is ambiguous, return no operations and explain exactly what is ambiguous.',
+    'Return strict JSON only, using this schema: {"operationTitle":"...","details":["..."],"sectionUpdates":[],"sectionOrder":["only for explicit reorder"],"sectionRangeMoves":[{"startSectionId":"...","endBeforeSectionId":"...","targetSectionId":"..."}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[],"tableDesignUpdates":[]}.',
+    'Document title: ' + document.title,
+    'Persona: ' + persona,
+    'Section count: ' + document.sections.length,
+    'Complete section inventory: ' + JSON.stringify(inventory),
+    'User instruction: ' + instruction
+  ].join('\n\n');
+}
+
 function mergeSectionUpdates(updates: SectionEdit[]): SectionEdit[] {
   const merged = new Map<string, SectionEdit>();
   for (const update of updates) {
@@ -457,8 +580,10 @@ export function buildDocumentEditPrompt(
     'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
     'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
     'Do not include sectionOrder at all unless the user explicitly asks to reorder, rearrange, or change the order of document sections. For every other task, omit sectionOrder completely.',
+    'For structural requests that move a continuous range of sections into one existing section/container, return sectionRangeMoves. Identify startSectionId from the first named heading, endBeforeSectionId from the boundary heading that must remain outside the move, and targetSectionId from the destination box. The start is inclusive and the end boundary is exclusive. The target must be inside the selected range. The application moves the original structured blocks without rewriting their wording.',
+    'Never simulate a move by rewriting content. Use sectionRangeMoves for heading-bounded consolidation and sectionOrder only for pure reordering. Preserve tables, charts, images, clauses, IDs, source references, and all original wording.'
     'Return one JSON object and no markdown fences with this exact shape:',
-    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
+    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"sectionRangeMoves":[{"startSectionId":"inclusive-start-id","endBeforeSectionId":"exclusive-boundary-id","targetSectionId":"existing-destination-id"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
     'Use empty arrays/omit optional fields when no changes are needed. Do not claim an operation was completed unless you return the corresponding update.',
     `Persona: ${persona}`,
     `User instruction: ${instruction}`,
@@ -485,6 +610,7 @@ export function applyDocumentEditResponse(
   const sections = currentDoc.sections.map(section => ({ ...section, clauses: section.clauses.map(clause => ({ ...clause })) }));
   if (isDesignOnly && (
     response.sectionUpdates.length > 0 ||
+    response.sectionRangeMoves?.length ||
     response.sectionOrder !== undefined ||
     response.styles !== undefined ||
     response.pageConfig !== undefined
@@ -545,6 +671,9 @@ export function applyDocumentEditResponse(
     }
     orderedSections = response.sectionOrder.map(id => sections.find(section => section.id === id)!);
   }
+
+  const rangeMoveResult = applySectionRangeMoves(orderedSections, response.sectionRangeMoves || []);
+  orderedSections = rangeMoveResult.sections;
 
   if (response.styles !== undefined && !isRecord(response.styles)) {
     throw new Error('Gemini returned invalid style updates. No changes were applied.');
@@ -622,22 +751,44 @@ export function applyDocumentEditResponse(
     verifications: [
       {
         name: 'Existing section identity',
-        passed: updatedDoc.sections.length === currentDoc.sections.length &&
-          updatedDoc.sections.every(section => knownIds.has(section.id))
+        passed: updatedDoc.sections.length === originalIds.length - rangeMoveResult.movedToTarget.size &&
+          updatedDoc.sections.every(section => knownIds.has(section.id)) &&
+          updatedDoc.sections.every(section => !rangeMoveResult.movedToTarget.has(section.id))
       },
       {
-        name: 'Untouched source text preservation',
-        passed: updatedDoc.sections.every(section => {
-          const before = currentDoc.sections.find(item => item.id === section.id);
-          if (!before) return false;
-          const explicitlyUpdated = response.sectionUpdates.find(item => item.sectionId === section.id);
+        name: 'Untouched and transferred source content preservation',
+        passed: currentDoc.sections.every(before => {
+          const targetId = rangeMoveResult.movedToTarget.get(before.id) || before.id;
+          const after = updatedDoc.sections.find(item => item.id === targetId);
+          if (!after) return false;
+          const explicitlyUpdated = response.sectionUpdates.find(item => item.sectionId === before.id);
           if (explicitlyUpdated?.content !== undefined && mayEditText) return true;
-          if (section.content !== before.content) return false;
-          return section.clauses.every(clause => {
-            const oldClause = before.clauses.find(item => item.id === clause.id);
+          if (rangeMoveResult.movedToTarget.has(before.id) || response.sectionRangeMoves?.some(move => move.targetSectionId === before.id)) {
+            if (before.content && !(after.content || '').includes(before.content)) return false;
+            for (const clause of before.clauses || []) {
+              const retained = after.clauses.find(item => item.id === clause.id);
+              if (!retained || retained.content !== clause.content) return false;
+            }
+            for (const table of before.tables || []) {
+              const retained = after.tables?.find(item => item.id === table.id);
+              if (!retained || JSON.stringify(retained) !== JSON.stringify(table)) return false;
+            }
+            for (const chart of before.charts || []) {
+              const retained = after.charts?.find(item => item.id === chart.id);
+              if (!retained || JSON.stringify(retained) !== JSON.stringify(chart)) return false;
+            }
+            for (const image of before.images || []) {
+              const retained = after.images?.find(item => item.id === image.id);
+              if (!retained || JSON.stringify(retained) !== JSON.stringify(image)) return false;
+            }
+            return true;
+          }
+          if (after.content !== before.content) return false;
+          return before.clauses.every(clause => {
+            const retained = after.clauses.find(item => item.id === clause.id);
             const clauseUpdate = explicitlyUpdated?.clauses?.find(item => item.id === clause.id);
-            return !!oldClause && (
-              (clause.content === oldClause.content) ||
+            return !!retained && (
+              retained.content === clause.content ||
               (mayEditText && clauseUpdate?.content !== undefined)
             );
           });
@@ -675,6 +826,25 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
 }> {
   const { instruction, currentDoc, persona, aiClient } = options;
   if (!instruction?.trim()) throw new Error('An editing instruction is required.');
+  if (requiresStructuralContext(instruction) && !designOnlyInstruction(instruction)) {
+    const structuralPrompt = buildStructuralEditPrompt(instruction, currentDoc, persona);
+    const structuralResult = await generateGeminiContentWithRetry(aiClient, {
+      model: options.model || 'gemini-3.8-flash',
+      contents: structuralPrompt,
+      config: { responseMimeType: 'application/json' }
+    });
+    const structuralResponse = parseModelResponse(structuralResult.text);
+    const hasStructuralOperations = structuralResponse.sectionRangeMoves?.length ||
+      structuralResponse.sectionOrder !== undefined ||
+      structuralResponse.sectionUpdates.length > 0 ||
+      (structuralResponse.sectionDesignUpdates?.length || 0) > 0 ||
+      (structuralResponse.tableDesignUpdates?.length || 0) > 0;
+    if (!hasStructuralOperations) {
+      throw new Error('Gemini could not identify an executable structural operation. It returned this clarification: ' +
+        (structuralResponse.details || []).join(' ') + ' No document changes were applied.');
+    }
+    return applyDocumentEditResponse(currentDoc, structuralResponse, instruction);
+  }
   if (designOnlyInstruction(instruction)) {
     const prompt = buildDocumentDesignPrompt(instruction, currentDoc, persona);
     const result = await generateGeminiContentWithRetry(aiClient, {
