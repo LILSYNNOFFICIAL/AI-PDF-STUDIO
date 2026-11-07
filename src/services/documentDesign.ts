@@ -418,6 +418,49 @@ export function borderToCss(border: BorderConfig, side?: BorderSide): string {
   return border.width + 'px ' + border.style + ' ' + border.color;
 }
 
+
+
+export function syncLegacyStyleChanges(
+  previous: DocumentModel,
+  next: DocumentModel,
+  brandProfile?: BrandProfile
+): DocumentModel {
+  const normalized = normalizeDocumentDesign(next, brandProfile);
+  if (
+    previous.id !== next.id ||
+    JSON.stringify(previous.design) !== JSON.stringify(next.design)
+  ) {
+    return normalized;
+  }
+
+  const prior = previous.styles;
+  const current = next.styles;
+  const design = deepCloneDesign(normalized.design || DEFAULT_DOCUMENT_DESIGN);
+  const typography = design.typography;
+  const colors = design.colors;
+
+  if (current.fontFamily !== prior.fontFamily) typography.bodyFontFamily = current.fontFamily;
+  if (current.fontSize !== prior.fontSize) typography.bodyFontSize = current.fontSize;
+  if (current.lineHeight !== prior.lineHeight) typography.bodyLineHeight = current.lineHeight;
+  if (current.paragraphSpacing !== prior.paragraphSpacing) typography.paragraphSpacing = current.paragraphSpacing;
+  if (current.headingFont !== prior.headingFont) typography.headingFontFamily = current.headingFont;
+  if (current.heading1Size !== prior.heading1Size) typography.heading1Size = current.heading1Size;
+  if (current.heading2Size !== prior.heading2Size) typography.heading2Size = current.heading2Size;
+  if (current.heading3Size !== prior.heading3Size) typography.heading3Size = current.heading3Size;
+  if (current.headingCase !== prior.headingCase) typography.headingCase = current.headingCase;
+
+  if (current.primaryColor !== prior.primaryColor) {
+    colors.primary = current.primaryColor;
+    colors.headingText = current.primaryColor;
+    colors.bodyText = current.primaryColor;
+  }
+  if (current.accentColor !== prior.accentColor) colors.accent = current.accentColor;
+  if (current.textColor !== prior.textColor) colors.bodyText = current.textColor || current.primaryColor || '#334155';
+
+  validateDocumentDesign(design);
+  return { ...normalized, design };
+}
+
 export interface SavedDocumentTheme {
   id: string;
   name: string;
