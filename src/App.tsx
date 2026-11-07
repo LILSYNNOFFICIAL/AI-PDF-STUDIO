@@ -225,7 +225,7 @@ export default function App() {
     const controller = new AbortController();
     // Structural operations and large documents can require multiple Gemini passes.
     // Keep the client alive long enough for the backend to finish and validate atomically.
-    const requestTimeout = window.setTimeout(() => controller.abort(), 15 * 60 * 1000);
+    const requestTimeout = window.setTimeout(() => controller.abort(), 90 * 60 * 1000);
     try {
       const configuredApiBase = String((import.meta as any).env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
       const apiBase = configuredApiBase || (
@@ -261,7 +261,7 @@ export default function App() {
     } catch (err: any) {
       console.error('AI document editing failed:', err);
       const message = err?.name === 'AbortError'
-        ? 'The AI request exceeded the 15-minute safety limit. The document was not changed. Retry the operation or simplify an unusually large request.'
+        ? 'The AI request exceeded the 90-minute safety limit. The document was not changed. Retry the operation or simplify an unusually large request.'
         : (err?.message || 'The document service is unavailable.');
       addAiMessage(`I could not apply that instruction. No document changes were made. ${message}`);
       showToast('Document unchanged: AI operation failed');
