@@ -409,7 +409,7 @@ function applySectionRangeMoves(
 }
 
 function requiresStructuralContext(instruction: string): boolean {
-  return /\\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|transfer|relocate|extract|insert|delete|duplicate|everything from)\\b/i.test(instruction);
+  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|transfer|relocate|extract|insert|delete|duplicate|everything from)\b/i.test(instruction);
 }
 
 export function buildStructuralEditPrompt(
