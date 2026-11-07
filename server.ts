@@ -158,9 +158,14 @@ async function startServer() {
     });
   }
 
-  app.listen(port, '0.0.0.0', () => {
+  const server = app.listen(port, '0.0.0.0', () => {
     console.log(`AI PDF Studio server listening on http://localhost:${port}`);
   });
+  // Render web services support long-running HTTP responses. Keep Node's
+  // socket timeout aligned with the browser's 90-minute orchestration ceiling.
+  server.timeout = 90 * 60 * 1000;
+  server.requestTimeout = 90 * 60 * 1000;
+  server.headersTimeout = 90 * 60 * 1000 + 1000;
 }
 
 startServer();
