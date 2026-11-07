@@ -96,8 +96,23 @@ app.post('/api/orchestrate', async (req, res) => {
   } catch (err: any) {
     console.error('AI document editing failed:', err?.message || err);
     const message = err?.message || 'AI document editing failed. No changes were applied.';
-    const status = /SOURCE CONTENT marker|marker is present/i.test(message) ? 400 : /safe AI chunk limit|large non-text blocks/i.test(message) ? 413 : 502;
-    return res.status(status).json({ error: message, documentUnchanged: true });
+    const isTemporaryUpstreamFailure = /temporarily overloaded|high demand|UNAVAILABLE|RESOURCE_EXHAUSTED|rate limit|\\b503\\b|\\b429\\b/i.test(message);
+    const isTimeout = /timed? ?out|deadline_exceeded|deadline exceeded/i.test(message);
+    const status = /SOURCE CONTENT marker|marker is present/i.test(message)
+      ? 400
+      : /safe AI chunk limit|large non-text blocks/i.test(message)
+        ? 413
+        : isTimeout
+          ? 504
+          : isTemporaryUpstreamFailure
+            ? 503
+            : 502;
+    if (status === 503) res.setHeader('Retry-After', '10');
+    return res.status(status).json({
+      error: message,
+      documentUnchanged: true,
+      retryable: status === 503 || status === 504
+    });
   }
 });
 
