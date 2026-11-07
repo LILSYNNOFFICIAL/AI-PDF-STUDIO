@@ -189,7 +189,6 @@ export default function App() {
 
   // Central Natural-Language Orchestration Dispatcher
   const handleSendMessage = async (instruction: string) => {
-    // 1. Add user message
     const userMsg: ChatMessage = {
       id: `usr_${Date.now()}`,
       sender: 'user',
@@ -197,142 +196,40 @@ export default function App() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     setMessages(prev => [...prev, userMsg]);
-    setIsOrchestrating(true);
 
-    try {
-      // Call backend API /api/orchestrate
-      const response = await fetch('/api/orchestrate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instruction,
-          currentDoc: document,
-          persona
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.updatedDoc) {
-          pushHistory(data.updatedDoc);
-          addAiMessage(
-            `Executed: "${instruction}"`,
-            data.plan,
-            data.summary
-          );
-          setIsOrchestrating(false);
-          return;
-        }
-      }
-    } catch (apiErr) {
-      console.warn('API call failed, running deterministic client-side orchestrator fallback:', apiErr);
+    const lower = instruction.toLowerCase();
+    if (lower.includes('undo') || lower.includes('rollback') || lower.includes('restore previous')) {
+      handleUndo();
+      return;
     }
 
-    // Client-side deterministic fallback
+    setIsOrchestrating(true);
     try {
-      const lower = instruction.toLowerCase();
+      const apiBase = String((import.meta as any).env?.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+      const response = await fetch(`${apiBase}/api/orchestrate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, currentDoc: document, persona })
+      });
 
-      // Undo / Rollback
-      if (lower.includes('undo') || lower.includes('rollback') || lower.includes('restore previous')) {
-        handleUndo();
-        setIsOrchestrating(false);
-        return;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Document service returned HTTP ${response.status}.`);
+      }
+      if (!data.updatedDoc || !Array.isArray(data.updatedDoc.sections)) {
+        throw new Error('The AI service did not return an updated document. No changes were applied.');
       }
 
-      // Reorganization
-      if (lower.includes('reorganiz') || lower.includes('restructur') || lower.includes('definitions first')) {
-        const res = reorganizeDocument(document);
-        pushHistory(res.updatedDoc);
-        addAiMessage(
-          'Reorganized complete document architecture. Definitions positioned at beginning, financial terms grouped, and all clauses renumbered sequentially.',
-          [
-            { id: '1', title: 'Classify Clauses by Legal Semantics', status: 'completed' },
-            { id: '2', title: 'Position Definitions at Document Head', status: 'completed' },
-            { id: '3', title: 'Group Financial & Royalty Schedules', status: 'completed' },
-            { id: '4', title: 'Renumber Clauses & Refresh Cross-References', status: 'completed' }
-          ],
-          res.summary
-        );
-        setIsOrchestrating(false);
-        return;
-      }
-
-      // Merge
-      if (lower.includes('merge') || lower.includes('combine')) {
-        const sec2Id = document.sections[1]?.id;
-        const sec3Id = document.sections[2]?.id;
-        const targetIds = (sec2Id && sec3Id) ? [sec2Id, sec3Id] : document.sections.slice(0, 2).map(s => s.id);
-        const res = mergeSections(document, targetIds, 'INTELLECTUAL PROPERTY & MASTER RIGHTS CONSOLIDATED', 'intelligent');
-        pushHistory(res.updatedDoc);
-        addAiMessage(
-          'Merged specified sections into a unified Intellectual Property & Master Rights provision while preserving all unique substantive clauses.',
-          [
-            { id: '1', title: 'Extract Component Clauses', status: 'completed' },
-            { id: '2', title: 'Intelligent Deduplication', status: 'completed' },
-            { id: '3', title: 'Renumber & Synchronize Cross-References', status: 'completed' }
-          ],
-          res.summary
-        );
-        setIsOrchestrating(false);
-        return;
-      }
-
-      // Split
-      if (lower.includes('split') || lower.includes('separate')) {
-        const target = document.sections.find(s => s.clauses.length >= 2) || document.sections[1];
-        const res = splitSection(document, target.id, [
-          { title: `${target.title} (Part A: Ownership)`, clauseIndices: [0] },
-          { title: `${target.title} (Part B: Exploitation)`, clauseIndices: [1] }
-        ]);
-        pushHistory(res.updatedDoc);
-        addAiMessage(
-          `Split section ${target.sectionNumber} into distinct dedicated provisions.`,
-          [
-            { id: '1', title: 'Identify Target Section', status: 'completed' },
-            { id: '2', title: 'Divide Provisions', status: 'completed' },
-            { id: '3', title: 'Recalculate Numbering Hierarchy', status: 'completed' }
-          ],
-          res.summary
-        );
-        setIsOrchestrating(false);
-        return;
-      }
-
-      // Formatting
-      if (lower.includes('garamond') || lower.includes('times') || lower.includes('font') || lower.includes('margin') || lower.includes('landscape')) {
-        const fontFamily = lower.includes('garamond') ? 'Garamond' : 
-                           lower.includes('inter') ? 'Inter' : 'Times New Roman';
-        const fontSize = lower.includes('12') ? 12 : 11;
-        const orientation = lower.includes('landscape') ? 'landscape' : 'portrait';
-        const res = applyFormatting(document, { fontFamily, fontSize }, { orientation });
-        pushHistory(res.updatedDoc);
-        addAiMessage(
-          `Applied global document styling: ${fontFamily} ${fontSize}pt, orientation: ${orientation}.`,
-          [
-            { id: '1', title: 'Update Stylesheet Configuration', status: 'completed' },
-            { id: '2', title: 'Recalculate Viewport Bounds & Margins', status: 'completed' }
-          ],
-          res.summary
-        );
-        setIsOrchestrating(false);
-        return;
-      }
-
-      // Fallback Document Build
-      const res = buildDocumentFromPrompt(instruction, document);
-      pushHistory(res.updatedDoc);
+      pushHistory(data.updatedDoc);
       addAiMessage(
-        `Generated complete document matching instruction with legal sections, collaborator royalty tables, and execution blocks.`,
-        [
-          { id: '1', title: 'Synthesize Document Outline & Hierarchy', status: 'completed' },
-          { id: '2', title: 'Generate Substantive Sections', status: 'completed' },
-          { id: '3', title: 'Configure Execution Signatures', status: 'completed' }
-        ],
-        res.summary
+        data.summary?.operationTitle || 'Document updated',
+        data.plan,
+        data.summary
       );
     } catch (err: any) {
-      console.error('Client orchestration error:', err);
-      addAiMessage(`Error executing operation: ${err.message || 'Operation failed'}`);
+      console.error('AI document editing failed:', err);
+      addAiMessage(`I could not apply that instruction. No document changes were made. ${err?.message || 'The document service is unavailable.'}`);
+      showToast('Document unchanged: AI operation failed');
     } finally {
       setIsOrchestrating(false);
     }
