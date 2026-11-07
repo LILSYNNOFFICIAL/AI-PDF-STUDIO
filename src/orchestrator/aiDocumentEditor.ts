@@ -778,7 +778,7 @@ function applyDocumentJsonPatch(
       }
       patchAdd(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
     } else if (operation.op === 'remove') {
-      if (!/\b(delete|remove|erase|clear|drop|omit)\b/i.test(instructionText)) {
+      if (!/\b(delete|remove|erase|clear|drop|omit|eliminate|discard)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize deleting document content. No changes were applied.');
       }
       patchRemove(candidate as unknown as Record<string, unknown>, operation.path);
@@ -789,7 +789,7 @@ function applyDocumentJsonPatch(
       if (!('value' in operation)) throw new Error('JSON Patch replace operation is missing its value.');
       patchReplace(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
     } else if (operation.op === 'move') {
-      if (!/\b(move|transfer|relocate|reorder|rearrange|place|put|group|consolidate|merge|contain|inside|within)\b/i.test(instructionText)) {
+      if (!/\b(move|transfer|relocate|reorder|rearrange|place|put|group|consolidate|merge|contain|contained|inside|within|everything from)\b/i.test(instructionText)) {
         throw new Error('The instruction does not authorize moving document content. No changes were applied.');
       }
       const fromTokens = jsonPointerTokens(operation.from);
