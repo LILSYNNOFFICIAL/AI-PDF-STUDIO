@@ -86,9 +86,7 @@ export default function App() {
     {
       id: 'msg_welcome',
       sender: 'ai',
-      text: `Welcome to AI PDF Studio. I am your Document Control & Orchestration Engine acting as the Music Industry Specialist.
-
-I have complete operational control over this document: you can instruct me in natural language to merge sections, split provisions, reorganize the structure, apply global legal typography, manage royalty tables, or regenerate verified PDFs.`,
+      text: `Welcome to AI PDF Studio. I am your Document Control & Orchestration Engine acting as the Music Industry Specialist.\n\nI have complete operational control over this document: you can instruct me in natural language to merge sections, split provisions, reorganize the structure, apply global legal typography, manage royalty tables, or regenerate verified PDFs.`,
       timestamp: 'Just now'
     }
   ]);
@@ -568,55 +566,28 @@ I have complete operational control over this document: you can instruct me in n
   };
 
   const handleExportMarkdown = () => {
-    let md = `# ${document.title}
-
-`;
-    md += `*Version: ${document.version} | Last Modified: ${new Date(document.updatedAt).toLocaleDateString()}*
-
----
-
-`;
+    let md = `# ${document.title}\n\n`;
+    md += `*Version: ${document.version} | Last Modified: ${new Date(document.updatedAt).toLocaleDateString()}*\n\n---\n\n`;
     document.sections.forEach(sec => {
-      md += `## ${sec.sectionNumber} ${sec.title}
-
-`;
-      if (sec.content) md += `${sec.content}
-
-`;
+      md += `## ${sec.sectionNumber} ${sec.title}\n\n`;
+      if (sec.content) md += `${sec.content}\n\n`;
       sec.clauses?.forEach(c => {
-        md += `**${c.clauseNumber}${c.heading ? ` ${c.heading}` : ''}**: ${c.content}
-
-`;
+        md += `**${c.clauseNumber}${c.heading ? ` ${c.heading}` : ''}**: ${c.content}\n\n`;
       });
       sec.tables?.forEach(t => {
-        if (t.title) md += `### ${t.title}
-
-`;
-        md += `| ${t.headers.map(h => h.content).join(' | ')} |
-`;
-        md += `| ${t.headers.map(() => '---').join(' | ')} |
-`;
+        if (t.title) md += `### ${t.title}\n\n`;
+        md += `| ${t.headers.map(h => h.content).join(' | ')} |\n`;
+        md += `| ${t.headers.map(() => '---').join(' | ')} |\n`;
         t.rows.forEach(r => {
-          md += `| ${r.map(cell => cell.content).join(' | ')} |
-`;
+          md += `| ${r.map(cell => cell.content).join(' | ')} |\n`;
         });
-        md += '
-';
+        md += '\n';
       });
     });
     if (document.signatures) {
-      md += `## ${document.signatures.title || 'SIGNATURES & EXECUTION'}
-
-`;
+      md += `## ${document.signatures.title || 'SIGNATURES & EXECUTION'}\n\n`;
       document.signatures.parties.forEach(p => {
-        md += `**${p.role}**
-
-- **By:** ${p.name}
-- **Title:** ${p.title || '—'}
-- **Company:** ${p.company || '—'}
-- **Date:** ${p.date || '—'}
-
-`;
+        md += `**${p.role}**\n\n- **By:** ${p.name}\n- **Title:** ${p.title || '—'}\n- **Company:** ${p.company || '—'}\n- **Date:** ${p.date || '—'}\n\n`;
       });
     }
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
@@ -631,39 +602,20 @@ I have complete operational control over this document: you can instruct me in n
   };
 
   const handleExportPlainText = () => {
-    let txt = `${document.title.toUpperCase()}
-`;
-    txt += `Version: ${document.version} | Last Updated: ${new Date(document.updatedAt).toLocaleDateString()}
-`;
-    txt += `================================================================================
-
-`;
+    let txt = `${document.title.toUpperCase()}\n`;
+    txt += `Version: ${document.version} | Last Updated: ${new Date(document.updatedAt).toLocaleDateString()}\n`;
+    txt += `================================================================================\n\n`;
     document.sections.forEach(sec => {
-      txt += `${sec.sectionNumber} ${sec.title.toUpperCase()}
-
-`;
-      if (sec.content) txt += `${sec.content}
-
-`;
+      txt += `${sec.sectionNumber} ${sec.title.toUpperCase()}\n\n`;
+      if (sec.content) txt += `${sec.content}\n\n`;
       sec.clauses?.forEach(c => {
-        txt += `   ${c.clauseNumber} ${c.heading ? `${c.heading}: ` : ''}${c.content}
-
-`;
+        txt += `   ${c.clauseNumber} ${c.heading ? `${c.heading}: ` : ''}${c.content}\n\n`;
       });
     });
     if (document.signatures) {
-      txt += `
-${document.signatures.title?.toUpperCase() || 'SIGNATURES & EXECUTION'}
-
-`;
+      txt += `\n${document.signatures.title?.toUpperCase() || 'SIGNATURES & EXECUTION'}\n\n`;
       document.signatures.parties.forEach(p => {
-        txt += `${p.role}:
-By: ${p.name}
-Title: ${p.title || '—'}
-Company: ${p.company || '—'}
-Date: ${p.date || '—'}
-
-`;
+        txt += `${p.role}:\nBy: ${p.name}\nTitle: ${p.title || '—'}\nCompany: ${p.company || '—'}\nDate: ${p.date || '—'}\n\n`;
       });
     }
     const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
@@ -678,20 +630,14 @@ Date: ${p.date || '—'}
   };
 
   const handleCopyDocumentText = () => {
-    let txt = `${document.title.toUpperCase()}
-
-`;
+    let txt = `${document.title.toUpperCase()}\n\n`;
     document.sections.forEach(sec => {
-      txt += `${sec.sectionNumber} ${sec.title}
-`;
-      if (sec.content) txt += `${sec.content}
-`;
+      txt += `${sec.sectionNumber} ${sec.title}\n`;
+      if (sec.content) txt += `${sec.content}\n`;
       sec.clauses?.forEach(c => {
-        txt += `${c.clauseNumber} ${c.heading ? `${c.heading}: ` : ''}${c.content}
-`;
+        txt += `${c.clauseNumber} ${c.heading ? `${c.heading}: ` : ''}${c.content}\n`;
       });
-      txt += '
-';
+      txt += '\n';
     });
     navigator.clipboard.writeText(txt).then(() => {
       showToast('Copied full document to clipboard!');
