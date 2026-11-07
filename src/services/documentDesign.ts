@@ -293,11 +293,15 @@ export function normalizeDocumentDesign<T extends DocumentModel>(doc: T, brandPr
   validateDocumentDesign(design);
   const sections = (doc.sections || []).map(section => {
     if (section.design) validateSectionDesign(section.design);
-    const tables = (section.tables || []).map(table => {
+    const tables = section.tables?.map(table => {
       if (table.design) validateTableDesign(table.design);
       return { ...table, design: table.design ? deepCloneDesign(table.design) : undefined };
     });
-    return { ...section, design: section.design ? deepCloneDesign(section.design) : undefined, tables };
+    return {
+      ...section,
+      design: section.design ? deepCloneDesign(section.design) : undefined,
+      ...(tables ? { tables } : {})
+    };
   });
   return { ...doc, design: deepCloneDesign(design), sections } as T;
 }
@@ -384,7 +388,7 @@ export function fillToCss(fill: ColorFill | undefined, fallback = 'transparent')
     const stops = fill.stops.map(stop => stop.color + ' ' + stop.position + '%').join(', ');
     return 'linear-gradient(' + fill.angle + 'deg, ' + stops + ')';
   }
-  if (!fill.opacity || fill.opacity >= 1) return fill.color;
+  if (fill.opacity === undefined || fill.opacity >= 1) return fill.color;
   const hex = fill.color.replace('#', '');
   const expanded = hex.length === 3 ? hex.split('').map(char => char + char).join('') : hex;
   const red = parseInt(expanded.slice(0, 2), 16);
@@ -451,4 +455,14 @@ export function deleteTheme(storage: StorageLike, themeId: string): SavedDocumen
   const themes = listSavedThemes(storage).filter(item => item.id !== themeId);
   storage.setItem(SAVED_THEMES_KEY, JSON.stringify(themes));
   return themes;
+}
+
+export function applySavedTheme(doc: DocumentModel, theme: SavedDocumentTheme): DocumentModel {
+  validateDocumentDesign(theme.design);
+  return {
+    ...normalizeDocumentDesign(doc),
+    design: deepCloneDesign(theme.design),
+    version: doc.version + 1,
+    updatedAt: new Date().toISOString()
+  };
 }
