@@ -533,7 +533,16 @@ function parseModelResponse(text: string | undefined): DocumentEditResponse {
   ) {
     throw new Error('Gemini response does not match the required document-edit schema.');
   }
-  return parsed as unknown as DocumentEditResponse;
+  const response = parsed as unknown as DocumentEditResponse;
+  if (!response.sectionOrder?.length) response.sectionOrder = undefined;
+  if (!response.sectionRangeMoves?.length) response.sectionRangeMoves = undefined;
+  if (!response.documentPatch?.length) response.documentPatch = undefined;
+  if (response.styles && Object.keys(response.styles).length === 0) response.styles = undefined;
+  if (response.pageConfig && Object.keys(response.pageConfig).length === 0) response.pageConfig = undefined;
+  if (response.design && Object.keys(response.design as Record<string, unknown>).length === 0) response.design = undefined;
+  if (!response.sectionDesignUpdates?.length) response.sectionDesignUpdates = undefined;
+  if (!response.tableDesignUpdates?.length) response.tableDesignUpdates = undefined;
+  return response;
 }
 
 export function prepareLongInstruction(
@@ -870,7 +879,7 @@ export function applyDocumentEditResponse(
   if (!response || !Array.isArray(response.sectionUpdates) || !Array.isArray(response.details)) {
     throw new Error('Invalid document-edit response. No changes were applied.');
   }
-  if (response.documentPatch !== undefined) return applyDocumentJsonPatch(currentDoc, response, instruction);
+  if (response.documentPatch?.length) return applyDocumentJsonPatch(currentDoc, response, instruction);
 
   const originalIds = currentDoc.sections.map(section => section.id);
   const knownIds = new Set(originalIds);
