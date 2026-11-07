@@ -64,6 +64,7 @@ interface MenuBarProps {
   onRedo: () => void;
   onOpenFindReplace: () => void;
   onOpenRedaction: () => void;
+  onOpenDesign: () => void;
   onAddSection: () => void;
   onOpenInsertTable: () => void;
   onOpenInsertChart: () => void;
@@ -108,6 +109,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onRedo,
   onOpenFindReplace,
   onOpenRedaction,
+  onOpenDesign,
   onAddSection,
   onOpenInsertTable,
   onOpenInsertChart,
@@ -352,6 +354,17 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               </button>
             </div>
           )}
+        </div>
+
+        {/* DESIGN CONTROLS */}
+        <div className="relative">
+          <button
+            onClick={() => executeAction(onOpenDesign)}
+            className="px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors"
+            title="Customize document themes, backgrounds, colors, sections and tables"
+          >
+            Design
+          </button>
         </div>
 
         {/* INSERT MENU */}
