@@ -96,7 +96,7 @@ app.post('/api/orchestrate', async (req, res) => {
   } catch (err: any) {
     console.error('AI document editing failed:', err?.message || err);
     const message = err?.message || 'AI document editing failed. No changes were applied.';
-    const isTemporaryUpstreamFailure = /temporarily overloaded|high demand|UNAVAILABLE|RESOURCE_EXHAUSTED|rate limit|\\b503\\b|\\b429\\b/i.test(message);
+    const isTemporaryUpstreamFailure = /temporarily overloaded|high demand|UNAVAILABLE|RESOURCE_EXHAUSTED|rate limit|\b503\b|\b429\b/i.test(message);
     const isTimeout = /timed? ?out|deadline_exceeded|deadline exceeded/i.test(message);
     const status = /SOURCE CONTENT marker|marker is present/i.test(message)
       ? 400
