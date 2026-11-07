@@ -18,7 +18,7 @@ import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal'
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
 import { DocumentDesignModal } from './components/DocumentDesignModal';
 import { parseTextDocument } from './services/textDocumentImporter';
-import { normalizeDocumentDesign, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
+import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
 import { 
   DocumentModel, 
   AIPersona, 
@@ -102,7 +102,7 @@ export default function App() {
   // Snapshot on meaningful update
   const pushHistory = (newDoc: DocumentModel) => {
     const profile = SAMPLE_BRAND_PROFILES.find(item => item.id === newDoc.brandProfileId);
-    const normalizedDoc = normalizeDocumentDesign(newDoc, profile);
+    const normalizedDoc = syncLegacyStyleChanges(document, newDoc, profile);
     const updatedHistory = history.slice(0, historyIndex + 1);
     updatedHistory.push(document);
     setHistory(updatedHistory);
