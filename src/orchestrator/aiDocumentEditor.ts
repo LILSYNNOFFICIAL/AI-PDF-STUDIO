@@ -440,6 +440,18 @@ export function buildStructuralEditPrompt(
     charts: (section.charts || []).map((chart, chartIndex) => ({ chartIndex, chartId: chart.id, title: chart.title })),
     images: (section.images || []).map((image, imageIndex) => ({ imageIndex, imageId: image.id, caption: image.caption || '', altText: image.altText || '' }))
   }));
+  const globalCollectionInventory = Object.fromEntries(
+    ['signatures', 'definitions', 'dependencies', 'redactions'].map(key => [
+      key,
+      Array.isArray((document as any)[key])
+        ? (document as any)[key].map((item: any, index: number) => ({
+            index,
+            id: item?.id || null,
+            title: item?.title || item?.heading || item?.name || ''
+          }))
+        : []
+    ])
+  );
 
   return [
     'You are the structural document-control engine for AI PDF Studio.',
@@ -451,12 +463,13 @@ export function buildStructuralEditPrompt(
     'For all other document-wide structural changes, use documentPatch as an RFC 6902 JSON Patch operation list. Supported operations are add, remove, replace, move, copy, and test. Use the sectionIndex, clauseIndex, tableIndex, chartIndex, and imageIndex values from the inventory to construct exact JSON Pointer paths. Only target supported document roots such as /sections, /title, /styles, /design, /pageConfig, /signatures, /definitions, /dependencies, and /redactions. Never modify protected app metadata or invent IDs.',
     'Use add/create only when the user asks to add or create. Use remove only when the user explicitly asks to delete/remove. Use copy only for copy/duplicate requests. Use move only for move/transfer/reorder requests. Use replace only for explicit change/rename/rewrite/update requests. Do not mix documentPatch with sectionUpdates or other operation formats.',
     'Use sectionUpdates only for explicit title or wording changes. Never rewrite text to imitate moving, merging, or grouping.',
-    'Do not invent IDs. Do not delete or omit source material. If the target or boundary is ambiguous, return no operations and explain exactly what is ambiguous.',
-    'Return strict JSON only, using this schema: {"operationTitle":"...","details":["..."],"sectionUpdates":[],"sectionOrder":["only for explicit reorder"],"sectionRangeMoves":[{"startSectionId":"...","endBeforeSectionId":"...","targetSectionId":"..."}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[],"tableDesignUpdates":[]}.',
+    'Do not invent IDs or omit source material. Use remove only when the user explicitly requests deletion. A sectionRangeMoves operation removes source section shells only after every original block is transferred to the destination. If the target or boundary is ambiguous, return no operations and explain exactly what is ambiguous.',
+    'Return strict JSON only, using this schema: {"operationTitle":"...","details":["..."],"sectionUpdates":[],"sectionOrder":["only for explicit reorder"],"sectionRangeMoves":[{"startSectionId":"...","endBeforeSectionId":"...","targetSectionId":"..."}],"documentPatch":[{"op":"move","from":"/sections/0/clauses/0","path":"/sections/1/clauses/-"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[],"tableDesignUpdates":[]}.',
     'Document title: ' + document.title,
     'Persona: ' + persona,
     'Section count: ' + document.sections.length,
     'Complete section inventory: ' + JSON.stringify(inventory),
+    'Global document collections: ' + JSON.stringify(globalCollectionInventory),
     'User instruction: ' + instruction
   ].join('\n\n');
 }
