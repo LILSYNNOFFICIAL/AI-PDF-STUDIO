@@ -1,5 +1,6 @@
 import type {
   AIPersona,
+  Clause,
   DocumentModel,
   ExecutionResultSummary,
   PageConfig,
