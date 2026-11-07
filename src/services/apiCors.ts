@@ -10,5 +10,6 @@ export function isAllowedApiOrigin(
     nodeEnv !== 'production' &&
     /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 
-  return allowedOrigins.has(origin) || localDevelopmentOrigin;
+  const productionPagesOrigin = origin === 'https://lilsynnofficial.github.io';
+  return allowedOrigins.has(origin) || productionPagesOrigin || localDevelopmentOrigin;
 }
