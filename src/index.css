@@ -85,3 +85,9 @@
   .app-root > .fixed.bottom-6 { bottom:76px!important; right:12px!important; }
 }
 @media (min-width: 768px) { .mobile-workspace { display:none!important; } .desktop-workspace { display:contents; } }
+
+@media (max-width: 767px) {
+  .mobile-ribbon { flex:0 0 auto; max-height:112px; overflow-y:auto; overflow-x:hidden; background:#0d1423; }
+  .mobile-ribbon > div { flex-wrap:wrap; gap:5px; padding:6px 8px; font-size:10px; }
+  .mobile-ribbon button { min-height:30px; padding:5px 7px; }
+}
