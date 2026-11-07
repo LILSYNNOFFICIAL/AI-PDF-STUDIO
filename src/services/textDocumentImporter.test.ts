@@ -18,12 +18,12 @@ test('imports numbered agreement sections and appendix without losing nested hea
     '## 17. CHARACTER REFERENCE', '### 1. PRESERVE IDENTITY', 'Nested content.', '',
     '# APPENDIX A. REFERENCES', 'https://example.com', '',
     '# IMPORTANT REVIEW NOTE', 'Review text.'
-  ].join('\\n');
+  ].join('\n');
   const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
   assert.equal(doc.title, 'MUSIC COLLABORATION AGREEMENT “SHADOWS”');
   assert.equal(doc.sections.length, 5);
   assert.equal(doc.sections[0].sectionNumber, '1.0');
-  assert.equal(doc.sections[2].content, '### 1. PRESERVE IDENTITY\\nNested content.');
+  assert.equal(doc.sections[2].content, '### 1. PRESERVE IDENTITY\nNested content.');
   assert.equal(doc.sections[3].isAppendix, true);
   assert.equal(doc.sections[3].content, 'https://example.com');
   assert.equal(doc.sections[4].title, 'IMPORTANT REVIEW NOTE');
