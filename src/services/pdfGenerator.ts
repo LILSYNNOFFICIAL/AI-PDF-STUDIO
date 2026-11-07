@@ -73,7 +73,8 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     const lines = pdf.splitTextToSize(String(text ?? ''), width) as string[];
     for (const line of lines) {
       ensureSpace(lineHeight);
-      pdf.text(line, x, cursorY, options.align ? { align: options.align } : undefined);
+      const textX = options.align === 'center' ? x + width / 2 : options.align === 'right' ? x + width : x;
+      pdf.text(line, textX, cursorY, options.align ? { align: options.align } : undefined);
       cursorY += lineHeight;
     }
     cursorY += options.after ?? 2;
