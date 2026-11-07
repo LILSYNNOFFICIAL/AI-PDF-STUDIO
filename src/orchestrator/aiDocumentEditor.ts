@@ -157,9 +157,9 @@ function explicitDocumentDesign(instruction: string): boolean {
 
 function designOnlyInstruction(instruction: string): boolean {
   // Ignore quoted section names when classifying visual-design intent.
-  const intent = instruction.replace(/(["']).*?\\1/g, ' ');
+  const intent = instruction.replace(/(["']).*?\1/g, ' ');
   if (!explicitDocumentDesign(intent) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
-  return !/\\b(add|create|remove|delete|rename|copy|duplicate|move|merge|split|reorganize|re-order|reorder|rearrange|insert|extract|transfer|relocate)\\b.{0,60}\\b(section|clause|table|chart|image|paragraph|sentence|heading|title|row|column|appendix|exhibit|schedule|signature|content|text)\\b/i.test(intent);
+  return !/\b(add|create|remove|delete|rename|copy|duplicate|move|merge|split|reorganize|re-order|reorder|rearrange|insert|extract|transfer|relocate)\b.{0,60}\b(section|clause|table|chart|image|paragraph|sentence|heading|title|row|column|appendix|exhibit|schedule|signature|content|text)\b/i.test(intent);
 }
 function mergePatch<T>(base: T, patch: unknown): T {
   if (patch === undefined) return deepCloneDesign(base);
@@ -416,8 +416,8 @@ function applySectionRangeMoves(
 }
 
 function requiresStructuralContext(instruction: string): boolean {
-  return /\\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|remove|duplicate|copy|create|add|rename|everything from|move all)\\b/i.test(instruction) ||
-    /\\b(change|update|modify|edit|replace)\\b.{0,40}\\b(section|clause|table|chart|image|heading|title|row|column|appendix|exhibit|schedule|signature)\\b/i.test(instruction);
+  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|remove|duplicate|copy|create|add|rename|everything from|move all)\b/i.test(instruction) ||
+    /\b(change|update|modify|edit|replace)\b.{0,40}\b(section|clause|table|chart|image|heading|title|row|column|appendix|exhibit|schedule|signature)\b/i.test(instruction);
 }
 export function buildStructuralEditPrompt(
   instruction: string,
