@@ -206,14 +206,25 @@ function mergeSectionUpdates(updates: SectionEdit[]): SectionEdit[] {
     }
     existing.title ??= update.title;
     existing.content ??= update.content;
+    if (existing.orderIndex !== undefined && update.orderIndex !== undefined && existing.orderIndex !== update.orderIndex) {
+      throw new Error(`Gemini returned conflicting order indexes for section ${update.sectionId}. No changes were applied.`);
+    }
     existing.orderIndex ??= update.orderIndex;
     const clauseMap = new Map((existing.clauses || []).map(clause => [clause.id, clause]));
     for (const clause of update.clauses || []) {
       const prior = clauseMap.get(clause.id);
-      if (prior && JSON.stringify(prior) !== JSON.stringify(clause)) {
-        throw new Error(`Gemini returned conflicting edits for clause ${clause.id}. No changes were applied.`);
+      if (prior) {
+        for (const key of ['heading', 'content', 'orderIndex'] as const) {
+          const previousValue = prior[key];
+          const incomingValue = clause[key];
+          if (previousValue !== undefined && incomingValue !== undefined && previousValue !== incomingValue) {
+            throw new Error(`Gemini returned conflicting edits for clause ${clause.id}. No changes were applied.`);
+          }
+          if (previousValue === undefined && incomingValue !== undefined) (prior as any)[key] = incomingValue;
+        }
+      } else {
+        clauseMap.set(clause.id, clause);
       }
-      clauseMap.set(clause.id, clause);
     }
     existing.clauses = [...clauseMap.values()];
   }
