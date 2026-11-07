@@ -59,28 +59,162 @@ function explicitTextEdit(instruction: string): boolean {
   return /\b(rewrite|reword|paraphrase|revise the wording|edit the wording|proofread|correct grammar|fix grammar|replace the text|change the wording|expand the text|shorten the text|summarize|condense|delete text|remove text|add (?:a |an |the )?(?:clause|paragraph|sentence|provision|section))\b/i.test(instruction);
 }
 
-function chunkSections(sections: Section[], maxChars: number): Section[][] {
-  const chunks: Section[][] = [];
+interface SectionChunk {
+  sections: Section[];
+  partialSectionIds: Set<string>;
+  partialClauseIds: Set<string>;
+}
+
+function chunkSections(sections: Section[], maxChars: number): SectionChunk[] {
+  const chunks: SectionChunk[] = [];
   let current: Section[] = [];
   let currentSize = 0;
 
-  for (const section of sections) {
-    const size = JSON.stringify(section).length;
-    if (size > maxChars) {
-      throw new Error(
-        `Section "${section.title}" contains ${size} characters and exceeds the safe AI chunk limit of ${maxChars}. Split this section into smaller clauses or content blocks before requesting AI editing. No document changes were applied.`
-      );
-    }
-    if (current.length > 0 && currentSize + size > maxChars) {
-      chunks.push(current);
+  const flush = () => {
+    if (current.length) {
+      chunks.push({ sections: current, partialSectionIds: new Set(), partialClauseIds: new Set() });
       current = [];
       currentSize = 0;
     }
+  };
+
+  const addWholeSection = (section: Section) => {
+    const size = JSON.stringify(section).length;
+    if (current.length > 0 && currentSize + size > maxChars) flush();
     current.push(section);
     currentSize += size;
+  };
+
+  for (const section of sections) {
+    const size = JSON.stringify(section).length;
+    if (size <= maxChars) {
+      addWholeSection(section);
+      continue;
+    }
+
+    flush();
+    const base = { ...section, content: undefined, clauses: [], tables: [], charts: [], images: [] };
+    const content = section.content || '';
+    const fragmentSize = Math.max(500, maxChars - JSON.stringify(base).length - 500);
+    let sectionContentWasSplit = false;
+
+    if (content.length > fragmentSize) {
+      sectionContentWasSplit = true;
+      for (let offset = 0; offset < content.length; offset += fragmentSize) {
+        const end = Math.min(content.length, offset + fragmentSize);
+        const fragment: Section = {
+          ...base,
+          content: content.slice(offset, end),
+          sourceReference: `PARTIAL_SECTION_CONTENT:${offset}:${end}`
+        };
+        if (JSON.stringify(fragment).length > maxChars) {
+          throw new Error(`Unable to safely chunk source content for section "${section.title}". No document changes were applied.`);
+        }
+        chunks.push({
+          sections: [fragment],
+          partialSectionIds: new Set([section.id]),
+          partialClauseIds: new Set()
+        });
+      }
+    } else {
+      const fragment: Section = { ...base, content, sourceReference: section.sourceReference };
+      if (JSON.stringify(fragment).length > maxChars) {
+        throw new Error(`Section metadata for "${section.title}" exceeds the safe AI chunk limit. No document changes were applied.`);
+      }
+      chunks.push({
+        sections: [fragment],
+        partialSectionIds: new Set(),
+        partialClauseIds: new Set()
+      });
+    }
+
+    let clauseBatch: typeof section.clauses = [];
+    let clauseBatchSize = JSON.stringify({ ...base, content: '' }).length;
+    const flushClauses = () => {
+      if (!clauseBatch.length) return;
+      const fragment: Section = {
+        ...base,
+        content: '',
+        clauses: clauseBatch,
+        sourceReference: section.sourceReference
+      };
+      chunks.push({
+        sections: [fragment],
+        partialSectionIds: new Set(),
+        partialClauseIds: new Set()
+      });
+      clauseBatch = [];
+      clauseBatchSize = JSON.stringify({ ...base, content: '' }).length;
+    };
+
+    for (const clause of section.clauses || []) {
+      const clauseSize = JSON.stringify(clause).length;
+      if (clauseSize > maxChars - clauseBatchSize) {
+        flushClauses();
+        if (clauseSize > maxChars - clauseBatchSize) {
+          const clauseBase = { ...clause, content: '' };
+          const sliceSize = Math.max(300, maxChars - JSON.stringify({ ...base, clauses: [clauseBase] }).length - 300);
+          const clauseContent = clause.content || '';
+          for (let offset = 0; offset < clauseContent.length; offset += sliceSize) {
+            const end = Math.min(clauseContent.length, offset + sliceSize);
+            const fragmentClause = {
+              ...clause,
+              content: clauseContent.slice(offset, end),
+              sourceReference: `PARTIAL_CLAUSE_CONTENT:${offset}:${end}`
+            };
+            chunks.push({
+              sections: [{ ...base, content: '', clauses: [fragmentClause] }],
+              partialSectionIds: new Set(),
+              partialClauseIds: new Set([clause.id])
+            });
+          }
+          continue;
+        }
+      }
+      clauseBatch.push(clause);
+      clauseBatchSize += clauseSize;
+    }
+    flushClauses();
+
+    if (!content && !(section.clauses || []).length && (section.tables?.length || section.charts?.length || section.images?.length)) {
+      throw new Error(`Section "${section.title}" contains a non-text block larger than the safe AI chunk limit. No document changes were applied.`);
+    }
+    if (sectionContentWasSplit && !chunks.some(chunk => chunk.partialSectionIds.has(section.id))) {
+      throw new Error(`Source content for section "${section.title}" could not be chunked safely. No document changes were applied.`);
+    }
   }
-  if (current.length) chunks.push(current);
+  flush();
   return chunks;
+}
+
+function mergeSectionUpdates(updates: SectionEdit[]): SectionEdit[] {
+  const merged = new Map<string, SectionEdit>();
+  for (const update of updates) {
+    const existing = merged.get(update.sectionId);
+    if (!existing) {
+      merged.set(update.sectionId, { ...update, clauses: update.clauses ? [...update.clauses] : undefined });
+      continue;
+    }
+    if (existing.title !== undefined && update.title !== undefined && existing.title !== update.title) {
+      throw new Error(`Gemini returned conflicting titles for section ${update.sectionId}. No changes were applied.`);
+    }
+    if (existing.content !== undefined && update.content !== undefined && existing.content !== update.content) {
+      throw new Error(`Gemini returned conflicting content for section ${update.sectionId}. No changes were applied.`);
+    }
+    existing.title ??= update.title;
+    existing.content ??= update.content;
+    existing.orderIndex ??= update.orderIndex;
+    const clauseMap = new Map((existing.clauses || []).map(clause => [clause.id, clause]));
+    for (const clause of update.clauses || []) {
+      const prior = clauseMap.get(clause.id);
+      if (prior && JSON.stringify(prior) !== JSON.stringify(clause)) {
+        throw new Error(`Gemini returned conflicting edits for clause ${clause.id}. No changes were applied.`);
+      }
+      clauseMap.set(clause.id, clause);
+    }
+    existing.clauses = [...clauseMap.values()];
+  }
+  return [...merged.values()];
 }
 
 function parseModelResponse(text: string | undefined): DocumentEditResponse {
@@ -123,6 +257,7 @@ export function buildDocumentEditPrompt(
     'Never summarize, condense, paraphrase, omit, or replace source wording unless the user explicitly requests a text rewrite.',
     'When the instruction is about formatting or organization, preserve every existing content and clause string exactly.',
     'Only update section IDs and clause IDs included in the supplied chunk. Never invent IDs.',
+    'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
     'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
     'Return one JSON object and no markdown fences with this exact shape:',
     '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"styles":{},"pageConfig":{}}',
@@ -273,15 +408,19 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     sectionUpdates: []
   };
 
+  const partialSectionIds = new Set<string>();
+  const partialClauseIds = new Set<string>();
   for (const chunk of chunks) {
-    const prompt = buildDocumentEditPrompt(instruction, currentDoc, persona, chunk);
+    chunk.partialSectionIds.forEach(id => partialSectionIds.add(id));
+    chunk.partialClauseIds.forEach(id => partialClauseIds.add(id));
+    const prompt = buildDocumentEditPrompt(instruction, currentDoc, persona, chunk.sections);
     const result = await aiClient.models.generateContent({
       model: options.model || 'gemini-3.8-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' }
     });
     const parsed = parseModelResponse(result.text);
-    const allowedIds = new Set(chunk.map(section => section.id));
+    const allowedIds = new Set(chunk.sections.map(section => section.id));
     for (const update of parsed.sectionUpdates) {
       if (!allowedIds.has(update.sectionId)) {
         throw new Error(`Gemini returned an update outside the current chunk: ${update.sectionId}. No changes were applied.`);
@@ -298,5 +437,16 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     if (parsed.pageConfig) aggregated.pageConfig = { ...(aggregated.pageConfig || {}), ...parsed.pageConfig };
   }
 
+  aggregated.sectionUpdates = mergeSectionUpdates(aggregated.sectionUpdates);
+  for (const update of aggregated.sectionUpdates) {
+    if (partialSectionIds.has(update.sectionId) && update.content !== undefined) {
+      throw new Error(`Gemini attempted to replace a partial section excerpt (${update.sectionId}) as if it were the complete section. No changes were applied.`);
+    }
+    for (const clause of update.clauses || []) {
+      if (partialClauseIds.has(clause.id) && clause.content !== undefined) {
+        throw new Error(`Gemini attempted to replace a partial clause excerpt (${clause.id}) as if it were the complete clause. No changes were applied.`);
+      }
+    }
+  }
   return applyDocumentEditResponse(currentDoc, aggregated, instruction);
 }
