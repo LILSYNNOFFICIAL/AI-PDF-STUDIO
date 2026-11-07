@@ -265,12 +265,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           {/* Document Title Header */}
           <div className="text-center pb-8 mb-8" style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
             <h1 
-              style={{ fontSize: `${documentDesign.typography.heading1Size || document.styles.heading1Size || 18}pt`, fontFamily: documentDesign.typography.headingFontFamily, color: documentDesign.colors.headingText }}
-              className={`font-bold tracking-tight mb-2 ${
-                document.styles.headingCase === 'uppercase' ? 'uppercase' : ''
-              }`}
+              style={{
+                fontSize: `${documentDesign.typography.heading1Size || document.styles.heading1Size || 18}pt`,
+                fontFamily: documentDesign.typography.headingFontFamily,
+                color: documentDesign.colors.headingText,
+                textTransform: documentDesign.typography.headingCase === 'uppercase'
+                  ? 'uppercase'
+                  : documentDesign.typography.headingCase === 'capitalize' ? 'capitalize' : 'none'
+              }}
+              className="font-bold tracking-tight mb-2"
             >
-              {document.title}
+              {documentDesign.typography.headingCase === 'uppercase'
+                ? document.title.toUpperCase()
+                : documentDesign.typography.headingCase === 'capitalize'
+                  ? document.title.toLowerCase().replace(/\b\p{L}/gu, character => character.toUpperCase())
+                  : document.title}
             </h1>
             <div className="text-xs font-sans flex items-center justify-center gap-3" style={{ color: documentDesign.colors.mutedText }}>
               <span>Version {document.version}</span>
