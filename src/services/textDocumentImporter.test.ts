@@ -44,3 +44,22 @@ test('rejects only empty input and does not require a numbered section heading',
   const doc = parseTextDocument('A single unstructured paragraph that must survive.', base);
   assert.match(doc.sections[0].content || '', /must survive/);
 });
+
+test('converts Markdown tables and explicit signature parties into editable document objects', () => {
+  const source = [
+    '# Recording Agreement', '',
+    '## 1. ROYALTY SPLITS', '',
+    '| Party | Share |', '| --- | --- |', '| Artist | 50% |', '| Producer | 50% |', '',
+    '## SIGNATURES', '',
+    'ARTIST', 'By: Alex Example', 'Signature: __________________', 'Date: __________', '',
+    'PRODUCER', 'By: Sam Example', 'Signature: __________________', 'Date: __________'
+  ].join('\\n');
+  const doc = parseTextDocument(source, base);
+  assert.equal(doc.sections[0].tables?.length, 1);
+  assert.deepEqual(doc.sections[0].tables?.[0].headers.map(cell => cell.content), ['Party', 'Share']);
+  assert.equal(doc.sections[0].tables?.[0].rows.length, 2);
+  assert.equal(doc.signatures?.parties.length, 2);
+  assert.equal(doc.signatures?.parties[0].name, 'Alex Example');
+  assert.equal(doc.signatures?.parties[1].role, 'PRODUCER');
+  assert.equal(doc.sourceText, source);
+});
