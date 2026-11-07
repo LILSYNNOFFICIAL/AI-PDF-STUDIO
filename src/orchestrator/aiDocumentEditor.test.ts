@@ -615,3 +615,65 @@ test('structural planner advertises generic JSON Patch operations for document-w
   assert.match(prompt, /documentPatch/);
   assert.match(prompt, /RFC 6902|JSON Patch/i);
 });
+
+
+test('generic document patch supports splitting a section by creating a child and moving the selected clause', () => {
+  const doc = makeDocument();
+  const source = doc.sections[0];
+  const moved = source.clauses[0];
+  const child = {
+    id: 'sec_split_child',
+    sectionNumber: '',
+    title: 'CHILD SECTION',
+    content: '',
+    clauses: [],
+    orderIndex: 2
+  };
+  const response: DocumentEditResponse = {
+    operationTitle: 'Split section',
+    details: ['Created a child section and moved the selected clause.'],
+    sectionUpdates: [],
+    documentPatch: [
+      { op: 'add', path: '/sections/1', value: child },
+      { op: 'move', from: '/sections/0/clauses/0', path: '/sections/1/clauses/-' }
+    ]
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Split the first section into a new child section.');
+  assert.equal(result.updatedDoc.sections[1].id, 'sec_split_child');
+  assert.equal(result.updatedDoc.sections[1].clauses[0].id, moved.id);
+  assert.equal(result.updatedDoc.sections[1].clauses[0].content, moved.content);
+  assert.equal(result.updatedDoc.sections[0].clauses.some(clause => clause.id === moved.id), false);
+});
+
+test('generic merge patches cannot discard a non-empty source section before transferring its blocks', () => {
+  const doc = makeDocument();
+  const before = JSON.stringify(doc);
+  const response: DocumentEditResponse = {
+    operationTitle: 'Merge sections',
+    details: [],
+    sectionUpdates: [],
+    documentPatch: [{ op: 'remove', path: '/sections/0' }]
+  };
+  assert.throws(
+    () => applyDocumentEditResponse(doc, response, 'Merge the first section into the second section.'),
+    /until all of its content and blocks have been transferred/i
+  );
+  assert.equal(JSON.stringify(doc), before);
+});
+
+test('generic document patch cannot replace source wording unless the user explicitly requests a text edit', () => {
+  const doc = makeDocument();
+  const before = JSON.stringify(doc);
+  const response: DocumentEditResponse = {
+    operationTitle: 'Unexpected wording replacement',
+    details: [],
+    sectionUpdates: [],
+    documentPatch: [{ op: 'replace', path: '/sections/0/content', value: 'Rewritten content.' }]
+  };
+  assert.throws(
+    () => applyDocumentEditResponse(doc, response, 'Reorganize the first section.'),
+    /explicit text-edit instruction/i
+  );
+  assert.equal(JSON.stringify(doc), before);
+});
