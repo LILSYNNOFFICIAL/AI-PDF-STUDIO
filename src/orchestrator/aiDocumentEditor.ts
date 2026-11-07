@@ -4,8 +4,21 @@ import type {
   ExecutionResultSummary,
   PageConfig,
   Section,
-  StyleConfig
+  StyleConfig,
+  DocumentDesign,
+  SectionDesign,
+  TableDesign,
+  DesignColors,
+  DesignTypography
 } from '../types/document';
+import {
+  DOCUMENT_DESIGN_PRESETS,
+  normalizeDocumentDesign,
+  validateDocumentDesign,
+  validateSectionDesign,
+  validateTableDesign,
+  deepCloneDesign
+} from '../services/documentDesign';
 import { recalculateNumbering } from './orchestrator';
 
 export interface SectionEdit {
@@ -21,6 +34,28 @@ export interface SectionEdit {
   }>;
 }
 
+export interface SectionDesignUpdate {
+  sectionId: string;
+  design: Partial<SectionDesign> | null;
+}
+
+export interface TableDesignUpdate {
+  sectionId: string;
+  tableId: string;
+  design: Partial<TableDesign> | null;
+}
+
+export interface DocumentDesignUpdate {
+  presetId?: string;
+  name?: string;
+  colors?: Partial<DesignColors>;
+  typography?: Partial<DesignTypography>;
+  page?: Partial<DocumentDesign['page']>;
+  sectionDefaults?: Partial<DocumentDesign['sectionDefaults']>;
+  tableDefaults?: Partial<DocumentDesign['tableDefaults']>;
+  pageFurniture?: Partial<DocumentDesign['pageFurniture']>;
+}
+
 export interface DocumentEditResponse {
   operationTitle: string;
   details: string[];
@@ -28,6 +63,9 @@ export interface DocumentEditResponse {
   sectionOrder?: string[];
   styles?: Partial<StyleConfig>;
   pageConfig?: Partial<PageConfig>;
+  design?: DocumentDesignUpdate;
+  sectionDesignUpdates?: SectionDesignUpdate[];
+  tableDesignUpdates?: TableDesignUpdate[];
 }
 
 export interface GeminiEditorClient {
@@ -94,6 +132,67 @@ function explicitTextEdit(instruction: string): boolean {
 
 function explicitSectionReorder(instruction: string): boolean {
   return /\b(reorder|re-organize|reorganize|rearrange|rearrangement|change the order of (?:the )?sections|change section order|sort the sections|move (?:the )?sections?)\b/i.test(instruction);
+}
+
+
+function explicitDocumentDesign(instruction: string): boolean {
+  return /\b(design|styling|style the document|theme|template|colour|color|recolor|colourise|colorize|background|gradient|palette|typography|typeface|font|garamond|inter|helvetica|georgia|border|divider|page surface|section background|table style|visual|appearance|polished|sleek|elegant|professional(?:ly)? formatted|professional (?:look|design|style|template)|modern|blue|navy|red|green|black|white|purple|pink|gold|silver|gray|grey|teal|cyan|orange|yellow|beige|make (?:the )?(?:document|pages?) look|professional(?:ly)? formatted|modern(?:ize|ise) the (?:document|layout))\b/i.test(instruction);
+}
+
+function designOnlyInstruction(instruction: string): boolean {
+  if (!explicitDocumentDesign(instruction) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
+  return !/\b(merge|split|reorganize|re-order|reorder|rearrange|move section|add section|delete section|remove section|insert section)\b/i.test(instruction);
+}
+
+function mergePatch<T>(base: T, patch: unknown): T {
+  if (patch === undefined) return deepCloneDesign(base);
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return patch as T;
+  const baseRecord = base && typeof base === 'object' && !Array.isArray(base)
+    ? base as Record<string, unknown>
+    : {};
+  const patchRecord = patch as Record<string, unknown>;
+  const result: Record<string, unknown> = { ...baseRecord };
+  for (const [key, value] of Object.entries(patchRecord)) {
+    const previous = baseRecord[key];
+    result[key] = value && typeof value === 'object' && !Array.isArray(value) &&
+      previous && typeof previous === 'object' && !Array.isArray(previous)
+      ? mergePatch(previous, value)
+      : deepCloneDesign(value);
+  }
+  return result as T;
+}
+
+export function buildDocumentDesignPrompt(
+  instruction: string,
+  document: DocumentModel,
+  persona: AIPersona | string
+): string {
+  const normalized = normalizeDocumentDesign(document);
+  const inventory = document.sections.map(section => ({
+    sectionId: section.id,
+    sectionNumber: section.sectionNumber,
+    title: section.title,
+    tables: (section.tables || []).map(table => ({ tableId: table.id, title: table.title || 'Untitled table' }))
+  }));
+  return [
+    'You are the visual design controller for AI PDF Studio.',
+    'Perform the requested visual styling by returning executable design tokens and overrides. Do not edit or reorder document content.',
+    'This is a design-only operation. Never return title/content/clause changes, sectionOrder, legacy styles, or pageConfig updates.',
+    'Use an existing presetId from the supplied preset list when the user requests one. For custom styling, return only the token fields that need to change.',
+    'For a section-specific visual change, use sectionDesignUpdates with an exact existing sectionId. For a table-specific visual change, use tableDesignUpdates with both an exact sectionId and tableId.',
+    'Do not invent IDs. If a requested target cannot be identified unambiguously, return no design changes and explain the issue in details.',
+    'Return one JSON object and no markdown fences with this exact shape:',
+    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[],"design":{"presetId":"optional-known-preset-id","name":"optional-theme-name","colors":{},"typography":{},"page":{},"sectionDefaults":{},"tableDefaults":{},"pageFurniture":{}},"sectionDesignUpdates":[{"sectionId":"existing-section-id","design":{"background":{"type":"solid","color":"#ffffff"},"headingColor":"#172033","bodyTextColor":"#334155","border":{"style":"solid","color":"#dbe3ee","width":1},"padding":10}}],"tableDesignUpdates":[{"sectionId":"existing-section-id","tableId":"existing-table-id","design":{"headerBackground":{"type":"solid","color":"#eef2f7"},"headerTextColor":"#172033","bodyTextColor":"#334155","gridlineColor":"#dbe3ee","gridlineWidth":1}}]}',
+    'For gradient fills use {"type":"linear-gradient","angle":135,"stops":[{"color":"#ffffff","position":0},{"color":"#e2e8f0","position":100}]}.',
+    'All colors must be valid 3- or 6-digit hexadecimal values. Opacity must be 0 through 1. Border styles: none, solid, dashed, dotted, double.',
+    'Do not return empty design objects. Every returned value must represent a concrete change.',
+    'Current design model: ' + JSON.stringify(normalized.design),
+    'Available visual presets: ' + JSON.stringify(DOCUMENT_DESIGN_PRESETS.map(preset => ({ presetId: preset.presetId, name: preset.name }))),
+    'Existing section and table IDs: ' + JSON.stringify(inventory),
+    'Document title: ' + document.title,
+    'Persona: ' + persona,
+    'User instruction: ' + instruction
+  ].join('\n\n');
 }
 
 
@@ -351,12 +450,15 @@ export function buildDocumentEditPrompt(
     'Never return only a description of changes. Return executable structured document updates.',
     'Never summarize, condense, paraphrase, omit, or replace source wording unless the user explicitly requests a text rewrite.',
     'When the instruction is about formatting or organization, preserve every existing content and clause string exactly.',
+    'For explicit visual styling requests, use design, sectionDesignUpdates, or tableDesignUpdates. Use only exact IDs from the supplied document. Do not use content or title changes as a substitute for styling.',
+    'When returning a document-wide design patch, include only the nested tokens that need to change. Color values must be hexadecimal. Gradient fills require at least two ordered stops.',
+    'The current document design model is: ' + JSON.stringify(document.design || null),
     'Only update section IDs and clause IDs included in the supplied chunk. Never invent IDs.',
     'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
     'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
     'Do not include sectionOrder at all unless the user explicitly asks to reorder, rearrange, or change the order of document sections. For every other task, omit sectionOrder completely.',
     'Return one JSON object and no markdown fences with this exact shape:',
-    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"styles":{},"pageConfig":{}}',
+    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
     'Use empty arrays/omit optional fields when no changes are needed. Do not claim an operation was completed unless you return the corresponding update.',
     `Persona: ${persona}`,
     `User instruction: ${instruction}`,
@@ -379,7 +481,16 @@ export function applyDocumentEditResponse(
   const knownIds = new Set(originalIds);
   const updatedIds = new Set<string>();
   const mayEditText = explicitTextEdit(instruction);
+  const isDesignOnly = designOnlyInstruction(instruction);
   const sections = currentDoc.sections.map(section => ({ ...section, clauses: section.clauses.map(clause => ({ ...clause })) }));
+  if (isDesignOnly && (
+    response.sectionUpdates.length > 0 ||
+    response.sectionOrder !== undefined ||
+    response.styles !== undefined ||
+    response.pageConfig !== undefined
+  )) {
+    throw new Error('Text edits are not authorized for a design-only instruction. Section order, legacy formatting, and page layout cannot be changed in this operation. No changes were applied.');
+  }
 
   for (const update of response.sectionUpdates) {
     if (!update || typeof update.sectionId !== 'string' || !knownIds.has(update.sectionId)) {
@@ -442,9 +553,61 @@ export function applyDocumentEditResponse(
     throw new Error('Gemini returned invalid page configuration updates. No changes were applied.');
   }
 
+  const sectionDesignIds = new Set<string>();
+  for (const update of response.sectionDesignUpdates || []) {
+    if (!update || typeof update.sectionId !== 'string' || !knownIds.has(update.sectionId)) {
+      throw new Error('AI returned an unknown section for a design override. No changes were applied.');
+    }
+    if (sectionDesignIds.has(update.sectionId)) throw new Error('AI returned duplicate section design overrides. No changes were applied.');
+    sectionDesignIds.add(update.sectionId);
+    const target = sections.find(section => section.id === update.sectionId)!;
+    if (update.design === null) {
+      target.design = undefined;
+    } else {
+      if (!update.design || !isRecord(update.design)) throw new Error('AI returned an invalid section design patch. No changes were applied.');
+      target.design = mergePatch<SectionDesign>(target.design || {}, update.design);
+      validateSectionDesign(target.design);
+    }
+  }
+
+  const tableDesignIds = new Set<string>();
+  for (const update of response.tableDesignUpdates || []) {
+    if (!update || typeof update.sectionId !== 'string' || typeof update.tableId !== 'string' || !knownIds.has(update.sectionId)) {
+      throw new Error('AI returned an unknown section or table for a design override. No changes were applied.');
+    }
+    const key = update.sectionId + ':' + update.tableId;
+    if (tableDesignIds.has(key)) throw new Error('AI returned duplicate table design overrides. No changes were applied.');
+    tableDesignIds.add(key);
+    const targetSection = sections.find(section => section.id === update.sectionId)!;
+    const targetTable = targetSection.tables?.find(table => table.id === update.tableId);
+    if (!targetTable) throw new Error('AI returned an unknown table ID for a design override. No changes were applied.');
+    if (update.design === null) {
+      targetTable.design = undefined;
+    } else {
+      if (!update.design || !isRecord(update.design)) throw new Error('AI returned an invalid table design patch. No changes were applied.');
+      targetTable.design = mergePatch<TableDesign>(targetTable.design || {}, update.design);
+      validateTableDesign(targetTable.design);
+    }
+  }
+
+  let design = normalizeDocumentDesign(currentDoc).design!;
+  if (response.design !== undefined) {
+    if (!isRecord(response.design)) throw new Error('AI returned an invalid document design patch. No changes were applied.');
+    const presetId = response.design.presetId;
+    if (presetId !== undefined) {
+      if (typeof presetId !== 'string') throw new Error('AI returned an invalid design preset ID. No changes were applied.');
+      const preset = DOCUMENT_DESIGN_PRESETS.find(item => item.presetId === presetId);
+      if (!preset) throw new Error('AI returned an unknown document design preset. No changes were applied.');
+      design = deepCloneDesign(preset);
+    }
+    design = mergePatch<DocumentDesign>(design, response.design);
+    validateDocumentDesign(design);
+  }
+
   const candidate: DocumentModel = {
     ...currentDoc,
     sections: orderedSections,
+    design,
     styles: { ...currentDoc.styles, ...(response.styles || {}) },
     pageConfig: { ...currentDoc.pageConfig, ...(response.pageConfig || {}) },
     version: currentDoc.version + 1,
@@ -479,6 +642,21 @@ export function applyDocumentEditResponse(
             );
           });
         })
+      },
+      {
+        name: 'Design schema validation',
+        passed: (() => {
+          try {
+            validateDocumentDesign(updatedDoc.design!);
+            updatedDoc.sections.forEach(section => {
+              if (section.design) validateSectionDesign(section.design);
+              section.tables?.forEach(table => { if (table.design) validateTableDesign(table.design); });
+            });
+            return true;
+          } catch {
+            return false;
+          }
+        })()
       }
     ],
     timestamp: new Date().toLocaleTimeString(),
@@ -497,6 +675,22 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
 }> {
   const { instruction, currentDoc, persona, aiClient } = options;
   if (!instruction?.trim()) throw new Error('An editing instruction is required.');
+  if (designOnlyInstruction(instruction)) {
+    const prompt = buildDocumentDesignPrompt(instruction, currentDoc, persona);
+    const result = await generateGeminiContentWithRetry(aiClient, {
+      model: options.model || 'gemini-3.8-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+    const designResponse = parseModelResponse(result.text);
+    const hasDesignOperations = designResponse.design !== undefined ||
+      (designResponse.sectionDesignUpdates?.length || 0) > 0 ||
+      (designResponse.tableDesignUpdates?.length || 0) > 0;
+    if (!hasDesignOperations) {
+      throw new Error('Gemini returned no executable design changes or actionable document updates. The document was not changed.');
+    }
+    return applyDocumentEditResponse(currentDoc, designResponse, instruction);
+  }
   const chunks = chunkSections(currentDoc.sections, options.maxChunkChars || DEFAULT_CHUNK_CHARS);
   const aggregated: DocumentEditResponse = {
     operationTitle: 'AI document editing completed',
@@ -533,6 +727,11 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     }
     if (parsed.styles) aggregated.styles = { ...(aggregated.styles || {}), ...parsed.styles };
     if (parsed.pageConfig) aggregated.pageConfig = { ...(aggregated.pageConfig || {}), ...parsed.pageConfig };
+    if (chunk === chunks[0]) {
+      aggregated.design = parsed.design;
+      aggregated.sectionDesignUpdates = parsed.sectionDesignUpdates;
+      aggregated.tableDesignUpdates = parsed.tableDesignUpdates;
+    }
   }
 
   aggregated.sectionUpdates = mergeSectionUpdates(aggregated.sectionUpdates);
@@ -540,7 +739,10 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     aggregated.sectionUpdates.length > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
-    Object.keys(aggregated.pageConfig || {}).length > 0;
+    Object.keys(aggregated.pageConfig || {}).length > 0 ||
+    aggregated.design !== undefined ||
+    (aggregated.sectionDesignUpdates?.length || 0) > 0 ||
+    (aggregated.tableDesignUpdates?.length || 0) > 0;
   if (!hasActionableUpdates && !options.allowNoop && chunks.length === 1) {
     const correctionPrompt = [
       buildDocumentEditPrompt(instruction, currentDoc, persona, chunks[0].sections),
@@ -566,13 +768,19 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     aggregated.sectionOrder = explicitSectionReorder(instruction) ? corrected.sectionOrder : undefined;
     aggregated.styles = corrected.styles;
     aggregated.pageConfig = corrected.pageConfig;
+    aggregated.design = corrected.design;
+    aggregated.sectionDesignUpdates = corrected.sectionDesignUpdates;
+    aggregated.tableDesignUpdates = corrected.tableDesignUpdates;
   }
 
   const correctedHasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
-    Object.keys(aggregated.pageConfig || {}).length > 0;
+    Object.keys(aggregated.pageConfig || {}).length > 0 ||
+    aggregated.design !== undefined ||
+    (aggregated.sectionDesignUpdates?.length || 0) > 0 ||
+    (aggregated.tableDesignUpdates?.length || 0) > 0;
   if (!correctedHasActionableUpdates && !options.allowNoop) {
     throw new Error('Gemini returned an execution summary without any actionable document updates after a correction attempt. The document was not changed.');
   }

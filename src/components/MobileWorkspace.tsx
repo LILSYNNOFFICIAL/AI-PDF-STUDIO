@@ -3,7 +3,7 @@ import {
   FileText, MessageSquare, ListTree, Wrench, Plus, Undo2, Redo2,
   FileDown, ShieldCheck, X, Search, Table2, Image, FileJson,
   FilePlus2, Scissors, BookOpen, Stamp, ClipboardCheck, Layers,
-  Printer, ChevronDown, Sparkles
+  Printer, ChevronDown, Sparkles, Palette
 } from 'lucide-react';
 import { DocumentModel, AIPersona, Section } from '../types/document';
 import { VisualEditor } from './VisualEditor';
@@ -27,6 +27,7 @@ interface MobileWorkspaceProps {
   onUndo: () => void;
   onRedo: () => void;
   onOpenPdfPreview: () => void;
+  onOpenDesign: () => void;
   onUpdateStyles: (styles: Partial<DocumentModel['styles']>) => void;
   onUpdatePageConfig: (config: Partial<DocumentModel['pageConfig']>) => void;
   onAddClause: () => void;
@@ -177,6 +178,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
               <button aria-label="Close tools" onClick={() => selectTab('editor')}><X size={19}/></button>
             </div>
             <div className="mobile-tools-grid">
+              {tool('Document design', <Palette size={20}/>, props.onOpenDesign)}
               {tool('New document', <FilePlus2 size={20}/>, props.onNewDocument)}
               {tool('Blank document', <FileText size={20}/>, props.onNewBlankDocument)}
               {tool('Find & replace', <Search size={20}/>, props.onFindReplace)}
