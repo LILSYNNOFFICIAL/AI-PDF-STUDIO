@@ -183,7 +183,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             File
           </button>
           {activeMenu === 'file' && (
-            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onNewBlankDocument)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
@@ -279,7 +279,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Edit
           </button>
           {activeMenu === 'edit' && (
-            <div className="absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-52 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onUndo)}
                 disabled={!canUndo}
@@ -327,7 +327,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Insert
           </button>
           {activeMenu === 'insert' && (
-            <div className="absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onAddSection)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
@@ -401,7 +401,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Format
           </button>
           {activeMenu === 'format' && (
-            <div className="absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-56 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button
                 onClick={() => executeAction(onOpenDesign)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
@@ -505,7 +505,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             Tools
           </button>
           {activeMenu === 'tools' && (
-            <div className="absolute left-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-64 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(onOpenClauseLibrary)}
                 className="w-full text-left px-3 py-1.5 hover:bg-emerald-600 hover:text-white flex items-center gap-2"
@@ -580,7 +580,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             View
           </button>
           {activeMenu === 'view' && (
-            <div className="absolute left-0 top-full mt-1 w-52 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+            <div className="absolute left-0 top-full mt-1 w-52 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
                 onClick={() => executeAction(toggleOutline)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
