@@ -31,3 +31,9 @@ jobs:
         run: bun run lint
       - name: Build
         run: bun run build
+        env:
+          VITE_BASE_PATH: /AI-PDF-STUDIO/
+      - name: Verify Pages artifact
+        run: bun run verify:pages
+        env:
+          VITE_BASE_PATH: /AI-PDF-STUDIO/
