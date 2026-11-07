@@ -122,15 +122,21 @@ test('design presets, page gradients, section fills, borders and table overrides
       }
     }]
   }];
-  doc.design = applyDocumentPreset(doc, 'technology-professional').design;
-  doc.design.page.background = {
-    type: 'linear-gradient',
-    angle: 135,
-    opacity: 0.18,
-    stops: [
-      { color: '#f8fafc', position: 0 },
-      { color: '#dbeafe', position: 100 }
-    ]
+  const presetDesign = applyDocumentPreset(doc, 'technology-professional').design!;
+  doc.design = {
+    ...presetDesign,
+    page: {
+      ...presetDesign.page,
+      background: {
+        type: 'linear-gradient',
+        angle: 135,
+        opacity: 0.18,
+        stops: [
+          { color: '#f8fafc', position: 0 },
+          { color: '#dbeafe', position: 100 }
+        ]
+      }
+    }
   };
 
   const pdf = generatePdfDocument(doc);
