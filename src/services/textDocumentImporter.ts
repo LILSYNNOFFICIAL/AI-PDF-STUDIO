@@ -40,7 +40,8 @@ function detectHeadings(lines: string[], firstContentLine: number): HeadingMatch
       continue;
     }
     const appendix = APPENDIX_HEADING.exec(value);
-    if (appendix) {
+    const appendixUsesExplicitSeparator = /^(?:APPENDIX|EXHIBIT|SCHEDULE)\\s+[A-Z0-9]+[.:-]\\s*/i.test(value);
+    if (appendix && (value === value.toUpperCase() || appendixUsesExplicitSeparator)) {
       headings.push({ line: index, text: [appendix[1], appendix[2], appendix[3]].filter(Boolean).join(' ').trim(), level: 1, appendix: true });
       continue;
     }
