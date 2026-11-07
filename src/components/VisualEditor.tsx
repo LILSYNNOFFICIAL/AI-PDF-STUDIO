@@ -771,7 +771,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           type="text"
                           value={party.title || ''}
                           onChange={(e) => handleUpdateParty(idx, 'title', e.target.value)}
-                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-slate-900 flex-1 px-1 rounded"
+                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none flex-1 px-1 rounded"
+                          style={{ color: documentDesign.colors.bodyText }}
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -780,7 +781,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           type="text"
                           value={party.company || ''}
                           onChange={(e) => handleUpdateParty(idx, 'company', e.target.value)}
-                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-slate-900 flex-1 px-1 rounded"
+                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none flex-1 px-1 rounded"
+                          style={{ color: documentDesign.colors.bodyText }}
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -789,7 +791,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           type="text"
                           value={party.date || ''}
                           onChange={(e) => handleUpdateParty(idx, 'date', e.target.value)}
-                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-slate-900 flex-1 px-1 rounded"
+                          className="bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none flex-1 px-1 rounded"
+                          style={{ color: documentDesign.colors.bodyText }}
                         />
                       </div>
                     </div>
