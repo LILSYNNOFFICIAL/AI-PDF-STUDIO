@@ -93,6 +93,9 @@ function chunkSections(sections: Section[], maxChars: number): SectionChunk[] {
     }
 
     flush();
+    if (section.tables?.length || section.charts?.length || section.images?.length) {
+      throw new Error(`Section "${section.title}" contains large non-text blocks that cannot be safely chunked yet. No document changes were applied.`);
+    }
     const base = { ...section, content: undefined, clauses: [], tables: [], charts: [], images: [] };
     const content = section.content || '';
     const fragmentSize = Math.max(500, maxChars - JSON.stringify(base).length - 500);
@@ -430,7 +433,9 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
     aggregated.details.push(...parsed.details);
     if (parsed.operationTitle) aggregated.operationTitle = parsed.operationTitle;
     if (parsed.sectionOrder) {
-      if (aggregated.sectionOrder) throw new Error('Gemini returned more than one section-order operation. No changes were applied.');
+      if (aggregated.sectionOrder && JSON.stringify(aggregated.sectionOrder) !== JSON.stringify(parsed.sectionOrder)) {
+        throw new Error('Gemini returned conflicting section-order operations. No changes were applied.');
+      }
       aggregated.sectionOrder = parsed.sectionOrder;
     }
     if (parsed.styles) aggregated.styles = { ...(aggregated.styles || {}), ...parsed.styles };
