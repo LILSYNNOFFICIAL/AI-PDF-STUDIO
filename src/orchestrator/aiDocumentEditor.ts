@@ -352,6 +352,7 @@ function applySectionRangeMoves(
   let working = [...sections];
   const movedToTarget = new Map<string, string>();
   const usedSections = new Set<string>();
+  const usedClauseIds = new Set(working.flatMap(section => (section.clauses || []).map(clause => clause.id)));
 
   for (const move of moves) {
     const startIndex = working.findIndex(section => section.id === move.startSectionId);
@@ -375,8 +376,14 @@ function applySectionRangeMoves(
     const mergedContent = target.content || '';
     const mergedClauses = range.flatMap(section => {
       if (section.id === target.id) return section.clauses || [];
+      let generatedClauseId = `moved_section_content_${section.id}`;
+      let generatedSuffix = 1;
+      while (usedClauseIds.has(generatedClauseId)) {
+        generatedClauseId = `moved_section_content_${section.id}_${generatedSuffix++}`;
+      }
+      usedClauseIds.add(generatedClauseId);
       const movedSectionContent: Clause = {
-        id: `moved_section_content_${section.id}`,
+        id: generatedClauseId,
         clauseNumber: '',
         heading: section.title || 'Moved section content',
         content: section.content || '',
