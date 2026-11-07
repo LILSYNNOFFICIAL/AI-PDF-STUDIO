@@ -644,6 +644,32 @@ export default function App() {
     });
   };
 
+  const handleImportText = () => {
+    const input = window.document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.md,text/plain,text/markdown';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const source = String(event.target?.result || '');
+          const imported = parseTextDocument(source, document);
+          pushHistory(imported);
+          setActiveSectionId(imported.sections[0]?.id || null);
+          addAiMessage(`Imported "${imported.title}" with ${imported.sections.length} sections. Source text, nested headings, lists, URLs, and signature text were retained. The AI editor will now operate on this imported document, not the sample template.`);
+          showToast(`Imported ${imported.sections.length} sections`);
+        } catch (error: any) {
+          alert(error?.message || 'Unable to import this text document.');
+        }
+      };
+      reader.onerror = () => alert('The selected text file could not be read.');
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   const handleImportJson = () => {
     const input = window.document.createElement('input');
     input.type = 'file';
@@ -723,7 +749,7 @@ export default function App() {
         onExportPdf={() => setIsPdfPreviewOpen(true)}
         onPrint={handlePrint}
         onExportJson={handleExportJson}
-        onImportJson={handleImportJson}
+        onImportJson={handleImportJson}\n        onImportText={handleImportText}
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
         onCopyDocumentText={handleCopyDocumentText}
