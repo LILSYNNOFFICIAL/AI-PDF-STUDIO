@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/orchestrator/orchestrator.test.ts src/orchestrator/aiDocumentEditor.test.ts src/services/pdfGenerator.test.ts"
+    "test": "tsx --test src/orchestrator/orchestrator.test.ts src/orchestrator/aiDocumentEditor.test.ts src/services/pdfGenerator.test.ts",
+    "verify:pages": "node scripts/verify-pages-build.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.0.0",
