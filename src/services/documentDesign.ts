@@ -446,11 +446,31 @@ export function syncLegacyStyleChanges(
   brandProfile?: BrandProfile
 ): DocumentModel {
   const normalized = normalizeDocumentDesign(next, brandProfile);
-  if (
-    previous.id !== next.id ||
-    JSON.stringify(previous.design) !== JSON.stringify(next.design)
-  ) {
-    return normalized;
+  if (previous.id !== next.id) return normalized;
+
+  // When a document theme changes, keep legacy toolbar controls in sync with
+  // the authoritative design tokens. This prevents the ribbon from displaying
+  // stale font, size, and color values after applying a preset or AI design.
+  if (JSON.stringify(previous.design) !== JSON.stringify(next.design)) {
+    const active = normalized.design || DEFAULT_DOCUMENT_DESIGN;
+    return {
+      ...normalized,
+      styles: {
+        ...next.styles,
+        fontFamily: active.typography.bodyFontFamily,
+        fontSize: active.typography.bodyFontSize,
+        lineHeight: active.typography.bodyLineHeight,
+        paragraphSpacing: active.typography.paragraphSpacing,
+        headingFont: active.typography.headingFontFamily,
+        heading1Size: active.typography.heading1Size,
+        heading2Size: active.typography.heading2Size,
+        heading3Size: active.typography.heading3Size,
+        headingCase: active.typography.headingCase,
+        primaryColor: active.colors.primary,
+        accentColor: active.colors.accent,
+        textColor: active.colors.bodyText
+      }
+    };
   }
 
   const prior = previous.styles;
