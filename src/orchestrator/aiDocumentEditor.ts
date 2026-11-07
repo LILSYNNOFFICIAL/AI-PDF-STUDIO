@@ -1,5 +1,6 @@
 import type {
   AIPersona,
+  Clause,
   DocumentModel,
   ExecutionResultSummary,
   PageConfig,
@@ -65,12 +66,18 @@ export interface SectionRangeMove {
   targetSectionId: string;
 }
 
+export type JsonPatchOperation =
+  | { op: 'add' | 'replace' | 'test'; path: string; value: unknown }
+  | { op: 'remove'; path: string }
+  | { op: 'move' | 'copy'; from: string; path: string };
+
 export interface DocumentEditResponse {
   operationTitle: string;
   details: string[];
   sectionUpdates: SectionEdit[];
   sectionOrder?: string[];
   sectionRangeMoves?: SectionRangeMove[];
+  documentPatch?: JsonPatchOperation[];
   styles?: Partial<StyleConfig>;
   pageConfig?: Partial<PageConfig>;
   design?: DocumentDesignUpdate;
@@ -150,13 +157,11 @@ function explicitDocumentDesign(instruction: string): boolean {
 }
 
 function designOnlyInstruction(instruction: string): boolean {
-  // Quoted section titles can contain words like "visual" or "design".
-  // Structural intent takes precedence over keyword-based design detection.
-  if (requiresStructuralContext(instruction)) return false;
-  if (!explicitDocumentDesign(instruction) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
-  return !/\b(merge|split|reorganize|re-order|reorder|rearrange|move section|add section|delete section|remove section|insert section)\b/i.test(instruction);
+  // Ignore quoted section names when classifying visual-design intent.
+  const intent = instruction.replace(/(["']).*?\1/g, ' ');
+  if (!explicitDocumentDesign(intent) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
+  return !/\b(add|create|remove|delete|rename|copy|duplicate|move|merge|split|reorganize|re-order|reorder|rearrange|insert|extract|transfer|relocate)\b.{0,60}\b(section|clause|table|chart|image|paragraph|sentence|heading|title|row|column|appendix|exhibit|schedule|signature|content|text)\b/i.test(intent);
 }
-
 function mergePatch<T>(base: T, patch: unknown): T {
   if (patch === undefined) return deepCloneDesign(base);
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return patch as T;
@@ -348,6 +353,7 @@ function applySectionRangeMoves(
   let working = [...sections];
   const movedToTarget = new Map<string, string>();
   const usedSections = new Set<string>();
+  const usedClauseIds = new Set(working.flatMap(section => (section.clauses || []).map(clause => clause.id)));
 
   for (const move of moves) {
     const startIndex = working.findIndex(section => section.id === move.startSectionId);
@@ -365,13 +371,28 @@ function applySectionRangeMoves(
     }
     range.forEach(section => usedSections.add(section.id));
 
-    const mergedContent = range.map(section => {
-      if (section.id === target.id) return section.content || '';
-      const heading = section.title ? section.title : '';
-      return [heading, section.content || ''].filter(Boolean).join('\n');
-    }).filter(value => value.length > 0).join('\n\n');
-
-    const mergedClauses = range.flatMap(section => section.clauses || []);
+    // Keep the destination's section-level content in place. Convert each
+    // absorbed section's own heading/content into a clause so it remains a
+    // visually distinct subheading inside the destination container.
+    const mergedContent = target.content || '';
+    const mergedClauses = range.flatMap(section => {
+      if (section.id === target.id) return section.clauses || [];
+      let generatedClauseId = `moved_section_content_${section.id}`;
+      let generatedSuffix = 1;
+      while (usedClauseIds.has(generatedClauseId)) {
+        generatedClauseId = `moved_section_content_${section.id}_${generatedSuffix++}`;
+      }
+      usedClauseIds.add(generatedClauseId);
+      const movedSectionContent: Clause = {
+        id: generatedClauseId,
+        clauseNumber: '',
+        heading: section.title || 'Moved section content',
+        content: section.content || '',
+        orderIndex: 0,
+        sourceReference: section.sourceReference || `Moved from section ${section.id}`
+      };
+      return [movedSectionContent, ...(section.clauses || [])];
+    }).map((clause, index) => ({ ...clause, orderIndex: index + 1 }));
     const mergedTables = range.flatMap(section => section.tables || []);
     const mergedCharts = range.flatMap(section => section.charts || []);
     const mergedImages = range.flatMap(section => section.images || []);
@@ -412,28 +433,42 @@ function applySectionRangeMoves(
 }
 
 function requiresStructuralContext(instruction: string): boolean {
-  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|duplicate|everything from|move all)\b/i.test(instruction);
+  return /\b(move|merge|consolidate|combine|split|reorder|re-organize|reorganize|rearrange|group|contain|place|put|inside|within|transfer|relocate|extract|insert|delete|remove|duplicate|copy|create|add|rename|everything from|move all)\b/i.test(instruction) ||
+    /\b(change|update|modify|edit|replace)\b.{0,40}\b(section|clause|table|chart|image|heading|title|row|column|appendix|exhibit|schedule|signature)\b/i.test(instruction);
 }
-
 export function buildStructuralEditPrompt(
   instruction: string,
   document: DocumentModel,
   persona: AIPersona | string
 ): string {
-  const inventory = document.sections.map(section => ({
+  const inventory = document.sections.map((section, sectionIndex) => ({
+    sectionIndex,
     sectionId: section.id,
     sectionNumber: section.sectionNumber,
     title: section.title,
     contentPreview: (section.content || '').slice(0, 1800),
-    clauses: (section.clauses || []).map(clause => ({
+    clauses: (section.clauses || []).map((clause, clauseIndex) => ({
+      clauseIndex,
       clauseId: clause.id,
       heading: clause.heading || '',
       contentPreview: clause.content.slice(0, 500)
     })),
-    tables: (section.tables || []).map(table => ({ tableId: table.id, title: table.title || table.caption || '' })),
-    charts: (section.charts || []).map(chart => ({ chartId: chart.id, title: chart.title })),
-    images: (section.images || []).map(image => ({ imageId: image.id, caption: image.caption || '', altText: image.altText || '' }))
+    tables: (section.tables || []).map((table, tableIndex) => ({ tableIndex, tableId: table.id, title: table.title || table.caption || '' })),
+    charts: (section.charts || []).map((chart, chartIndex) => ({ chartIndex, chartId: chart.id, title: chart.title })),
+    images: (section.images || []).map((image, imageIndex) => ({ imageIndex, imageId: image.id, caption: image.caption || '', altText: image.altText || '' }))
   }));
+  const globalCollectionInventory = Object.fromEntries(
+    ['signatures', 'definitions', 'dependencies', 'redactions'].map(key => [
+      key,
+      Array.isArray((document as any)[key])
+        ? (document as any)[key].map((item: any, index: number) => ({
+            index,
+            id: item?.id || null,
+            title: item?.title || item?.heading || item?.name || ''
+          }))
+        : []
+    ])
+  );
 
   return [
     'You are the structural document-control engine for AI PDF Studio.',
@@ -442,13 +477,16 @@ export function buildStructuralEditPrompt(
     'For a request such as "everything from heading A up to the box above heading B belongs inside heading A", return one sectionRangeMoves item: startSectionId is heading A, endBeforeSectionId is heading B (exclusive), targetSectionId is the destination box. Do not include the boundary section.',
     'A sectionRangeMoves operation preserves original wording, clauses, tables, charts, images, and IDs. It removes the absorbed source sections only after all blocks are transferred.',
     'For pure section reordering, return sectionOrder as a complete permutation of every section ID. Do not return sectionOrder for other requests.',
+    'For all other document-wide structural changes, use documentPatch as an RFC 6902 JSON Patch operation list. Supported operations are add, remove, replace, move, copy, and test. Use the sectionIndex, clauseIndex, tableIndex, chartIndex, and imageIndex values from the inventory to construct exact JSON Pointer paths. Only target supported document roots such as /sections, /title, /styles, /design, /pageConfig, /signatures, /definitions, /dependencies, and /redactions. Never modify protected app metadata or invent IDs.',
+    'Use add/create only when the user asks to add or create. Use remove only when the user explicitly asks to delete/remove. Use copy only for copy/duplicate requests. Use move only for move/transfer/reorder requests. Use replace only for explicit change/rename/rewrite/update requests. Do not mix documentPatch with sectionUpdates or other operation formats.',
     'Use sectionUpdates only for explicit title or wording changes. Never rewrite text to imitate moving, merging, or grouping.',
-    'Do not invent IDs. Do not delete or omit source material. If the target or boundary is ambiguous, return no operations and explain exactly what is ambiguous.',
-    'Return strict JSON only, using this schema: {"operationTitle":"...","details":["..."],"sectionUpdates":[],"sectionOrder":["only for explicit reorder"],"sectionRangeMoves":[{"startSectionId":"...","endBeforeSectionId":"...","targetSectionId":"..."}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[],"tableDesignUpdates":[]}.',
+    'Use exact IDs for existing objects. Generate fresh unique IDs only for newly created objects. Do not omit source material. Use remove only when the user explicitly requests deletion. A sectionRangeMoves operation removes source section shells only after every original block is transferred to the destination. If the target or boundary is ambiguous, return no operations and explain exactly what is ambiguous.',
+    'Return strict JSON only, using this schema: {"operationTitle":"...","details":["..."],"sectionUpdates":[],"sectionOrder":["only for explicit reorder"],"sectionRangeMoves":[{"startSectionId":"...","endBeforeSectionId":"...","targetSectionId":"..."}],"documentPatch":[{"op":"move","from":"/sections/0/clauses/0","path":"/sections/1/clauses/-"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[],"tableDesignUpdates":[]}.',
     'Document title: ' + document.title,
     'Persona: ' + persona,
     'Section count: ' + document.sections.length,
     'Complete section inventory: ' + JSON.stringify(inventory),
+    'Global document collections: ' + JSON.stringify(globalCollectionInventory),
     'User instruction: ' + instruction
   ].join('\n\n');
 }
@@ -512,7 +550,16 @@ function parseModelResponse(text: string | undefined): DocumentEditResponse {
   ) {
     throw new Error('Gemini response does not match the required document-edit schema.');
   }
-  return parsed as unknown as DocumentEditResponse;
+  const response = parsed as unknown as DocumentEditResponse;
+  if (!response.sectionOrder?.length) response.sectionOrder = undefined;
+  if (!response.sectionRangeMoves?.length) response.sectionRangeMoves = undefined;
+  if (!response.documentPatch?.length) response.documentPatch = undefined;
+  if (response.styles && Object.keys(response.styles).length === 0) response.styles = undefined;
+  if (response.pageConfig && Object.keys(response.pageConfig).length === 0) response.pageConfig = undefined;
+  if (response.design && Object.keys(response.design as Record<string, unknown>).length === 0) response.design = undefined;
+  if (!response.sectionDesignUpdates?.length) response.sectionDesignUpdates = undefined;
+  if (!response.tableDesignUpdates?.length) response.tableDesignUpdates = undefined;
+  return response;
 }
 
 export function prepareLongInstruction(
@@ -579,14 +626,15 @@ export function buildDocumentEditPrompt(
     'For explicit visual styling requests, use design, sectionDesignUpdates, or tableDesignUpdates. Use only exact IDs from the supplied document. Do not use content or title changes as a substitute for styling.',
     'When returning a document-wide design patch, include only the nested tokens that need to change. Color values must be hexadecimal. Gradient fills require at least two ordered stops.',
     'The current document design model is: ' + JSON.stringify(document.design || null),
-    'Only update section IDs and clause IDs included in the supplied chunk. Never invent IDs.',
+    'For edits to existing objects, use only exact IDs included in the supplied document. For newly created objects explicitly requested by the user, generate fresh unique IDs that do not collide with any existing ID.',
     'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
-    'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
+    'Never delete sections or clauses unless the user explicitly asks for deletion, or a sectionRangeMoves operation transfers every block into its destination. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
     'Do not include sectionOrder at all unless the user explicitly asks to reorder, rearrange, or change the order of document sections. For every other task, omit sectionOrder completely.',
+    'For document-wide structural CRUD or block-level moves not covered by the existing fields, return documentPatch as an RFC 6902 JSON Patch array with add, remove, replace, move, copy, and test operations. Use only supported document roots and exact IDs/paths from the supplied section inventory. Never modify protected metadata. New objects require fresh unique IDs.',
     'For structural requests that move a continuous range of sections into one existing section/container, return sectionRangeMoves. Identify startSectionId from the first named heading, endBeforeSectionId from the boundary heading that must remain outside the move, and targetSectionId from the destination box. The start is inclusive and the end boundary is exclusive. The target must be inside the selected range. The application moves the original structured blocks without rewriting their wording.',
     'Never simulate a move by rewriting content. Use sectionRangeMoves for heading-bounded consolidation and sectionOrder only for pure reordering. Preserve tables, charts, images, clauses, IDs, source references, and all original wording.',
     'Return one JSON object and no markdown fences with this exact shape:',
-    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"sectionRangeMoves":[{"startSectionId":"inclusive-start-id","endBeforeSectionId":"exclusive-boundary-id","targetSectionId":"existing-destination-id"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
+    '{"operationTitle":"short action name","details":["actual operation performed"],"sectionUpdates":[{"sectionId":"existing-id","title":"optional title","content":"only when explicitly requested","orderIndex":1,"clauses":[{"id":"existing-clause-id","heading":"optional heading","content":"only when explicitly requested","orderIndex":1}]}],"sectionOrder":["all document section IDs in desired order, only when the user requests reordering"],"sectionRangeMoves":[{"startSectionId":"inclusive-start-id","endBeforeSectionId":"exclusive-boundary-id","targetSectionId":"existing-destination-id"}],"documentPatch":[{"op":"move","from":"/sections/0/clauses/0","path":"/sections/1/clauses/-"}],"styles":{},"pageConfig":{},"design":{},"sectionDesignUpdates":[{"sectionId":"existing-id","design":{}}],"tableDesignUpdates":[{"sectionId":"existing-id","tableId":"existing-table-id","design":{}}]}',
     'Use empty arrays/omit optional fields when no changes are needed. Do not claim an operation was completed unless you return the corresponding update.',
     `Persona: ${persona}`,
     `User instruction: ${instruction}`,
@@ -594,6 +642,250 @@ export function buildDocumentEditPrompt(
     `Complete section inventory (IDs and titles only): ${JSON.stringify(sectionInventory)}`,
     `Current document chunk: ${JSON.stringify(sections)}`
   ].join('\n\n');
+}
+
+const PATCHABLE_DOCUMENT_ROOTS = new Set([
+  'title', 'type', 'author', 'brandProfileId', 'styles', 'design',
+  'pageConfig', 'sections', 'signatures', 'definitions', 'dependencies', 'redactions'
+]);
+const FORBIDDEN_POINTER_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
+
+function jsonPointerTokens(path: string): string[] {
+  if (typeof path !== 'string' || !path.startsWith('/') || path === '/') {
+    throw new Error('JSON Patch paths must target an existing document field. Root replacement is not allowed.');
+  }
+  const tokens = path.slice(1).split('/').map(token => token.replace(/~1/g, '/').replace(/~0/g, '~'));
+  if (!tokens.length || !PATCHABLE_DOCUMENT_ROOTS.has(tokens[0])) {
+    throw new Error('JSON Patch path targets a protected or unsupported document field.');
+  }
+  if (tokens.some(token => FORBIDDEN_POINTER_SEGMENTS.has(token))) {
+    throw new Error('Unsafe JSON Patch path rejected to prevent prototype pollution.');
+  }
+  return tokens;
+}
+
+function arrayIndex(token: string, length: number, allowEnd: boolean): number {
+  if (allowEnd && token === '-') return length;
+  if (!/^(0|[1-9]\d*)$/.test(token)) throw new Error('JSON Patch contains an invalid array index.');
+  const index = Number(token);
+  if (!Number.isSafeInteger(index) || index < 0 || index > (allowEnd ? length : length - 1)) {
+    throw new Error('JSON Patch array index does not exist or is out of range.');
+  }
+  return index;
+}
+
+function patchParent(root: Record<string, unknown>, path: string): { parent: Record<string, unknown> | unknown[]; key: string } {
+  const tokens = jsonPointerTokens(path);
+  let current: any = root;
+  for (const token of tokens.slice(0, -1)) {
+    if (current === null || typeof current !== 'object') throw new Error('JSON Patch path does not exist.');
+    if (Array.isArray(current)) current = current[arrayIndex(token, current.length, false)];
+    else {
+      if (!Object.prototype.hasOwnProperty.call(current, token)) throw new Error('JSON Patch path does not exist.');
+      current = current[token];
+    }
+  }
+  if (current === null || typeof current !== 'object') throw new Error('JSON Patch parent path does not exist.');
+  return { parent: current, key: tokens[tokens.length - 1] };
+}
+
+function patchGet(root: Record<string, unknown>, path: string): unknown {
+  const tokens = jsonPointerTokens(path);
+  let current: any = root;
+  for (const token of tokens) {
+    if (current === null || typeof current !== 'object') throw new Error('JSON Patch source path does not exist.');
+    if (Array.isArray(current)) current = current[arrayIndex(token, current.length, false)];
+    else {
+      if (!Object.prototype.hasOwnProperty.call(current, token)) throw new Error('JSON Patch source path does not exist.');
+      current = current[token];
+    }
+  }
+  return current;
+}
+
+function patchAdd(root: Record<string, unknown>, path: string, value: unknown): void {
+  const { parent, key } = patchParent(root, path);
+  const cloned = JSON.parse(JSON.stringify(value));
+  if (Array.isArray(parent)) parent.splice(arrayIndex(key, parent.length, true), 0, cloned);
+  else (parent as Record<string, unknown>)[key] = cloned;
+}
+
+function patchReplace(root: Record<string, unknown>, path: string, value: unknown): void {
+  const { parent, key } = patchParent(root, path);
+  const cloned = JSON.parse(JSON.stringify(value));
+  if (Array.isArray(parent)) parent[arrayIndex(key, parent.length, false)] = cloned;
+  else {
+    if (!Object.prototype.hasOwnProperty.call(parent, key)) throw new Error('JSON Patch replace target does not exist.');
+    (parent as Record<string, unknown>)[key] = cloned;
+  }
+}
+
+function patchRemove(root: Record<string, unknown>, path: string): unknown {
+  const { parent, key } = patchParent(root, path);
+  if (Array.isArray(parent)) return parent.splice(arrayIndex(key, parent.length, false), 1)[0];
+  if (!Object.prototype.hasOwnProperty.call(parent, key)) throw new Error('JSON Patch remove target does not exist.');
+  const value = (parent as Record<string, unknown>)[key];
+  delete (parent as Record<string, unknown>)[key];
+  return value;
+}
+
+function validatePatchedDocument(document: DocumentModel): void {
+  if (!document || typeof document.title !== 'string' || !Array.isArray(document.sections)) {
+    throw new Error('JSON Patch did not produce a valid document model.');
+  }
+  const sectionIds = new Set<string>();
+  const clauseIds = new Set<string>();
+  const tableIds = new Set<string>();
+  const chartIds = new Set<string>();
+  const imageIds = new Set<string>();
+
+  for (const section of document.sections) {
+    if (!section || typeof section.id !== 'string' || typeof section.title !== 'string' || !Array.isArray(section.clauses)) {
+      throw new Error('JSON Patch produced a section with invalid identity, title, or clause structure.');
+    }
+    if (sectionIds.has(section.id)) throw new Error(`JSON Patch produced duplicate section ID: ${section.id}.`);
+    sectionIds.add(section.id);
+    for (const clause of section.clauses) {
+      if (!clause || typeof clause.id !== 'string' || typeof clause.content !== 'string' || clauseIds.has(clause.id)) {
+        throw new Error('JSON Patch produced an invalid or duplicate clause.');
+      }
+      clauseIds.add(clause.id);
+    }
+    for (const table of section.tables || []) {
+      if (!table || typeof table.id !== 'string' || tableIds.has(table.id)) throw new Error('JSON Patch produced an invalid or duplicate table.');
+      tableIds.add(table.id);
+    }
+    for (const chart of section.charts || []) {
+      if (!chart || typeof chart.id !== 'string' || chartIds.has(chart.id)) throw new Error('JSON Patch produced an invalid or duplicate chart.');
+      chartIds.add(chart.id);
+    }
+    for (const image of section.images || []) {
+      if (!image || typeof image.id !== 'string' || imageIds.has(image.id)) throw new Error('JSON Patch produced an invalid or duplicate image.');
+      imageIds.add(image.id);
+    }
+    if (section.design) validateSectionDesign(section.design);
+    section.tables?.forEach(table => { if (table.design) validateTableDesign(table.design); });
+  }
+  if (document.design !== undefined) validateDocumentDesign(document.design);
+}
+
+function applyDocumentJsonPatch(
+  currentDoc: DocumentModel,
+  response: DocumentEditResponse,
+  instruction: string
+): { updatedDoc: DocumentModel; summary: ExecutionResultSummary } {
+  const patch = response.documentPatch || [];
+  if (!patch.length || patch.length > 500) throw new Error('JSON Patch must contain between 1 and 500 operations.');
+  if (
+    response.sectionUpdates.length ||
+    (response.sectionOrder?.length || 0) > 0 ||
+    (response.sectionRangeMoves?.length || 0) > 0 ||
+    Object.keys(response.styles || {}).length > 0 ||
+    Object.keys(response.pageConfig || {}).length > 0 ||
+    (response.design !== undefined && Object.keys(response.design as Record<string, unknown>).length > 0) ||
+    (response.sectionDesignUpdates?.length || 0) > 0 ||
+    (response.tableDesignUpdates?.length || 0) > 0
+  ) {
+    throw new Error('JSON Patch cannot be mixed with other document-edit operation formats. No changes were applied.');
+  }
+
+  const candidate = JSON.parse(JSON.stringify(currentDoc)) as DocumentModel;
+  const instructionText = instruction.toLowerCase();
+  const changesSections = patch.some(operation => operation.path.startsWith('/sections') || ('from' in operation && operation.from.startsWith('/sections')));
+
+  for (const operation of patch) {
+    if (!operation || typeof operation.path !== 'string') throw new Error('JSON Patch contains an invalid operation.');
+    const path = jsonPointerTokens(operation.path);
+    void path;
+    if (operation.op === 'add') {
+      if (!/\b(add|create|insert|append|include|build|split)\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize adding document content. No changes were applied.');
+      }
+      patchAdd(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
+    } else if (operation.op === 'remove') {
+      const explicitDeletion = /\b(delete|remove|erase|clear|drop|omit|eliminate|discard)\b/i.test(instructionText);
+      const mergeIntent = /\b(merge|combine|consolidate)\b/i.test(instructionText);
+      if (!explicitDeletion && !mergeIntent) {
+        throw new Error('The instruction does not authorize deleting document content. No changes were applied.');
+      }
+      if (mergeIntent && !explicitDeletion && /^\/sections\/\d+$/.test(operation.path)) {
+        const sourceSection = patchGet(candidate as unknown as Record<string, unknown>, operation.path) as Section;
+        const hasUnmovedContent = Boolean(sourceSection.content?.trim()) ||
+          (sourceSection.clauses?.length || 0) > 0 ||
+          (sourceSection.tables?.length || 0) > 0 ||
+          (sourceSection.charts?.length || 0) > 0 ||
+          (sourceSection.images?.length || 0) > 0;
+        if (hasUnmovedContent) {
+          throw new Error('A section cannot be removed during a merge until all of its content and blocks have been transferred. Use a safe range move or transfer every block first. No changes were applied.');
+        }
+      }
+      patchRemove(candidate as unknown as Record<string, unknown>, operation.path);
+    } else if (operation.op === 'replace') {
+      if (!/\b(replace|rewrite|rename|change|update|modify|edit|set|correct|fix|format|style|design)\b/i.test(instructionText) &&
+          !(operation.path.endsWith('/id') && /\b(copy|duplicate|clone)\b/i.test(instructionText))) {
+        throw new Error('The instruction does not authorize replacing document content. No changes were applied.');
+      }
+      if (/^\/sections\/\d+\/content$/.test(operation.path) ||
+          /^\/sections\/\d+\/clauses\/\d+\/content$/.test(operation.path)) {
+        if (!/\b(rewrite|reword|replace|change|update|modify|edit|correct|fix)\b/i.test(instructionText)) {
+          throw new Error('Replacing source wording requires an explicit text-edit instruction. No changes were applied.');
+        }
+      }
+      if (/^\/sections(?:\/\d+)?$/.test(operation.path) &&
+          !/\b(replace|rewrite|rebuild|overwrite)\b.{0,40}\b(section|document)\b/i.test(instructionText)) {
+        throw new Error('Replacing an entire section collection requires an explicit full-section or full-document replacement request.');
+      }
+      if (!('value' in operation)) throw new Error('JSON Patch replace operation is missing its value.');
+      patchReplace(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
+    } else if (operation.op === 'move') {
+      if (!/\b(move|transfer|relocate|reorder|rearrange|place|put|group|consolidate|merge|combine|split|contain|contained|inside|within|everything from)\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize moving document content. No changes were applied.');
+      }
+      const fromTokens = jsonPointerTokens(operation.from);
+      const toTokens = jsonPointerTokens(operation.path);
+      if (toTokens.length > fromTokens.length && fromTokens.every((token, index) => token === toTokens[index])) {
+        throw new Error('JSON Patch cannot move a value into one of its descendants.');
+      }
+      const value = patchRemove(candidate as unknown as Record<string, unknown>, operation.from);
+      patchAdd(candidate as unknown as Record<string, unknown>, operation.path, value);
+    } else if (operation.op === 'copy') {
+      if (!/\b(copy|duplicate|clone)\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize copying document content. No changes were applied.');
+      }
+      patchAdd(candidate as unknown as Record<string, unknown>, operation.path, patchGet(candidate as unknown as Record<string, unknown>, operation.from));
+    } else if (operation.op === 'test') {
+      const actual = patchGet(candidate as unknown as Record<string, unknown>, operation.path);
+      if (JSON.stringify(actual) !== JSON.stringify(operation.value)) {
+        throw new Error('JSON Patch test operation failed. No document changes were applied.');
+      }
+    } else {
+      throw new Error('JSON Patch operation is not supported. No document changes were applied.');
+    }
+  }
+
+  if (changesSections) {
+    candidate.sections = recalculateNumbering(candidate).sections;
+  }
+  candidate.version = currentDoc.version + 1;
+  candidate.updatedAt = new Date().toISOString();
+  candidate.changeSummary = response.operationTitle;
+  validatePatchedDocument(candidate);
+
+  const summary: ExecutionResultSummary = {
+    operationTitle: response.operationTitle || 'Document updated',
+    details: response.details,
+    verifications: [
+      { name: 'Atomic JSON Patch application', passed: true, notes: `${patch.length} operations applied to an isolated document copy.` },
+      { name: 'Document structure and unique block IDs', passed: true, notes: 'Sections, clauses, tables, charts, images, and design tokens validated.' },
+      { name: 'Source-of-truth metadata preservation', passed: candidate.sourceText === currentDoc.sourceText && JSON.stringify(candidate.sourceIntegrity) === JSON.stringify(currentDoc.sourceIntegrity) }
+    ],
+    timestamp: new Date().toLocaleTimeString(),
+    versionCreated: candidate.version
+  };
+  if (summary.verifications.some(check => !check.passed)) {
+    throw new Error('Document integrity verification failed. No changes were applied.');
+  }
+  return { updatedDoc: candidate, summary };
 }
 
 export function applyDocumentEditResponse(
@@ -604,6 +896,7 @@ export function applyDocumentEditResponse(
   if (!response || !Array.isArray(response.sectionUpdates) || !Array.isArray(response.details)) {
     throw new Error('Invalid document-edit response. No changes were applied.');
   }
+  if (response.documentPatch?.length) return applyDocumentJsonPatch(currentDoc, response, instruction);
 
   const originalIds = currentDoc.sections.map(section => section.id);
   const knownIds = new Set(originalIds);
@@ -771,8 +1064,10 @@ export function applyDocumentEditResponse(
           const explicitlyUpdated = response.sectionUpdates.find(item => item.sectionId === before.id);
           if (explicitlyUpdated?.content !== undefined && mayEditText) return true;
           if (rangeMoveResult.movedToTarget.has(before.id) || response.sectionRangeMoves?.some(move => move.targetSectionId === before.id)) {
-            if (before.content && !(after.content || '').includes(before.content)) return false;
-            if (before.id !== targetId && before.title && !(after.content || '').includes(before.title)) return false;
+            if (before.content && !(after.content || '').includes(before.content) &&
+                !after.clauses.some(clause => clause.content === before.content)) return false;
+            if (before.id !== targetId && before.title &&
+                !after.clauses.some(clause => clause.heading === before.title)) return false;
             for (const clause of before.clauses || []) {
               const retained = after.clauses.find(item => item.id === clause.id);
               if (!retained || retained.content !== clause.content) return false;
@@ -841,14 +1136,36 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
       contents: structuralPrompt,
       config: { responseMimeType: 'application/json' }
     });
-    const structuralResponse = parseModelResponse(structuralResult.text);
-    const hasStructuralOperations = structuralResponse.sectionRangeMoves?.length ||
-      structuralResponse.sectionOrder !== undefined ||
-      structuralResponse.sectionUpdates.length > 0 ||
-      (structuralResponse.sectionDesignUpdates?.length || 0) > 0 ||
-      (structuralResponse.tableDesignUpdates?.length || 0) > 0;
-    if (!hasStructuralOperations) {
-      throw new Error('Gemini could not identify an executable structural operation. It returned this clarification: ' +
+    let structuralResponse = parseModelResponse(structuralResult.text);
+    const requiresBoundedRange = /\b(everything from|all content from|from .+ to the box above|contained within|inside the .+ box|within the .+ box)\b/i.test(instruction);
+    const hasOperations = (response: DocumentEditResponse) => Boolean(
+      response.sectionRangeMoves?.length ||
+      response.documentPatch?.length ||
+      response.sectionOrder !== undefined ||
+      response.sectionUpdates.length > 0 ||
+      (response.sectionDesignUpdates?.length || 0) > 0 ||
+      (response.tableDesignUpdates?.length || 0) > 0
+    );
+
+    if (!hasOperations(structuralResponse) || (requiresBoundedRange && !structuralResponse.sectionRangeMoves?.length)) {
+      const correctionPrompt = [
+        structuralPrompt,
+        'CORRECTION REQUIRED: Your previous response did not return the required executable structural operation.',
+        requiresBoundedRange
+          ? 'The user explicitly requested a heading-bounded range move. Return sectionRangeMoves with the exact existing startSectionId, exclusive endBeforeSectionId, and destination targetSectionId. Do not substitute sectionOrder, documentPatch, or a textual rewrite.'
+          : 'Re-evaluate the request and return the exact executable documentPatch, sectionRangeMoves, sectionOrder, sectionUpdates, or design operations needed.',
+        'If a required heading or target cannot be identified unambiguously from the inventory, return no operations and explain which exact boundary is ambiguous.'
+      ].join('\n\n');
+      const correction = await generateGeminiContentWithRetry(aiClient, {
+        model: options.model || 'gemini-3.8-flash',
+        contents: correctionPrompt,
+        config: { responseMimeType: 'application/json' }
+      });
+      structuralResponse = parseModelResponse(correction.text);
+    }
+
+    if (!hasOperations(structuralResponse) || (requiresBoundedRange && !structuralResponse.sectionRangeMoves?.length)) {
+      throw new Error('Gemini could not identify the required executable structural operation after a correction attempt. It returned this clarification: ' +
         (structuralResponse.details || []).join(' ') + ' No document changes were applied.');
     }
     return applyDocumentEditResponse(currentDoc, structuralResponse, instruction);
@@ -930,6 +1247,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
   const hasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
     (aggregated.sectionRangeMoves?.length || 0) > 0 ||
+    (aggregated.documentPatch?.length || 0) > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0 ||
@@ -969,6 +1287,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
   const correctedHasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
     (aggregated.sectionRangeMoves?.length || 0) > 0 ||
+    (aggregated.documentPatch?.length || 0) > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0 ||
