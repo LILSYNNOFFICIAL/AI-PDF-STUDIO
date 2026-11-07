@@ -53,7 +53,7 @@ test('converts Markdown tables and explicit signature parties into editable docu
     '## SIGNATURES', '',
     'ARTIST', 'By: Alex Example', 'Signature: __________________', 'Date: __________', '',
     'PRODUCER', 'By: Sam Example', 'Signature: __________________', 'Date: __________'
-  ].join('\\n');
+  ].join('\n');
   const doc = parseTextDocument(source, base);
   assert.equal(doc.sections[0].tables?.length, 1);
   assert.deepEqual(doc.sections[0].tables?.[0].headers.map(cell => cell.content), ['Party', 'Share']);
