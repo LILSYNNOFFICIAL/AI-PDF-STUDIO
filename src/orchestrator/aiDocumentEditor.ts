@@ -618,7 +618,6 @@ export function buildDocumentEditPrompt(
   ].join('\n\n');
 }
 
-export 
 const PATCHABLE_DOCUMENT_ROOTS = new Set([
   'title', 'type', 'author', 'brandProfileId', 'styles', 'design',
   'pageConfig', 'sections', 'signatures', 'definitions', 'dependencies', 'redactions'
