@@ -84,7 +84,7 @@ export const AIChatOrchestrator: React.FC<AIChatOrchestratorProps> = ({
   };
 
   return (
-    <aside className="w-96 bg-slate-900 border-l border-slate-800 flex flex-col h-full select-none shrink-0 text-slate-300">
+    <aside className="desktop-ai-panel w-96 bg-slate-900 border-l border-slate-800 flex flex-col h-full select-none shrink-0 text-slate-300">
       {/* Header with Active Persona */}
       <div className="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
         <div className="flex items-center gap-2">
