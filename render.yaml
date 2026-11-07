@@ -1,7 +1,7 @@
 services:
   - type: web
     name: ai-pdf-studio-api
-    runtime: bun
+    runtime: node
     plan: free
     buildCommand: bun install --frozen-lockfile && bun run test && bun run lint && bun run build
     startCommand: bun run start
@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: BUN_VERSION
+        value: 1.4.4
       - key: ALLOWED_ORIGINS
         value: https://lilsynnofficial.github.io
       - key: GEMINI_MODEL
