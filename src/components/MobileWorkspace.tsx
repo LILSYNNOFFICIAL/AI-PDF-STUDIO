@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FileText, MessageSquare, ListTree, Wrench, Plus, Undo2, Redo2,
   FileDown, ShieldCheck, X, Search, Table2, Image, FileJson,
@@ -61,16 +61,25 @@ interface MobileWorkspaceProps {
 }
 
 export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  );
   const [activeTab, setActiveTab] = useState<MobileTab>('editor');
-  const [showTools, setShowTools] = useState(false);
 
-  const selectTab = (tab: MobileTab) => {
-    setShowTools(tab === 'tools');
-    setActiveTab(tab);
-  };
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767px)');
+    const updateViewport = () => setIsMobile(media.matches);
+    updateViewport();
+    media.addEventListener('change', updateViewport);
+    return () => media.removeEventListener('change', updateViewport);
+  }, []);
+
+  const selectTab = (tab: MobileTab) => setActiveTab(tab);
+
+  if (!isMobile) return null;
 
   const tool = (label: string, icon: React.ReactNode, action: () => void) => (
-    <button key={label} onClick={() => { action(); setShowTools(false); setActiveTab('editor'); }}
+    <button key={label} onClick={() => { action(); setActiveTab('editor'); }}
       className="mobile-tool-button">
       <span className="mobile-tool-icon">{icon}</span>
       <span>{label}</span>
