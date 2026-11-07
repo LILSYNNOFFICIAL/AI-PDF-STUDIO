@@ -207,7 +207,8 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
       characterCount: source.length,
       wordCount: countWords(source),
       sectionCount: sections.length,
-      detectedSignatureSection: signatureParties.length > 0,
+      detectedSignatureSection: headings.some(heading => SIGNATURE_HEADING.test(heading.text)),
+      signaturePartyCount: signatureParties.length,
       detectedTableRows,
       detectedListItems: detectedLists
     },
