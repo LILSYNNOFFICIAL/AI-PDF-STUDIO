@@ -291,7 +291,7 @@ export function prepareLongInstruction(
 
   return {
     instruction: `${directive}\n\nThe complete source text is stored verbatim in section ${sectionId}. Process it in bounded chunks. Do not summarize, condense, omit, or replace the source wording unless the instruction explicitly requests a rewrite.`,
-    document: { ...currentDoc, sections: [...currentDoc.sections, sourceSection] }
+    document: recalculateNumbering({ ...currentDoc, sections: [...currentDoc.sections, sourceSection] })
   };
 }
 
