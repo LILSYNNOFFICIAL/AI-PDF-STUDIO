@@ -589,7 +589,7 @@ export function buildDocumentEditPrompt(
     'The current document design model is: ' + JSON.stringify(document.design || null),
     'Only update section IDs and clause IDs included in the supplied chunk. Never invent IDs.',
     'If a supplied section has a sourceReference beginning with PARTIAL_SECTION_CONTENT or a clause has PARTIAL_CLAUSE_CONTENT, it is an excerpt only. Never return a replacement content value for that excerpt. Preserve the full original text by leaving its content field untouched.',
-    'Do not delete sections or clauses. Do not merge away content. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
+    'Never delete sections or clauses unless the user explicitly asks for deletion, or a sectionRangeMoves operation transfers every block into its destination. Preserve all supplied source text unless the instruction explicitly authorizes a targeted text edit.',
     'Do not include sectionOrder at all unless the user explicitly asks to reorder, rearrange, or change the order of document sections. For every other task, omit sectionOrder completely.',
     'For document-wide structural CRUD or block-level moves not covered by the existing fields, return documentPatch as an RFC 6902 JSON Patch array with add, remove, replace, move, copy, and test operations. Use only supported document roots and exact IDs/paths from the supplied section inventory. Never modify protected metadata or invent IDs.',
     'For structural requests that move a continuous range of sections into one existing section/container, return sectionRangeMoves. Identify startSectionId from the first named heading, endBeforeSectionId from the boundary heading that must remain outside the move, and targetSectionId from the destination box. The start is inclusive and the end boundary is exclusive. The target must be inside the selected range. The application moves the original structured blocks without rewriting their wording.',
@@ -1161,6 +1161,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
   const hasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
     (aggregated.sectionRangeMoves?.length || 0) > 0 ||
+    (aggregated.documentPatch?.length || 0) > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0 ||
