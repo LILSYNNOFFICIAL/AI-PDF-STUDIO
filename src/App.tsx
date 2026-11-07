@@ -17,6 +17,7 @@ import { ClauseLibraryModal } from './components/ClauseLibraryModal';
 import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal';
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
 import { DocumentDesignModal } from './components/DocumentDesignModal';
+import { SourceOfTruthModal } from './components/SourceOfTruthModal';
 import { parseTextDocument } from './services/textDocumentImporter';
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
 import { 
@@ -78,6 +79,10 @@ export default function App() {
   const [isWatermarkCustomizerOpen, setIsWatermarkCustomizerOpen] = useState(false);
   const [isReadabilityOpen, setIsReadabilityOpen] = useState(false);
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
+  const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(false);
+  const [sourceTruthText, setSourceTruthText] = useState('');
+  const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
+  const [isRenderingSource, setIsRenderingSource] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -679,6 +684,38 @@ export default function App() {
     input.click();
   };
 
+
+  const handleRenderSourceTruth = () => {
+    if (!sourceTruthText.trim()) {
+      showToast('Paste your complete document before rendering');
+      return;
+    }
+    setIsRenderingSource(true);
+    try {
+      const rendered = parseTextDocument(sourceTruthText, document, new Date().toISOString(), sourceTruthPresetId);
+      // Commit directly rather than passing through legacy style synchronization,
+      // which could carry the old sample document's formatting into the new render.
+      const nextHistory = history.slice(0, historyIndex + 1);
+      nextHistory.push(document);
+      setHistory(nextHistory);
+      setHistoryIndex(nextHistory.length - 1);
+      setDocument(rendered);
+      setActiveSectionId(rendered.sections[0]?.id || null);
+      setIsSourceTruthOpen(false);
+      const integrity = rendered.sourceIntegrity;
+      addAiMessage(
+        `Rendered "${rendered.title}" from the Source of Truth. ${integrity?.wordCount.toLocaleString() || 0} source words and ${integrity?.characterCount.toLocaleString() || 0} characters retained. Built ${rendered.sections.length} editable sections. ${integrity?.detectedSignatureSection ? 'A signature/execution section was detected in the source.' : 'No dedicated signature heading was detected; signature text remains in the source content.'} Detected ${integrity?.detectedTableRows || 0} Markdown table rows and ${integrity?.detectedListItems || 0} list items. The original source is stored separately and has not been rewritten.`
+      );
+      showToast(`Rendered ${rendered.sections.length} sections from source`);
+    } catch (error: any) {
+      console.error('Source of Truth render failed:', error);
+      addAiMessage(`Rendering failed. The existing document was not changed. ${error?.message || 'Unknown rendering error.'}`);
+      showToast('Render failed: existing document preserved');
+    } finally {
+      setIsRenderingSource(false);
+    }
+  };
+
   const handleImportJson = () => {
     const input = window.document.createElement('input');
     input.type = 'file';
@@ -834,6 +871,7 @@ export default function App() {
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onImportText={handleImportText}
+        onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
         onCopyDocumentText={handleCopyDocumentText}
