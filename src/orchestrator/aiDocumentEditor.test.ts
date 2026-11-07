@@ -328,3 +328,111 @@ test('executor ignores an unsolicited incomplete section order during a non-reor
     doc.sections.map(section => section.id)
   );
 });
+
+
+test('AI visual-design requests apply a preset without changing document wording or structure', async () => {
+  const doc = makeDocument();
+  const originalSections = JSON.stringify(doc.sections);
+  const originalContent = doc.sections.map(section => section.content);
+  const prompts: string[] = [];
+  const client = {
+    models: {
+      generateContent: async ({ contents }: { model: string; contents: string; config?: { responseMimeType?: string } }) => {
+        prompts.push(contents);
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Applied Luxury Executive design',
+            details: ['Applied the Luxury Executive visual preset'],
+            sectionUpdates: [],
+            design: { presetId: 'luxury-executive' }
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: 'Apply the Luxury Executive design to this document.',
+    currentDoc: doc,
+    persona: 'document_designer',
+    aiClient: client
+  });
+
+  assert.equal(prompts.length, 1, 'Design-only instructions should not chunk or send source text to the model');
+  assert.match(prompts[0], /luxury-executive/);
+  assert.equal(result.updatedDoc.design?.presetId, 'luxury-executive');
+  assert.deepEqual(result.updatedDoc.sections.map(section => section.content), originalContent);
+  assert.equal(
+    JSON.stringify(result.updatedDoc.sections.map(section => ({ ...section, design: undefined }))),
+    JSON.stringify(doc.sections.map(section => ({ ...section, design: undefined })))
+  );
+  assert.notEqual(JSON.stringify(result.updatedDoc.sections), originalSections);
+  assert.ok(result.summary.verifications.every(check => check.passed));
+});
+
+test('AI section and table design overrides apply only to validated existing targets', () => {
+  const doc = makeDocument();
+  const target = doc.sections[0];
+  target.tables = [{
+    id: 'tbl-design-target',
+    headers: [{ id: 'header-1', content: 'Party' }],
+    rows: [[{ id: 'cell-1', content: 'Artist' }]]
+  }];
+  const response: DocumentEditResponse = {
+    operationTitle: 'Style target section and table',
+    details: ['Applied section background and table header styling'],
+    sectionUpdates: [],
+    sectionDesignUpdates: [{
+      sectionId: target.id,
+      design: { background: { type: 'solid', color: '#102030' }, headingColor: '#ffffff' }
+    }],
+    tableDesignUpdates: [{
+      sectionId: target.id,
+      tableId: 'tbl-design-target',
+      design: { headerBackground: { type: 'solid', color: '#334455' }, headerTextColor: '#ffffff' }
+    }]
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Set the first section background and style its table header.');
+  assert.equal(result.updatedDoc.sections[0].design?.background?.type, 'solid');
+  assert.equal(result.updatedDoc.sections[0].design?.headingColor, '#ffffff');
+  assert.equal(result.updatedDoc.sections[0].tables?.[0].design?.headerTextColor, '#ffffff');
+  assert.equal(result.updatedDoc.sections[0].content, doc.sections[0].content);
+  assert.ok(result.summary.verifications.every(check => check.passed));
+});
+
+test('AI design updates reject invalid targets and colors without mutating the source document', () => {
+  const doc = makeDocument();
+  const before = JSON.stringify(doc);
+  const invalidSection: DocumentEditResponse = {
+    operationTitle: 'Invalid section styling',
+    details: ['Attempted invalid styling'],
+    sectionUpdates: [],
+    sectionDesignUpdates: [{ sectionId: 'missing-section', design: { headingColor: '#ffffff' } }]
+  };
+  assert.throws(() => applyDocumentEditResponse(doc, invalidSection, 'Change the document design.'), /unknown section/i);
+  assert.equal(JSON.stringify(doc), before);
+
+  const invalidColor: DocumentEditResponse = {
+    operationTitle: 'Invalid color styling',
+    details: ['Attempted invalid styling'],
+    sectionUpdates: [],
+    design: { colors: { accent: 'electric-purple' as any } }
+  };
+  assert.throws(() => applyDocumentEditResponse(doc, invalidColor, 'Change the document design.'), /hexadecimal color/i);
+  assert.equal(JSON.stringify(doc), before);
+});
+
+test('design-only instructions cannot smuggle in content edits', () => {
+  const doc = makeDocument();
+  const response: DocumentEditResponse = {
+    operationTitle: 'Style and unexpectedly edit',
+    details: [],
+    sectionUpdates: [{ sectionId: doc.sections[0].id, title: 'Rewritten title' }],
+    design: { colors: { accent: '#aabbcc' } }
+  };
+  assert.throws(
+    () => applyDocumentEditResponse(doc, response, 'Apply a modern visual design.'),
+    /Text edits are not authorized/i
+  );
+});
