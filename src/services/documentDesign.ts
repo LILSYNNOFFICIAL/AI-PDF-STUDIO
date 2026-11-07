@@ -160,6 +160,9 @@ function validateFill(fill: unknown, path: string): asserts fill is ColorFill {
   }
   if (value.type === 'linear-gradient') {
     if (typeof value.angle !== 'number' || !Number.isFinite(value.angle)) throw new Error(path + '.angle must be finite.');
+    if (value.opacity !== undefined && (typeof value.opacity !== 'number' || !Number.isFinite(value.opacity) || value.opacity < 0 || value.opacity > 1)) {
+      throw new Error(path + '.opacity must be between 0 and 1.');
+    }
     if (!Array.isArray(value.stops) || value.stops.length < 2) throw new Error(path + ' must contain at least two gradient stops.');
     let priorPosition = -1;
     for (const [index, stop] of value.stops.entries()) {
@@ -385,7 +388,18 @@ export function clearDesignOverrides(doc: DocumentModel): DocumentModel {
 export function fillToCss(fill: ColorFill | undefined, fallback = 'transparent'): string {
   if (!fill) return fallback;
   if (fill.type === 'linear-gradient') {
-    const stops = fill.stops.map(stop => stop.color + ' ' + stop.position + '%').join(', ');
+    const opacity = fill.opacity ?? 1;
+    const stops = fill.stops.map(stop => {
+      const raw = stop.color.replace('#', '');
+      const expanded = raw.length === 3 ? raw.split('').map(char => char + char).join('') : raw;
+      const red = parseInt(expanded.slice(0, 2), 16);
+      const green = parseInt(expanded.slice(2, 4), 16);
+      const blue = parseInt(expanded.slice(4, 6), 16);
+      const color = opacity >= 1
+        ? stop.color
+        : 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + opacity + ')';
+      return color + ' ' + stop.position + '%';
+    }).join(', ');
     return 'linear-gradient(' + fill.angle + 'deg, ' + stops + ')';
   }
   if (fill.opacity === undefined || fill.opacity >= 1) return fill.color;
