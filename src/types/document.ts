@@ -22,7 +22,7 @@ export interface GradientStop {
 
 export type ColorFill =
   | { type: 'solid'; color: string; opacity?: number }
-  | { type: 'linear-gradient'; angle: number; stops: GradientStop[] };
+  | { type: 'linear-gradient'; angle: number; stops: GradientStop[]; opacity?: number };
 
 export interface BorderConfig {
   style: BorderStyle;
