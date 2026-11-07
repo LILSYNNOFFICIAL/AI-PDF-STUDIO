@@ -1104,7 +1104,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
           ? 'The user explicitly requested a heading-bounded range move. Return sectionRangeMoves with the exact existing startSectionId, exclusive endBeforeSectionId, and destination targetSectionId. Do not substitute sectionOrder, documentPatch, or a textual rewrite.'
           : 'Re-evaluate the request and return the exact executable documentPatch, sectionRangeMoves, sectionOrder, sectionUpdates, or design operations needed.',
         'If a required heading or target cannot be identified unambiguously from the inventory, return no operations and explain which exact boundary is ambiguous.'
-      ].join('\\n\\n');
+      ].join('\n\n');
       const correction = await generateGeminiContentWithRetry(aiClient, {
         model: options.model || 'gemini-3.8-flash',
         contents: correctionPrompt,
