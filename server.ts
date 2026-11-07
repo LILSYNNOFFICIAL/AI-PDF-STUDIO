@@ -95,7 +95,7 @@ app.post('/api/orchestrate', async (req, res) => {
   } catch (err: any) {
     console.error('AI document editing failed:', err?.message || err);
     const message = err?.message || 'AI document editing failed. No changes were applied.';
-    const status = /safe AI chunk limit/i.test(message) ? 413 : 502;
+    const status = /SOURCE CONTENT marker|marker is present/i.test(message) ? 400 : /safe AI chunk limit|large non-text blocks/i.test(message) ? 413 : 502;
     return res.status(status).json({ error: message, documentUnchanged: true });
   }
 });
