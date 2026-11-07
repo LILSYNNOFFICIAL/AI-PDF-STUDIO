@@ -294,10 +294,42 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
   if (!isOpen) return null;
 
   const updateColor = (key: keyof DocumentDesign['colors'], value: string) => {
-    setDesign(current => ({
-      ...current,
-      colors: { ...current.colors, [key]: value }
-    }));
+    setDesign(current => {
+      const next: DocumentDesign = {
+        ...current,
+        colors: { ...current.colors, [key]: value }
+      };
+      const solidFill: ColorFill = { type: 'solid', color: value, opacity: 1 };
+
+      if (key === 'pageSurface') {
+        next.page = { ...next.page, background: solidFill };
+        next.tableDefaults = { ...next.tableDefaults, bodyBackground: solidFill };
+      }
+      if (key === 'sectionSurface') {
+        next.sectionDefaults = { ...next.sectionDefaults, background: solidFill };
+      }
+      if (key === 'border') {
+        next.sectionDefaults = {
+          ...next.sectionDefaults,
+          border: { ...next.sectionDefaults.border, color: value }
+        };
+        next.tableDefaults = { ...next.tableDefaults, gridlineColor: value };
+        next.pageFurniture = { ...next.pageFurniture, dividerColor: value };
+      }
+      if (key === 'tableHeaderSurface') {
+        next.tableDefaults = { ...next.tableDefaults, headerBackground: solidFill };
+      }
+      if (key === 'tableHeaderText') {
+        next.tableDefaults = { ...next.tableDefaults, headerTextColor: value };
+      }
+      if (key === 'tableBodyText') {
+        next.tableDefaults = { ...next.tableDefaults, bodyTextColor: value };
+      }
+      if (key === 'tableAlternateRowSurface') {
+        next.tableDefaults = { ...next.tableDefaults, alternateRowBackground: solidFill };
+      }
+      return next;
+    });
   };
 
   const updateTypography = (key: keyof DocumentDesign['typography'], value: string | number) => {
@@ -308,7 +340,14 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
   };
 
   const updatePageFill = (fill: ColorFill) => {
-    setDesign(current => setNestedDesign(current, 'page', { background: fill }));
+    setDesign(current => ({
+      ...current,
+      page: { ...current.page, background: fill },
+      colors: {
+        ...current.colors,
+        pageSurface: fill.type === 'solid' ? fill.color : (fill.stops[0]?.color || current.colors.pageSurface)
+      }
+    }));
   };
 
   const applySavedTheme = (theme: SavedDocumentTheme) => {
