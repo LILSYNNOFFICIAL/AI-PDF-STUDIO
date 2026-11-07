@@ -248,7 +248,7 @@ export function prepareLongInstruction(
 ): { instruction: string; document: DocumentModel } {
   if (instruction.length <= threshold) return { instruction, document: currentDoc };
 
-  const marker = /(?:source\\s+content|document\\s+content|text\\s+to\\s+include|following\\s+text|following\\s+content|full\\s+text|source)\\s*[:：]\\s*/i;
+  const marker = /(?:source\s+content|document\s+content|text\s+to\s+include|following\s+text|following\s+content|full\s+text|source)\s*[:：]\s*/i;
   const match = marker.exec(instruction);
   if (!match || match.index === undefined) {
     throw new Error(
@@ -257,7 +257,7 @@ export function prepareLongInstruction(
   }
 
   const sourceStart = match.index + match[0].length;
-  const sourceText = instruction.slice(sourceStart).replace(/^\\s+/, '');
+  const sourceText = instruction.slice(sourceStart).replace(/^\s+/, '');
   if (!sourceText.trim()) {
     throw new Error('The SOURCE CONTENT marker is present, but no source text follows it. No document changes were applied.');
   }
@@ -279,7 +279,7 @@ export function prepareLongInstruction(
   };
 
   return {
-    instruction: `${directive}\\n\\nThe complete source text is stored verbatim in section ${sectionId}. Process it in bounded chunks. Do not summarize, condense, omit, or replace the source wording unless the instruction explicitly requests a rewrite.`,
+    instruction: `${directive}\n\nThe complete source text is stored verbatim in section ${sectionId}. Process it in bounded chunks. Do not summarize, condense, omit, or replace the source wording unless the instruction explicitly requests a rewrite.`,
     document: { ...currentDoc, sections: [...currentDoc.sections, sourceSection] }
   };
 }
