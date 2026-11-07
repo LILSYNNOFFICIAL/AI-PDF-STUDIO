@@ -561,6 +561,7 @@ test('generic document patch can move an existing clause between sections by sta
 
 test('generic document patch can create a new section and update a document title atomically', () => {
   const doc = makeDocument();
+  const originalTitle = doc.title;
   const newSection = {
     id: 'sec_ai_created',
     sectionNumber: '',
@@ -583,7 +584,7 @@ test('generic document patch can create a new section and update a document titl
   assert.equal(result.updatedDoc.title, 'Updated Agreement');
   assert.equal(result.updatedDoc.sections.at(-1)?.id, 'sec_ai_created');
   assert.equal(result.updatedDoc.sections.at(-1)?.content, 'New terms supplied by the user.');
-  assert.equal(doc.title, 'Agreement');
+  assert.equal(doc.title, originalTitle);
   assert.equal(doc.sections.some(section => section.id === 'sec_ai_created'), false);
 });
 
@@ -673,7 +674,7 @@ test('generic document patch cannot replace source wording unless the user expli
   };
   assert.throws(
     () => applyDocumentEditResponse(doc, response, 'Reorganize the first section.'),
-    /explicit text-edit instruction/i
+    /does not authorize replacing document content|explicit text-edit instruction/i
   );
   assert.equal(JSON.stringify(doc), before);
 });
