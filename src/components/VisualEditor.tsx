@@ -575,7 +575,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Chart Visual Block */}
                   {section.charts && section.charts.map((chart) => (
-                    <div key={chart.id} className="mt-4 p-4 rounded-lg flex flex-col items-center" style={{ background: fillToCss(documentDesign.colors.sectionSurface), border: `1px solid ${documentDesign.colors.border}` }}>
+                    <div key={chart.id} className="mt-4 p-4 rounded-lg flex flex-col items-center" style={{ background: documentDesign.colors.sectionSurface, border: `1px solid ${documentDesign.colors.border}` }}>
                       <div className="text-xs font-bold mb-3 flex items-center gap-1.5" style={{ color: documentDesign.colors.headingText }}>
                         <PieChart className="w-4 h-4" style={{ color: documentDesign.colors.accent }} />
                         <span>{chart.title}</span>
@@ -656,7 +656,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-6">
                 {document.signatures.parties.map((party: SignatureParty, idx: number) => (
-                  <div key={party.id} className="rounded p-4" style={{ border: `1px solid ${documentDesign.colors.border}`, background: fillToCss(documentDesign.colors.sectionSurface) }}>
+                  <div key={party.id} className="rounded p-4" style={{ border: `1px solid ${documentDesign.colors.border}`, background: documentDesign.colors.sectionSurface }}>
                     <input
                       type="text"
                       value={party.role}
