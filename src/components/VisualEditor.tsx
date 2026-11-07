@@ -18,6 +18,14 @@ import {
   ArrowDownCircle
 } from 'lucide-react';
 import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty } from '../types/document';
+import {
+  resolveDocumentDesign,
+  resolveSectionDesign,
+  resolveTableDesign,
+  resolveCellFill,
+  fillToCss,
+  borderToCss
+} from '../services/documentDesign';
 
 interface VisualEditorProps {
   document: DocumentModel;
@@ -39,6 +47,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onQuickAIAction
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const documentDesign = resolveDocumentDesign(document);
 
   // Elongation & Section Extension helpers
   const handleExtendSectionText = (section: Section) => {
@@ -186,17 +195,25 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         <main 
           role="main"
           aria-label="Document Canvas"
-          className={`w-[820px] min-h-[1050px] bg-white text-slate-900 shadow-2xl rounded-sm p-12 sm:p-16 border border-slate-200 relative mb-12 ${currentFontClass}`}
+          className={`w-[820px] min-h-[1050px] text-slate-900 shadow-2xl rounded-sm p-12 sm:p-16 border border-slate-200 relative mb-12 ${currentFontClass}`}
           style={{
             paddingTop: `${document.pageConfig.margins.top * 1.5}px`,
             paddingBottom: `${document.pageConfig.margins.bottom * 1.5}px`,
             paddingLeft: `${document.pageConfig.margins.left * 1.5}px`,
-            paddingRight: `${document.pageConfig.margins.right * 1.5}px`
+            paddingRight: `${document.pageConfig.margins.right * 1.5}px`,
+            background: fillToCss(documentDesign.page.firstPageBackground || documentDesign.page.background),
+            color: documentDesign.colors.bodyText,
+            fontFamily: documentDesign.typography.bodyFontFamily,
+            fontSize: `${documentDesign.typography.bodyFontSize}pt`,
+            lineHeight: documentDesign.typography.bodyLineHeight
           }}
         >
           {/* Running Header */}
           {document.pageConfig.headerText && (
-            <div className="border-b border-slate-200 pb-2 mb-8 flex items-center justify-between text-[11px] text-slate-400 font-sans tracking-wider uppercase">
+            <div
+              className="pb-2 mb-8 flex items-center justify-between text-[11px] font-sans tracking-wider uppercase"
+              style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` }}
+            >
               <span>{document.pageConfig.headerText}</span>
               <span>CONFIDENTIAL</span>
             </div>
@@ -210,16 +227,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           )}
 
           {/* Document Title Header */}
-          <div className="text-center pb-8 border-b-2 border-slate-900 mb-8">
+          <div className="text-center pb-8 mb-8" style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
             <h1 
-              style={{ fontSize: `${document.styles.heading1Size || 18}pt` }}
-              className={`font-bold tracking-tight text-slate-950 mb-2 ${
+              style={{ fontSize: `${documentDesign.typography.heading1Size || document.styles.heading1Size || 18}pt`, fontFamily: documentDesign.typography.headingFontFamily, color: documentDesign.colors.headingText }}
+              className={`font-bold tracking-tight mb-2 ${
                 document.styles.headingCase === 'uppercase' ? 'uppercase' : ''
               }`}
             >
               {document.title}
             </h1>
-            <div className="text-xs text-slate-500 font-sans flex items-center justify-center gap-3">
+            <div className="text-xs font-sans flex items-center justify-center gap-3" style={{ color: documentDesign.colors.mutedText }}>
               <span>Version {document.version}</span>
               <span>•</span>
               <span>Document Type: {document.type.replace('_', ' ').toUpperCase()}</span>
@@ -233,14 +250,22 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             {document.sections.map((section) => {
               const isActive = activeSectionId === section.id;
               const isAppendix = section.isAppendix || section.sectionNumber.includes('APPENDIX');
+              const sectionStyle = resolveSectionDesign(document, section);
 
               return (
                 <section 
                   key={section.id} 
                   id={section.id}
                   className={`relative group rounded-md p-3 transition-all ${
-                    isActive ? 'ring-2 ring-blue-500/50 bg-blue-50/30' : 'hover:bg-slate-50/50'
-                  } ${section.forcePageBreakBefore ? 'pt-8 border-t-2 border-dashed border-slate-300' : ''}`}
+                    isActive ? 'ring-2 ring-blue-500/50' : 'hover:bg-slate-50/50'
+                  } ${section.forcePageBreakBefore ? 'pt-8' : ''}`}
+                  style={{
+                    background: fillToCss(sectionStyle.background),
+                    color: sectionStyle.bodyTextColor,
+                    border: borderToCss(sectionStyle.border),
+                    padding: `${sectionStyle.padding}px`,
+                    borderTop: section.forcePageBreakBefore ? '2px dashed ' + documentDesign.colors.border : undefined
+                  }}
                 >
                   {/* Floating Contextual AI Bar on Section */}
                   <div className="absolute -top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white rounded-md px-2 py-1 flex items-center gap-1.5 shadow-lg z-10 text-[11px] font-sans">
@@ -296,9 +321,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Section Heading */}
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className={`font-bold font-mono text-xs ${
-                      isAppendix ? 'text-purple-700' : 'text-blue-900'
-                    }`}>
+                    <span className="font-bold font-mono text-xs" style={{ color: sectionStyle.headingColor }}>
                       {section.sectionNumber}
                     </span>
                     <input 
@@ -306,8 +329,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       value={section.title}
                       onChange={(e) => onUpdateSection({ ...section, title: e.target.value })}
                       aria-label="Section Title"
-                      style={{ fontSize: `${document.styles.heading2Size || 13}pt` }}
-                      className="font-bold text-slate-900 flex-1 bg-transparent hover:bg-slate-100/50 focus:bg-white rounded px-1.5 py-0.5 border border-transparent focus:border-blue-400 focus:outline-none"
+                      style={{ fontSize: `${documentDesign.typography.heading2Size || document.styles.heading2Size || 13}pt`, color: sectionStyle.headingColor, fontFamily: documentDesign.typography.headingFontFamily }}
+                      className="font-bold flex-1 bg-transparent hover:bg-slate-100/50 focus:bg-white rounded px-1.5 py-0.5 border border-transparent focus:border-blue-400 focus:outline-none"
                     />
                   </div>
 
@@ -320,11 +343,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       onChange={(e) => onUpdateSection({ ...section, content: e.target.value })}
                       aria-label="Section Content"
                       style={{ 
-                        fontSize: `${document.styles.fontSize || 11}pt`, 
-                        lineHeight: document.styles.lineHeight || 1.5,
+                        fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
+                        lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
                         textAlign: document.styles.alignment || 'left',
-                        color: document.styles.textColor || '#334155',
-                        backgroundColor: document.styles.highlightColor || 'transparent'
+                        color: sectionStyle.bodyTextColor,
+                        backgroundColor: document.styles.highlightColor || 'transparent',
+                        fontFamily: documentDesign.typography.bodyFontFamily
                       }}
                       className="w-full bg-transparent hover:bg-slate-100/50 focus:bg-white rounded p-1.5 border border-transparent focus:border-blue-300 focus:outline-none resize-y placeholder:italic placeholder:text-slate-400"
                     />
@@ -351,7 +375,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                   updated[cIdx] = { ...clause, heading: e.currentTarget.textContent || '' };
                                   onUpdateSection({ ...section, clauses: updated });
                                 }}
-                                className="font-semibold text-slate-900 mr-1.5 outline-none hover:bg-slate-100 focus:bg-white rounded px-0.5"
+                                className="font-semibold mr-1.5 outline-none hover:bg-slate-100 focus:bg-white rounded px-0.5"
+                                style={{ color: sectionStyle.headingColor, fontFamily: documentDesign.typography.headingFontFamily }}
                               >
                                 {clause.heading}:
                               </span>
@@ -365,16 +390,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                 onUpdateSection({ ...section, clauses: updated });
                               }}
                               style={{ 
-                                fontSize: `${document.styles.fontSize || 11}pt`, 
-                                lineHeight: document.styles.lineHeight || 1.5,
+                                fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
+                                lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
                                 fontWeight: document.styles.isBold ? 'bold' : 'normal',
                                 fontStyle: document.styles.isItalic ? 'italic' : 'normal',
                                 textDecoration: [
                                   document.styles.isUnderline ? 'underline' : '',
                                   document.styles.isStrikethrough ? 'line-through' : ''
                                 ].filter(Boolean).join(' ') || 'none',
-                                color: document.styles.textColor || '#1e293b',
-                                backgroundColor: document.styles.highlightColor || 'transparent'
+                                color: sectionStyle.bodyTextColor,
+                                backgroundColor: document.styles.highlightColor || 'transparent',
+                                fontFamily: documentDesign.typography.bodyFontFamily
                               }}
                               className="outline-none hover:bg-slate-100/60 focus:bg-white rounded px-1 transition-colors"
                             >
@@ -429,10 +455,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   </div>
 
                   {/* Tables Block with In-Canvas Editing */}
-                  {section.tables && section.tables.map((table, tIdx) => (
-                    <div key={table.id} className="mt-4 border border-slate-300 rounded-md shadow-xs bg-white">
+                  {section.tables && section.tables.map((table, tIdx) => {
+                    const tableStyle = resolveTableDesign(document, section, table);
+                    return (
+                    <div key={table.id} className="mt-4 rounded-md shadow-xs overflow-hidden" style={{ border: `1px solid ${tableStyle.gridlineColor}`, background: fillToCss(tableStyle.bodyBackground) }}>
                       {/* Table Header Bar with Actions */}
-                      <div className="bg-slate-100 px-3 py-1.5 border-b border-slate-300 flex items-center justify-between">
+                      <div className="px-3 py-1.5 flex items-center justify-between" style={{ background: fillToCss(tableStyle.headerBackground), borderBottom: `${tableStyle.gridlineWidth}px solid ${tableStyle.gridlineColor}` }}>
                         <div className="flex items-center gap-2">
                           <TableIcon className="w-3.5 h-3.5 text-blue-600" />
                           <input
@@ -444,7 +472,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                               updatedTables[tIdx] = { ...table, title: e.target.value };
                               onUpdateSection({ ...section, tables: updatedTables });
                             }}
-                            className="font-bold text-xs text-slate-800 bg-transparent border-none outline-none focus:bg-white px-1 rounded"
+                            className="font-bold text-xs bg-transparent border-none outline-none focus:bg-white px-1 rounded"
+                            style={{ color: tableStyle.headerTextColor }}
                           />
                         </div>
                         <div className="flex items-center gap-2">
@@ -476,9 +505,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-300">
+                            <tr style={{ background: fillToCss(tableStyle.headerBackground), borderBottom: `${tableStyle.gridlineWidth}px solid ${tableStyle.gridlineColor}` }}>
                               {table.headers.map((h, hIdx) => (
-                                <th key={h.id} className="p-2 font-bold text-slate-900 border-r border-slate-200 last:border-none">
+                                <th key={h.id} className="p-2 font-bold border-r last:border-none" style={{ color: tableStyle.headerTextColor, borderColor: tableStyle.gridlineColor, background: h.bg || fillToCss(tableStyle.headerBackground) }}>
                                   <input
                                     type="text"
                                     value={h.content}
@@ -489,16 +518,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                       updatedTables[tIdx] = { ...table, headers: updatedHeaders };
                                       onUpdateSection({ ...section, tables: updatedTables });
                                     }}
-                                    className="w-full bg-transparent border-none outline-none font-bold text-slate-900 focus:bg-white"
+                                    className="w-full bg-transparent border-none outline-none font-bold focus:bg-white"
+                                    style={{ color: tableStyle.headerTextColor }}
                                   />
                                 </th>
                               ))}
-                              <th className="w-8 p-1 text-center bg-slate-50 font-normal text-slate-400"></th>
+                              <th className="w-8 p-1 text-center font-normal" style={{ background: fillToCss(tableStyle.headerBackground), color: tableStyle.headerTextColor }}></th>
                             </tr>
                           </thead>
                           <tbody>
                             {table.rows.map((row, rIdx) => (
-                              <tr key={rIdx} className="border-b border-slate-200 last:border-none hover:bg-blue-50/20 group/row">
+                              <tr key={rIdx} className="border-b last:border-none hover:bg-blue-50/20 group/row" style={{ borderColor: tableStyle.gridlineColor }}>
                                 {row.map((cell, cIdx) => (
                                   <td 
                                     key={cell.id} 
@@ -511,9 +541,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                       updatedTables[tIdx] = { ...table, rows: updatedRows };
                                       onUpdateSection({ ...section, tables: updatedTables });
                                     }}
-                                    className={`p-2 text-slate-800 border-r border-slate-200 last:border-none focus:bg-white outline-none ${
+                                    className={`p-2 border-r last:border-none focus:bg-white outline-none ${
                                       cell.bold ? 'font-semibold' : ''
                                     } ${cell.align === 'right' ? 'text-right' : ''}`}
+                                    style={{
+                                      color: tableStyle.bodyTextColor,
+                                      background: fillToCss(resolveCellFill(tableStyle, cell, rIdx + 1)),
+                                      borderColor: tableStyle.gridlineColor
+                                    }}
                                   >
                                     {cell.content}
                                   </td>
@@ -533,7 +568,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         </table>
                       </div>
                     </div>
-                  ))}
+                  ); })}
 
                   {/* Chart Visual Block */}
                   {section.charts && section.charts.map((chart) => (
@@ -677,7 +712,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           )}
 
           {/* Running Footer */}
-          <div className="mt-16 pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 font-sans">
+          <div className="mt-16 pt-4 border-t flex items-center justify-between text-[11px] font-sans" style={{ color: documentDesign.pageFurniture.footerTextColor, borderColor: documentDesign.pageFurniture.dividerColor, borderTopWidth: `${documentDesign.pageFurniture.dividerWidth}px` }}>
             <span>{document.pageConfig.footerText || 'CONFIDENTIAL & PROPRIETARY'}</span>
             <span>Page 1 of 1</span>
           </div>
