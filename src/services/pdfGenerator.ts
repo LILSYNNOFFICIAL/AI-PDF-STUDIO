@@ -402,12 +402,12 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     else ensureSpace(55);
 
     drawWrappedText(doc.signatures.title || 'SIGNATURES & EXECUTION', margins.left, contentWidth, {
-      font: headingFont, style: 'bold', size: 14, color: [15, 23, 42], lineHeight: 7, after: 2
+      font: headingFont, style: 'bold', size: 14, color: colorToRgb(design.colors.headingText), lineHeight: 7, after: 2
     });
     drawWrappedText(
       'IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date written below.',
       margins.left, contentWidth,
-      { font: primaryFont, style: 'italic', size: 9.5, color: [100, 116, 139], lineHeight: 4.5, after: 5 }
+      { font: primaryFont, style: 'italic', size: 9.5, color: colorToRgb(design.colors.mutedText), lineHeight: 4.5, after: 5 }
     );
 
     const parties = doc.signatures.parties;
@@ -420,18 +420,18 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         const blockX = margins.left + index * (blockWidth + 10);
         pdf.setFont(primaryFont, 'bold');
         pdf.setFontSize(10);
-        pdf.setTextColor(15, 23, 42);
+        pdf.setTextColor(...colorToRgb(design.colors.headingText));
         pdf.text(party.role, blockX, startY);
-        pdf.setDrawColor(71, 85, 105);
+        pdf.setDrawColor(...colorToRgb(design.colors.primary));
         pdf.setLineWidth(0.5);
         pdf.line(blockX, startY + 14, blockX + blockWidth - 10, startY + 14);
         pdf.setFont('courier', 'italic');
         pdf.setFontSize(10);
-        pdf.setTextColor(30, 58, 138);
+        pdf.setTextColor(...colorToRgb(design.colors.accent));
         pdf.text(party.signaturePlaceholder || `/s/ ${party.name}`, blockX + 5, startY + 12);
         pdf.setFont(primaryFont, 'normal');
         pdf.setFontSize(9);
-        pdf.setTextColor(51, 65, 85);
+        pdf.setTextColor(...colorToRgb(design.colors.bodyText));
         pdf.text(`By: ${party.name}`, blockX, startY + 20);
         if (party.title) pdf.text(`Title: ${party.title}`, blockX, startY + 25);
         if (party.company) pdf.text(`Company: ${party.company}`, blockX, startY + 30);
@@ -443,18 +443,18 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       for (const party of parties) {
         ensureSpace(48);
         drawWrappedText(party.role, margins.left, contentWidth, {
-          font: primaryFont, style: 'bold', size: 10, color: [15, 23, 42], lineHeight: 4.5, after: 1
+          font: primaryFont, style: 'bold', size: 10, color: colorToRgb(design.colors.headingText), lineHeight: 4.5, after: 1
         });
-        pdf.setDrawColor(71, 85, 105);
+        pdf.setDrawColor(...colorToRgb(design.colors.primary));
         pdf.line(margins.left, cursorY + 3, pageWidth - margins.right, cursorY + 3);
         drawWrappedText(party.signaturePlaceholder || `/s/ ${party.name}`, margins.left + 5, contentWidth - 10, {
-          font: 'courier', style: 'italic', size: 10, color: [30, 58, 138], lineHeight: 4.5, after: 1
+          font: 'courier', style: 'italic', size: 10, color: colorToRgb(design.colors.accent), lineHeight: 4.5, after: 1
         });
-        drawWrappedText(`By: ${party.name}`, margins.left, contentWidth, { font: primaryFont, size: 9, lineHeight: 4, after: 0 });
-        if (party.title) drawWrappedText(`Title: ${party.title}`, margins.left, contentWidth, { font: primaryFont, size: 9, lineHeight: 4, after: 0 });
-        if (party.company) drawWrappedText(`Company: ${party.company}`, margins.left, contentWidth, { font: primaryFont, size: 9, lineHeight: 4, after: 0 });
-        if (party.date) drawWrappedText(`Date: ${party.date}`, margins.left, contentWidth, { font: primaryFont, size: 9, lineHeight: 4, after: 0 });
-        if (party.hasWitness && party.witnessName) drawWrappedText(`Witness: ${party.witnessName}`, margins.left, contentWidth, { font: primaryFont, size: 9, lineHeight: 4, after: 2 });
+        drawWrappedText(`By: ${party.name}`, margins.left, contentWidth, { font: primaryFont, size: 9, color: colorToRgb(design.colors.bodyText), lineHeight: 4, after: 0 });
+        if (party.title) drawWrappedText(`Title: ${party.title}`, margins.left, contentWidth, { font: primaryFont, size: 9, color: colorToRgb(design.colors.bodyText), lineHeight: 4, after: 0 });
+        if (party.company) drawWrappedText(`Company: ${party.company}`, margins.left, contentWidth, { font: primaryFont, size: 9, color: colorToRgb(design.colors.bodyText), lineHeight: 4, after: 0 });
+        if (party.date) drawWrappedText(`Date: ${party.date}`, margins.left, contentWidth, { font: primaryFont, size: 9, color: colorToRgb(design.colors.bodyText), lineHeight: 4, after: 0 });
+        if (party.hasWitness && party.witnessName) drawWrappedText(`Witness: ${party.witnessName}`, margins.left, contentWidth, { font: primaryFont, size: 9, color: colorToRgb(design.colors.bodyText), lineHeight: 4, after: 2 });
         cursorY += 5;
       }
     }
