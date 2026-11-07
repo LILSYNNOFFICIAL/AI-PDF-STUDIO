@@ -1085,15 +1085,36 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
       contents: structuralPrompt,
       config: { responseMimeType: 'application/json' }
     });
-    const structuralResponse = parseModelResponse(structuralResult.text);
-    const hasStructuralOperations = structuralResponse.sectionRangeMoves?.length ||
-      structuralResponse.documentPatch?.length ||
-      structuralResponse.sectionOrder !== undefined ||
-      structuralResponse.sectionUpdates.length > 0 ||
-      (structuralResponse.sectionDesignUpdates?.length || 0) > 0 ||
-      (structuralResponse.tableDesignUpdates?.length || 0) > 0;
-    if (!hasStructuralOperations) {
-      throw new Error('Gemini could not identify an executable structural operation. It returned this clarification: ' +
+    let structuralResponse = parseModelResponse(structuralResult.text);
+    const requiresBoundedRange = /\\b(everything from|all content from|from .+ to the box above|contained within|inside the .+ box|within the .+ box)\\b/i.test(instruction);
+    const hasOperations = (response: DocumentEditResponse) => Boolean(
+      response.sectionRangeMoves?.length ||
+      response.documentPatch?.length ||
+      response.sectionOrder !== undefined ||
+      response.sectionUpdates.length > 0 ||
+      (response.sectionDesignUpdates?.length || 0) > 0 ||
+      (response.tableDesignUpdates?.length || 0) > 0
+    );
+
+    if (!hasOperations(structuralResponse) || (requiresBoundedRange && !structuralResponse.sectionRangeMoves?.length)) {
+      const correctionPrompt = [
+        structuralPrompt,
+        'CORRECTION REQUIRED: Your previous response did not return the required executable structural operation.',
+        requiresBoundedRange
+          ? 'The user explicitly requested a heading-bounded range move. Return sectionRangeMoves with the exact existing startSectionId, exclusive endBeforeSectionId, and destination targetSectionId. Do not substitute sectionOrder, documentPatch, or a textual rewrite.'
+          : 'Re-evaluate the request and return the exact executable documentPatch, sectionRangeMoves, sectionOrder, sectionUpdates, or design operations needed.',
+        'If a required heading or target cannot be identified unambiguously from the inventory, return no operations and explain which exact boundary is ambiguous.'
+      ].join('\\n\\n');
+      const correction = await generateGeminiContentWithRetry(aiClient, {
+        model: options.model || 'gemini-3.8-flash',
+        contents: correctionPrompt,
+        config: { responseMimeType: 'application/json' }
+      });
+      structuralResponse = parseModelResponse(correction.text);
+    }
+
+    if (!hasOperations(structuralResponse) || (requiresBoundedRange && !structuralResponse.sectionRangeMoves?.length)) {
+      throw new Error('Gemini could not identify the required executable structural operation after a correction attempt. It returned this clarification: ' +
         (structuralResponse.details || []).join(' ') + ' No document changes were applied.');
     }
     return applyDocumentEditResponse(currentDoc, structuralResponse, instruction);
