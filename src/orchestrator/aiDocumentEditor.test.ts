@@ -467,8 +467,9 @@ test('AI can move a heading-bounded section range into one existing target box w
   );
 
   assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [target.id, boundary.id]);
-  assert.equal(result.updatedDoc.sections[0].content, 'Target box original text.\n\nVISUAL DETAILS\nMiddle section exact wording.');
-  assert.deepEqual(result.updatedDoc.sections[0].clauses.map(clause => clause.content), ['Clause wording stays exact.']);
+  assert.equal(result.updatedDoc.sections[0].content, 'Target box original text.');
+  assert.deepEqual(result.updatedDoc.sections[0].clauses.map(clause => clause.content), ['Middle section exact wording.', 'Clause wording stays exact.']);
+  assert.equal(result.updatedDoc.sections[0].clauses[0].heading, 'VISUAL DETAILS');
   assert.deepEqual(result.updatedDoc.sections[0].tables?.map(table => table.id), ['target-table', 'middle-table']);
   assert.equal(result.updatedDoc.sections[1].content, 'Boundary must remain outside the move.');
   assert.equal(JSON.stringify(doc.sections[1]).includes('Middle section exact wording.'), true, 'The input document remains unchanged');
@@ -536,7 +537,7 @@ test('structural executor gives Gemini the complete section inventory and applie
   assert.match(prompts[0], /WRITTEN DESCRIPTION \+ VISUAL REFERENCE/);
   assert.match(prompts[0], /REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY/);
   assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [target.id, boundary.id]);
-  assert.match(result.updatedDoc.sections[0].content || '', /All additional detail\./);
+  assert.equal(result.updatedDoc.sections[0].clauses.some(clause => clause.content.includes('All additional detail.')), true);
 });
 
 
