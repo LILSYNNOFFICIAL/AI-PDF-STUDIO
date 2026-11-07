@@ -534,3 +534,84 @@ test('structural executor gives Gemini the complete section inventory and applie
   assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [target.id, boundary.id]);
   assert.match(result.updatedDoc.sections[0].content || '', /All additional detail\./);
 });
+
+
+test('generic document patch can move an existing clause between sections by stable JSON paths', () => {
+  const doc = makeDocument();
+  const source = doc.sections[0];
+  const target = doc.sections[1];
+  const moved = source.clauses[0];
+  const response: DocumentEditResponse = {
+    operationTitle: 'Move clause to ownership section',
+    details: ['Moved the selected clause without rewriting it.'],
+    sectionUpdates: [],
+    documentPatch: [{
+      op: 'move',
+      from: `/sections/0/clauses/0`,
+      path: `/sections/1/clauses/-`
+    }]
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Move the first clause into the second section.');
+  assert.equal(result.updatedDoc.sections[0].clauses.some(clause => clause.id === moved.id), false);
+  assert.equal(result.updatedDoc.sections[1].clauses.some(clause => clause.id === moved.id && clause.content === moved.content), true);
+  assert.equal(doc.sections[0].clauses.some(clause => clause.id === moved.id), true, 'The original document remains unchanged');
+  assert.ok(result.summary.verifications.every(check => check.passed));
+});
+
+test('generic document patch can create a new section and update a document title atomically', () => {
+  const doc = makeDocument();
+  const newSection = {
+    id: 'sec_ai_created',
+    sectionNumber: '',
+    title: 'NEW COMMERCIAL TERMS',
+    content: 'New terms supplied by the user.',
+    clauses: [],
+    orderIndex: doc.sections.length + 1
+  };
+  const response: DocumentEditResponse = {
+    operationTitle: 'Add commercial terms',
+    details: ['Created a new section and updated the document title.'],
+    sectionUpdates: [],
+    documentPatch: [
+      { op: 'replace', path: '/title', value: 'Updated Agreement' },
+      { op: 'add', path: '/sections/-', value: newSection }
+    ]
+  };
+
+  const result = applyDocumentEditResponse(doc, response, 'Rename the agreement and add a new section.');
+  assert.equal(result.updatedDoc.title, 'Updated Agreement');
+  assert.equal(result.updatedDoc.sections.at(-1)?.id, 'sec_ai_created');
+  assert.equal(result.updatedDoc.sections.at(-1)?.content, 'New terms supplied by the user.');
+  assert.equal(doc.title, 'Agreement');
+  assert.equal(doc.sections.some(section => section.id === 'sec_ai_created'), false);
+});
+
+test('generic document patches reject prototype pollution and invalid paths without mutating the source', () => {
+  const doc = makeDocument();
+  const before = JSON.stringify(doc);
+  const malicious: DocumentEditResponse = {
+    operationTitle: 'Unsafe patch',
+    details: [],
+    sectionUpdates: [],
+    documentPatch: [{ op: 'add', path: '/sections/0/__proto__/polluted', value: true }]
+  };
+  assert.throws(() => applyDocumentEditResponse(doc, malicious, 'Add a property.'), /unsafe|prototype|path/i);
+  assert.equal(JSON.stringify(doc), before);
+
+  const invalid: DocumentEditResponse = {
+    operationTitle: 'Invalid patch',
+    details: [],
+    sectionUpdates: [],
+    documentPatch: [{ op: 'replace', path: '/sections/999/title', value: 'Missing' }]
+  };
+  assert.throws(() => applyDocumentEditResponse(doc, invalid, 'Rename a section.'), /does not exist|invalid path|index/i);
+  assert.equal(JSON.stringify(doc), before);
+});
+
+test('structural planner advertises generic JSON Patch operations for document-wide CRUD', () => {
+  const doc = makeDocument();
+  const prompt = buildDocumentEditPrompt('Add a new section.', doc, 'auto_architect', doc.sections);
+  assert.match(prompt, /documentPatch/);
+  assert.match(prompt, /RFC 6902|JSON Patch/i);
+});
