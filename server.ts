@@ -6,6 +6,7 @@ import { GoogleGenAI } from '@google/genai';
 import { assessDocumentQuality } from './src/orchestrator/orchestrator.ts';
 import { DocumentModel } from './src/types/document.ts';
 import { executeAiDocumentEdit, prepareLongInstruction } from './src/orchestrator/aiDocumentEditor.ts';
+import { isAllowedApiOrigin } from './src/services/apiCors.ts';
 
 dotenv.config();
 
@@ -28,11 +29,7 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (!origin) return next();
 
-  const localDevelopmentOrigin =
-    process.env.NODE_ENV !== 'production' &&
-    /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
-
-  if (!allowedOrigins.has(origin) && !localDevelopmentOrigin) {
+  if (!isAllowedApiOrigin(origin, process.env.ALLOWED_ORIGINS || '', process.env.NODE_ENV)) {
     return res.status(403).json({ error: 'Origin is not allowed.' });
   }
 
