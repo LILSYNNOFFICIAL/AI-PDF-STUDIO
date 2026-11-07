@@ -51,12 +51,19 @@ function parseColorInput(input: string): string | null {
     return '#' + raw.toLowerCase();
   }
   const rgb = value.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/i);
-  if (rgb) return rgbToHex(Number(rgb[1]), Number(rgb[2]), Number(rgb[3]));
+  if (rgb) {
+    const channels = [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+    if (channels.some(channel => channel < 0 || channel > 255)) return null;
+    return rgbToHex(channels[0], channels[1], channels[2]);
+  }
   const hsl = value.match(/^hsla?\(\s*(-?[\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*[\d.]+)?\s*\)$/i);
   if (hsl) {
+    const saturationValue = Number(hsl[2]);
+    const lightnessValue = Number(hsl[3]);
+    if (saturationValue < 0 || saturationValue > 100 || lightnessValue < 0 || lightnessValue > 100) return null;
     const hue = ((Number(hsl[1]) % 360) + 360) % 360 / 360;
-    const saturation = Math.max(0, Math.min(100, Number(hsl[2]))) / 100;
-    const lightness = Math.max(0, Math.min(100, Number(hsl[3]))) / 100;
+    const saturation = saturationValue / 100;
+    const lightness = lightnessValue / 100;
     const channel = (n: number) => {
       const k = (n + hue * 12) % 12;
       const a = saturation * Math.min(lightness, 1 - lightness);
