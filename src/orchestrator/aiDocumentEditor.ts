@@ -369,13 +369,22 @@ function applySectionRangeMoves(
     }
     range.forEach(section => usedSections.add(section.id));
 
-    const mergedContent = range.map(section => {
-      if (section.id === target.id) return section.content || '';
-      const heading = section.title ? section.title : '';
-      return [heading, section.content || ''].filter(Boolean).join('\n');
-    }).filter(value => value.length > 0).join('\n\n');
-
-    const mergedClauses = range.flatMap(section => section.clauses || []);
+    // Keep the destination's section-level content in place. Convert each
+    // absorbed section's own heading/content into a clause so it remains a
+    // visually distinct subheading inside the destination container.
+    const mergedContent = target.content || '';
+    const mergedClauses = range.flatMap(section => {
+      if (section.id === target.id) return section.clauses || [];
+      const movedSectionContent: Clause = {
+        id: `moved_section_content_${section.id}`,
+        clauseNumber: '',
+        heading: section.title || 'Moved section content',
+        content: section.content || '',
+        orderIndex: 0,
+        sourceReference: section.sourceReference || `Moved from section ${section.id}`
+      };
+      return [movedSectionContent, ...(section.clauses || [])];
+    }).map((clause, index) => ({ ...clause, orderIndex: index + 1 }));
     const mergedTables = range.flatMap(section => section.tables || []);
     const mergedCharts = range.flatMap(section => section.charts || []);
     const mergedImages = range.flatMap(section => section.images || []);
@@ -1047,8 +1056,10 @@ export function applyDocumentEditResponse(
           const explicitlyUpdated = response.sectionUpdates.find(item => item.sectionId === before.id);
           if (explicitlyUpdated?.content !== undefined && mayEditText) return true;
           if (rangeMoveResult.movedToTarget.has(before.id) || response.sectionRangeMoves?.some(move => move.targetSectionId === before.id)) {
-            if (before.content && !(after.content || '').includes(before.content)) return false;
-            if (before.id !== targetId && before.title && !(after.content || '').includes(before.title)) return false;
+            if (before.content && !(after.content || '').includes(before.content) &&
+                !after.clauses.some(clause => clause.content === before.content)) return false;
+            if (before.id !== targetId && before.title &&
+                !after.clauses.some(clause => clause.heading === before.title)) return false;
             for (const clause of before.clauses || []) {
               const retained = after.clauses.find(item => item.id === clause.id);
               if (!retained || retained.content !== clause.content) return false;
