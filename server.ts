@@ -3,16 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
-import { 
-  buildDocumentFromPrompt, 
-  mergeSections, 
-  splitSection, 
-  reorganizeDocument, 
-  applyFormatting, 
-  assessDocumentQuality,
-  recalculateNumbering,
-  rollbackDocument
-} from './src/orchestrator/orchestrator.ts';
+import { assessDocumentQuality } from './src/orchestrator/orchestrator.ts';
 import { DocumentModel } from './src/types/document.ts';
 import { executeAiDocumentEdit } from './src/orchestrator/aiDocumentEditor.ts';
 
