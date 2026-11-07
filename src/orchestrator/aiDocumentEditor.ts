@@ -150,6 +150,9 @@ function explicitDocumentDesign(instruction: string): boolean {
 }
 
 function designOnlyInstruction(instruction: string): boolean {
+  // Quoted section titles can contain words like "visual" or "design".
+  // Structural intent takes precedence over keyword-based design detection.
+  if (requiresStructuralContext(instruction)) return false;
   if (!explicitDocumentDesign(instruction) || explicitTextEdit(instruction) || explicitSectionReorder(instruction)) return false;
   return !/\b(merge|split|reorganize|re-order|reorder|rearrange|move section|add section|delete section|remove section|insert section)\b/i.test(instruction);
 }
@@ -672,9 +675,6 @@ export function applyDocumentEditResponse(
     orderedSections = response.sectionOrder.map(id => sections.find(section => section.id === id)!);
   }
 
-  const rangeMoveResult = applySectionRangeMoves(orderedSections, response.sectionRangeMoves || []);
-  orderedSections = rangeMoveResult.sections;
-
   if (response.styles !== undefined && !isRecord(response.styles)) {
     throw new Error('Gemini returned invalid style updates. No changes were applied.');
   }
@@ -718,6 +718,9 @@ export function applyDocumentEditResponse(
       validateTableDesign(targetTable.design);
     }
   }
+
+  const rangeMoveResult = applySectionRangeMoves(orderedSections, response.sectionRangeMoves || []);
+  orderedSections = rangeMoveResult.sections;
 
   let design = normalizeDocumentDesign(currentDoc).design!;
   if (response.design !== undefined) {
