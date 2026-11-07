@@ -47,6 +47,7 @@ export interface ExecuteDocumentEditOptions {
   aiClient: GeminiEditorClient;
   model?: string;
   maxChunkChars?: number;
+  allowNoop?: boolean;
 }
 
 const DEFAULT_CHUNK_CHARS = 18000;
@@ -497,6 +498,14 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
   }
 
   aggregated.sectionUpdates = mergeSectionUpdates(aggregated.sectionUpdates);
+  const hasActionableUpdates =
+    aggregated.sectionUpdates.length > 0 ||
+    aggregated.sectionOrder !== undefined ||
+    Object.keys(aggregated.styles || {}).length > 0 ||
+    Object.keys(aggregated.pageConfig || {}).length > 0;
+  if (!hasActionableUpdates && !options.allowNoop) {
+    throw new Error('Gemini returned an execution summary without any actionable document updates. The document was not changed.');
+  }
   for (const update of aggregated.sectionUpdates) {
     if (partialSectionIds.has(update.sectionId) && update.content !== undefined) {
       throw new Error(`Gemini attempted to replace a partial section excerpt (${update.sectionId}) as if it were the complete section. No changes were applied.`);
