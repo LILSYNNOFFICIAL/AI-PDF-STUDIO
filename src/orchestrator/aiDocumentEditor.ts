@@ -870,37 +870,51 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
 
   const partialSectionIds = new Set<string>();
   const partialClauseIds = new Set<string>();
-  for (const chunk of chunks) {
-    chunk.partialSectionIds.forEach(id => partialSectionIds.add(id));
-    chunk.partialClauseIds.forEach(id => partialClauseIds.add(id));
-    const prompt = buildDocumentEditPrompt(instruction, currentDoc, persona, chunk.sections);
-    const result = await generateGeminiContentWithRetry(aiClient, {
-      model: options.model || 'gemini-3.8-flash',
-      contents: prompt,
-      config: { responseMimeType: 'application/json' }
+  const chunkConcurrency = 3;
+
+  for (let offset = 0; offset < chunks.length; offset += chunkConcurrency) {
+    const batch = chunks.slice(offset, offset + chunkConcurrency);
+    batch.forEach(chunk => {
+      chunk.partialSectionIds.forEach(id => partialSectionIds.add(id));
+      chunk.partialClauseIds.forEach(id => partialClauseIds.add(id));
     });
-    const parsed = parseModelResponse(result.text);
-    const allowedIds = new Set(chunk.sections.map(section => section.id));
-    for (const update of parsed.sectionUpdates) {
-      if (!allowedIds.has(update.sectionId)) {
-        throw new Error(`Gemini returned an update outside the current chunk: ${update.sectionId}. No changes were applied.`);
+
+    // Independent document chunks can be analyzed concurrently. Results are
+    // merged in source order, and the document is still committed only once.
+    const batchResults = await Promise.all(batch.map(async chunk => {
+      const prompt = buildDocumentEditPrompt(instruction, currentDoc, persona, chunk.sections);
+      const result = await generateGeminiContentWithRetry(aiClient, {
+        model: options.model || 'gemini-3.8-flash',
+        contents: prompt,
+        config: { responseMimeType: 'application/json' }
+      });
+      const parsed = parseModelResponse(result.text);
+      const allowedIds = new Set(chunk.sections.map(section => section.id));
+      for (const update of parsed.sectionUpdates) {
+        if (!allowedIds.has(update.sectionId)) {
+          throw new Error(`Gemini returned an update outside the current chunk: ${update.sectionId}. No changes were applied.`);
+        }
       }
-      aggregated.sectionUpdates.push(update);
-    }
-    aggregated.details.push(...parsed.details);
-    if (parsed.operationTitle) aggregated.operationTitle = parsed.operationTitle;
-    if (parsed.sectionOrder && explicitSectionReorder(instruction)) {
-      if (aggregated.sectionOrder && JSON.stringify(aggregated.sectionOrder) !== JSON.stringify(parsed.sectionOrder)) {
-        throw new Error('Gemini returned conflicting section-order operations. No changes were applied.');
+      return { chunk, parsed };
+    }));
+
+    for (const { chunk, parsed } of batchResults) {
+      aggregated.sectionUpdates.push(...parsed.sectionUpdates);
+      aggregated.details.push(...parsed.details);
+      if (parsed.operationTitle) aggregated.operationTitle = parsed.operationTitle;
+      if (parsed.sectionOrder && explicitSectionReorder(instruction)) {
+        if (aggregated.sectionOrder && JSON.stringify(aggregated.sectionOrder) !== JSON.stringify(parsed.sectionOrder)) {
+          throw new Error('Gemini returned conflicting section-order operations. No changes were applied.');
+        }
+        aggregated.sectionOrder = parsed.sectionOrder;
       }
-      aggregated.sectionOrder = parsed.sectionOrder;
-    }
-    if (parsed.styles) aggregated.styles = { ...(aggregated.styles || {}), ...parsed.styles };
-    if (parsed.pageConfig) aggregated.pageConfig = { ...(aggregated.pageConfig || {}), ...parsed.pageConfig };
-    if (chunk === chunks[0]) {
-      aggregated.design = parsed.design;
-      aggregated.sectionDesignUpdates = parsed.sectionDesignUpdates;
-      aggregated.tableDesignUpdates = parsed.tableDesignUpdates;
+      if (parsed.styles) aggregated.styles = { ...(aggregated.styles || {}), ...parsed.styles };
+      if (parsed.pageConfig) aggregated.pageConfig = { ...(aggregated.pageConfig || {}), ...parsed.pageConfig };
+      if (offset === 0 && chunk === chunks[0]) {
+        aggregated.design = parsed.design;
+        aggregated.sectionDesignUpdates = parsed.sectionDesignUpdates;
+        aggregated.tableDesignUpdates = parsed.tableDesignUpdates;
+      }
     }
   }
 
