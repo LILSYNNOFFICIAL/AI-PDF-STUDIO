@@ -415,7 +415,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Table Target</h3>
                 <select value={tableId} onChange={event => setTableId(event.target.value)} className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100">
-                  {document.sections.flatMap(section => (section.tables || []).map(table => <option key={section.id + '-' + table.id} value={table.id}>{section.sectionNumber}: {table.title || 'Untitled table'}</option>))}
+                  {tables.map(table => <option key={table.id} value={table.id}>{table.title || 'Untitled table'}</option>)}
                 </select>
                 {selectedTable && <p className="text-[10px] text-slate-500">{selectedSection?.title}</p>}
                 <ColorControl label="Table header background" value={fillColor(tableDraft.headerBackground, design.colors.tableHeaderSurface)} onChange={color => setTableDraft(current => ({ ...current, headerBackground: { type: 'solid', color } }))} />
