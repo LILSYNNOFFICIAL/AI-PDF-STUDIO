@@ -298,19 +298,18 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               >
                 <FileText className="w-3.5 h-3.5 text-emerald-400" /> Import Full Text / Markdown
               </button>
-              <button
-                onClick={() => executeAction(onOpenSourceTruth)}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <FileCheck className="w-3.5 h-3.5 text-cyan-300" /> Source of Truth / Render Document
-              </button>
-
               <div className="border-t border-slate-800 my-1" />
               <button 
                 onClick={() => executeAction(onOpenMetadata)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
               >
                 <FileText className="w-3.5 h-3.5 text-slate-400" /> Document Properties
+              </button>
+              <button
+                onClick={() => executeAction(onOpenSourceTruth)}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <FileCheck className="w-3.5 h-3.5 text-cyan-300" /> Source of Truth / Render Document
               </button>
             </div>
           )}
@@ -362,17 +361,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               </button>
             </div>
           )}
-        </div>
-
-        {/* DESIGN CONTROLS */}
-        <div className="relative">
-          <button
-            onClick={() => executeAction(onOpenDesign)}
-            className="px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors"
-            title="Customize document themes, backgrounds, colors, sections and tables"
-          >
-            Design
-          </button>
         </div>
 
         {/* INSERT MENU */}
@@ -462,6 +450,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           </button>
           {activeMenu === 'format' && (
             <div className="absolute left-0 top-full mt-1 w-56 bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
+              <button
+                onClick={() => executeAction(onOpenDesign)}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+                title="Customize document themes, backgrounds, colors, sections and tables"
+              >
+                <Palette className="w-3.5 h-3.5 text-blue-300" /> Document Design
+              </button>
+              <div className="border-t border-slate-800 my-1" />
               <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Font Families</div>
               {['Times New Roman', 'Garamond', 'Inter', 'Helvetica', 'Georgia', 'Courier New'].map((f) => (
                 <button
