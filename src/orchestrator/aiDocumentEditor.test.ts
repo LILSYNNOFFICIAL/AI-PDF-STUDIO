@@ -147,7 +147,8 @@ test('very large section source is processed in ordered chunks without losing te
           text: JSON.stringify({
             operationTitle: 'Large source inspected in chunks',
             details: ['Processed one source fragment'],
-            sectionUpdates: []
+            sectionUpdates: [],
+            styles: { fontSize: 12 }
           })
         };
       }
@@ -164,6 +165,7 @@ test('very large section source is processed in ordered chunks without losing te
 
   assert.ok(calls > 1, 'Expected the oversized source to be processed through multiple AI calls');
   assert.equal(result.updatedDoc.sections[0].content, original);
+  assert.equal(result.updatedDoc.styles.fontSize, 12);
   assert.match(result.updatedDoc.sections[0].content || '', /^LONG-SOURCE-BEGIN/);
   assert.match(result.updatedDoc.sections[0].content || '', /LONG-SOURCE-END$/);
 });
@@ -189,5 +191,31 @@ test('large pasted content without an explicit source boundary is rejected, not 
   assert.throws(
     () => prepareLongInstruction('Unstructured long input '.repeat(1000), doc, 100),
     /SOURCE CONTENT.*No document changes were applied/i
+  );
+});
+
+test('AI summary without document operations is rejected as a no-op', async () => {
+  const doc = makeDocument();
+  doc.sections = doc.sections.slice(0, 1);
+  const client = {
+    models: {
+      generateContent: async () => ({
+        text: JSON.stringify({
+          operationTitle: 'Claimed completion',
+          details: ['No actual operation was returned'],
+          sectionUpdates: []
+        })
+      })
+    }
+  };
+
+  await assert.rejects(
+    executeAiDocumentEdit({
+      instruction: 'Make the document more professional.',
+      currentDoc: doc,
+      persona: 'auto_architect',
+      aiClient: client
+    }),
+    /without any actionable document updates/i
   );
 });
