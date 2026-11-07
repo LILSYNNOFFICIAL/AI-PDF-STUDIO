@@ -1201,6 +1201,7 @@ export async function executeAiDocumentEdit(options: ExecuteDocumentEditOptions)
   const correctedHasActionableUpdates =
     aggregated.sectionUpdates.length > 0 ||
     (aggregated.sectionRangeMoves?.length || 0) > 0 ||
+    (aggregated.documentPatch?.length || 0) > 0 ||
     aggregated.sectionOrder !== undefined ||
     Object.keys(aggregated.styles || {}).length > 0 ||
     Object.keys(aggregated.pageConfig || {}).length > 0 ||
