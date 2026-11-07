@@ -54,6 +54,7 @@ interface MenuBarProps {
   onPrint: () => void;
   onExportJson: () => void;
   onImportJson: () => void;
+  onImportText: () => void;
   onExportMarkdown: () => void;
   onExportPlainText: () => void;
   onCopyDocumentText: () => void;
@@ -97,6 +98,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onPrint,
   onExportJson,
   onImportJson,
+  onImportText,
   onExportMarkdown,
   onExportPlainText,
   onCopyDocumentText,
@@ -285,6 +287,12 @@ export const MenuBar: React.FC<MenuBarProps> = ({
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
               >
                 <FolderOpen className="w-3.5 h-3.5 text-blue-400" /> Import Model JSON
+              </button>
+              <button
+                onClick={() => executeAction(onImportText)}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+              >
+                <FileText className="w-3.5 h-3.5 text-emerald-400" /> Import Full Text / Markdown
               </button>
 
               <div className="border-t border-slate-800 my-1" />
