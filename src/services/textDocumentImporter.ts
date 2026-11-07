@@ -94,7 +94,7 @@ function parseSignatureParties(content: string): SignatureParty[] {
   let current: { role: string; lines: string[] } | null = null;
   const flush = () => {
     if (!current) return;
-    const valueFor = (label: string) => current!.lines.find(line => new RegExp('^\\s*' + label + '\\s*:', 'i').test(line))?.replace(/^\\s*[^:]+:\\s*/i, '').trim() || '';
+    const valueFor = (label: string) => current!.lines.find(line => new RegExp('^\\s*(?:' + label + ')\\s*:', 'i').test(line))?.replace(/^\\s*[^:]+:\\s*/i, '').trim() || '';
     const by = valueFor('By|Name|Printed Name');
     const signature = valueFor('Signature');
     const date = valueFor('Date');
@@ -235,7 +235,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
 
 export function getSourceIntegrityReport(doc: DocumentModel) {
   const source = doc.sourceText || '';
-  const rendered = doc.sections.map(section => [section.sourceHeading || '', section.content || '', ...(section.tables || []).flatMap(table => [table.headers.map(cell => cell.content).join(' '), ...table.rows.map(row => row.map(cell => cell.content).join(' '))])].join('\\n')).join('\\n');
+  const rendered = [doc.title, ...doc.sections.map(section => [section.sourceHeading || '', section.content || '', ...(section.tables || []).flatMap(table => [table.headers.map(cell => cell.content).join(' '), ...table.rows.map(row => row.map(cell => cell.content).join(' '))])].join('\\n')), ...(doc.signatures?.parties || []).flatMap(party => [party.role, party.name, party.title || '', party.company || '', party.date || '', party.signaturePlaceholder || ''])].join('\\n');
   return {
     sourceCharacters: source.length,
     sourceWords: countWords(source),
