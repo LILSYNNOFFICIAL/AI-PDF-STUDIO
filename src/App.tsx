@@ -17,7 +17,8 @@ import { ClauseLibraryModal } from './components/ClauseLibraryModal';
 import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal';
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
 import { DocumentDesignModal } from './components/DocumentDesignModal';
-import { parseTextDocument } from './services/textDocumentImporter';
+import { SourceOfTruthModal } from './components/SourceOfTruthModal';
+import { parseTextDocument, getSourceIntegrityReport } from './services/textDocumentImporter';
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
 import { 
   DocumentModel, 
@@ -78,6 +79,10 @@ export default function App() {
   const [isWatermarkCustomizerOpen, setIsWatermarkCustomizerOpen] = useState(false);
   const [isReadabilityOpen, setIsReadabilityOpen] = useState(false);
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
+  const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(false);
+  const [sourceTruthText, setSourceTruthText] = useState('');
+  const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
+  const [isRenderingSource, setIsRenderingSource] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -229,7 +234,7 @@ export default function App() {
       const response = await fetch(`${apiBase}/api/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, currentDoc: document, persona }),
+        body: JSON.stringify({ instruction, currentDoc: { ...document, sourceText: undefined }, persona }),
         signal: controller.signal
       });
 
@@ -241,7 +246,11 @@ export default function App() {
         throw new Error('The AI service did not return an updated document. No changes were applied.');
       }
 
-      pushHistory(data.updatedDoc);
+      pushHistory({
+        ...data.updatedDoc,
+        sourceText: data.updatedDoc.sourceText ?? document.sourceText,
+        sourceIntegrity: data.updatedDoc.sourceIntegrity ?? document.sourceIntegrity
+      });
       addAiMessage(
         data.summary?.operationTitle || 'Document updated',
         data.plan,
@@ -679,6 +688,39 @@ export default function App() {
     input.click();
   };
 
+
+  const handleRenderSourceTruth = () => {
+    if (!sourceTruthText.trim()) {
+      showToast('Paste your complete document before rendering');
+      return;
+    }
+    setIsRenderingSource(true);
+    try {
+      const rendered = parseTextDocument(sourceTruthText, document, new Date().toISOString(), sourceTruthPresetId);
+      // Commit directly rather than passing through legacy style synchronization,
+      // which could carry the old sample document's formatting into the new render.
+      const nextHistory = history.slice(0, historyIndex + 1);
+      nextHistory.push(document);
+      setHistory(nextHistory);
+      setHistoryIndex(nextHistory.length - 1);
+      setDocument(rendered);
+      setActiveSectionId(rendered.sections[0]?.id || null);
+      setIsSourceTruthOpen(false);
+      const integrity = rendered.sourceIntegrity;
+      const report = getSourceIntegrityReport(rendered);
+      addAiMessage(
+        `Rendered "${rendered.title}" from the Source of Truth. ${integrity?.wordCount.toLocaleString() || 0} source words and ${integrity?.characterCount.toLocaleString() || 0} characters retained. Built ${rendered.sections.length} editable sections. ${integrity?.detectedSignatureSection ? 'A signature/execution section was detected, with ${integrity?.signaturePartyCount || 0} explicit parties converted to editable signature fields.' : 'No dedicated signature heading was detected; signature text remains in the source content.'} Detected ${integrity?.detectedTableRows || 0} Markdown table rows and ${integrity?.detectedListItems || 0} list items. Rendered structure contains ${report.renderedWords.toLocaleString()} words across the title, sections, tables, and signature fields. The original source is stored separately and has not been rewritten.`
+      );
+      showToast(`Rendered ${rendered.sections.length} sections from source`);
+    } catch (error: any) {
+      console.error('Source of Truth render failed:', error);
+      addAiMessage(`Rendering failed. The existing document was not changed. ${error?.message || 'Unknown rendering error.'}`);
+      showToast('Render failed: existing document preserved');
+    } finally {
+      setIsRenderingSource(false);
+    }
+  };
+
   const handleImportJson = () => {
     const input = window.document.createElement('input');
     input.type = 'file';
@@ -834,6 +876,7 @@ export default function App() {
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onImportText={handleImportText}
+        onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
         onCopyDocumentText={handleCopyDocumentText}
@@ -972,6 +1015,7 @@ export default function App() {
         document={document}
         activeSectionId={activeSectionId}
         onOpenDesign={() => setIsDesignModalOpen(true)}
+        onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         persona={persona}
         messages={messages}
         isOrchestrating={isOrchestrating}
@@ -1110,6 +1154,17 @@ export default function App() {
         document={document}
         isOpen={isReadabilityOpen}
         onClose={() => setIsReadabilityOpen(false)}
+      />
+
+      <SourceOfTruthModal
+        isOpen={isSourceTruthOpen}
+        source={sourceTruthText}
+        selectedPresetId={sourceTruthPresetId}
+        onSourceChange={setSourceTruthText}
+        onPresetChange={setSourceTruthPresetId}
+        onRender={handleRenderSourceTruth}
+        onClose={() => setIsSourceTruthOpen(false)}
+        isRendering={isRenderingSource}
       />
 
       <DocumentDesignModal

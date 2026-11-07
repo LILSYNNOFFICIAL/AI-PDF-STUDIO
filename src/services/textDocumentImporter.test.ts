@@ -10,26 +10,78 @@ const base = {
   sections: []
 } as unknown as DocumentModel;
 
-test('imports numbered agreement sections and appendix without losing nested headings or text', () => {
-  const source = [
-    '# MUSIC COLLABORATION AGREEMENT', '## “SHADOWS”', '',
-    '## 1. PARTIES', 'Party A text.', '',
-    '## 2. PROJECT', 'Project text.', '',
-    '## 17. CHARACTER REFERENCE', '### 1. PRESERVE IDENTITY', 'Nested content.', '',
-    '# APPENDIX A. REFERENCES', 'https://example.com', '',
-    '# IMPORTANT REVIEW NOTE', 'Review text.'
-  ].join('\n');
+test('renders ordinary pasted text even when it has no recognized heading syntax', () => {
+  const source = 'Collaboration Agreement\n\nThe parties agree to collaborate.\n\nPayment is due within thirty days.';
   const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
-  assert.equal(doc.title, 'MUSIC COLLABORATION AGREEMENT “SHADOWS”');
-  assert.equal(doc.sections.length, 5);
-  assert.equal(doc.sections[0].sectionNumber, '1.0');
-  assert.equal(doc.sections[2].content, '### 1. PRESERVE IDENTITY\nNested content.');
-  assert.equal(doc.sections[3].isAppendix, true);
-  assert.equal(doc.sections[3].content, 'https://example.com');
-  assert.equal(doc.sections[4].title, 'IMPORTANT REVIEW NOTE');
+  assert.equal(doc.sourceText, source);
+  assert.equal(doc.sections.length, 1);
+  assert.match(doc.sections[0].content || '', /The parties agree to collaborate/);
+  assert.match(doc.sections[0].content || '', /Payment is due within thirty days/);
 });
 
-test('rejects empty and unstructured input instead of silently importing a blank document', () => {
+test('recognizes common heading styles while preserving every source line in the source of truth', () => {
+  const source = [
+    'MUSIC COLLABORATION AGREEMENT', '',
+    '1. PARTIES', 'Party A and Party B agree.', '',
+    '2.1 Ownership and Rights', 'The parties own the work equally.', '',
+    'PAYMENT TERMS', 'Payment is due within thirty days.', '',
+    'SIGNATURES', 'Artist: ____________________', 'Producer: ____________________'
+  ].join('\n');
+  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+  assert.equal(doc.sourceText, source);
+  assert.ok(doc.sections.length >= 3);
+  assert.ok(doc.sections.some(section => /PARTIES/i.test(section.title)));
+  assert.ok(doc.sections.some(section => /Ownership and Rights/i.test(section.title)));
+  assert.ok(doc.sections.some(section => /PAYMENT TERMS/i.test(section.title)));
+  const represented = doc.sections.map(section => [section.sourceHeading || '', section.content || ''].join('\n')).join('\n');
+  for (const required of ['Party A and Party B agree.', 'The parties own the work equally.', 'Payment is due within thirty days.', 'Artist: ____________________', 'Producer: ____________________']) {
+    assert.ok(represented.includes(required), 'missing source content: ' + required);
+  }
+});
+
+test('rejects only empty input and does not require a numbered section heading', () => {
   assert.throws(() => parseTextDocument('  ', base), /empty/i);
-  assert.throws(() => parseTextDocument('Just a paragraph', base), /No numbered sections/i);
+  const doc = parseTextDocument('A single unstructured paragraph that must survive.', base);
+  assert.match(doc.sections[0].content || '', /must survive/);
+});
+
+test('converts Markdown tables and explicit signature parties into editable document objects', () => {
+  const source = [
+    '# Recording Agreement', '',
+    '## 1. ROYALTY SPLITS', '',
+    '| Party | Share |', '| --- | --- |', '| Artist | 50% |', '| Producer | 50% |', '',
+    '## SIGNATURES', '',
+    'ARTIST', 'By: Alex Example', 'Signature: __________________', 'Date: __________', '',
+    'PRODUCER', 'By: Sam Example', 'Signature: __________________', 'Date: __________'
+  ].join('\n');
+  const doc = parseTextDocument(source, base);
+  assert.equal(doc.sections[0].tables?.length, 1);
+  assert.deepEqual(doc.sections[0].tables?.[0].headers.map(cell => cell.content), ['Party', 'Share']);
+  assert.equal(doc.sections[0].tables?.[0].rows.length, 2);
+  assert.equal(doc.signatures?.parties.length, 2);
+  assert.equal(doc.signatures?.parties[0].name, 'Alex Example');
+  assert.equal(doc.signatures?.parties[1].role, 'PRODUCER');
+  assert.equal(doc.sourceText, source);
+});
+
+test('keeps explicit Markdown section numbering and classifies Markdown appendices', () => {
+  const source = [
+    '# Contract', '',
+    '## 4. PARTIES', 'The parties are identified here.', '',
+    '# APPENDIX A. EXHIBITS', 'Exhibit A is attached.'
+  ].join('\n');
+  const doc = parseTextDocument(source, base);
+  const mainSection = doc.sections.find(section => /PARTIES/.test(section.title));
+  const appendix = doc.sections.find(section => /APPENDIX A/.test(section.title));
+  assert.equal(mainSection?.sectionNumber, '4');
+  assert.equal(appendix?.isAppendix, true);
+  assert.match(appendix?.content || '', /Exhibit A is attached/);
+});
+
+test('reports a signature heading even when no participant details can be safely extracted', () => {
+  const source = '# Contract\n\n## SIGNATURES\n\nExecuted by the parties on the date written below.';
+  const doc = parseTextDocument(source, base);
+  assert.equal(doc.sourceIntegrity?.detectedSignatureSection, true);
+  assert.equal(doc.sourceIntegrity?.signaturePartyCount, 0);
+  assert.match(doc.sections.find(section => /SIGNATURES/.test(section.title))?.content || '', /Executed by the parties/);
 });
