@@ -411,8 +411,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               </button>
               <div className="border-t border-slate-800 my-1" />
               <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Document Templates</div>
-              <div className="border-t border-slate-800 my-1" />
-              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500">Music Industry Templates</div>
+              <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-500 mt-1">Music Industry Templates</div>
               <button 
                 onClick={() => executeAction(() => onOpenTemplate('music'))}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
