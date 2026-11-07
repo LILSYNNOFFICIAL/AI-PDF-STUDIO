@@ -16,14 +16,19 @@ import { DocumentMetadataModal } from './components/DocumentMetadataModal';
 import { ClauseLibraryModal } from './components/ClauseLibraryModal';
 import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal';
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
+import { DocumentDesignModal } from './components/DocumentDesignModal';
 import { parseTextDocument } from './services/textDocumentImporter';
+import { normalizeDocumentDesign, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
 import { 
   DocumentModel, 
   AIPersona, 
   BrandProfile, 
   Section,
   StyleConfig,
-  PageConfig
+  PageConfig,
+  DocumentDesign,
+  SectionDesign,
+  TableDesign
 } from './types/document';
 import { 
   getInitialDocument, 
@@ -48,7 +53,7 @@ import {
 } from './orchestrator/orchestrator';
 
 export default function App() {
-  const [document, setDocument] = useState<DocumentModel>(() => getInitialDocument());
+  const [document, setDocument] = useState<DocumentModel>(() => normalizeDocumentDesign(getInitialDocument()));
   const [history, setHistory] = useState<DocumentModel[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [activeSectionId, setActiveSectionId] = useState<string | null>('sec_1');
@@ -72,6 +77,7 @@ export default function App() {
   const [isClauseLibraryOpen, setIsClauseLibraryOpen] = useState(false);
   const [isWatermarkCustomizerOpen, setIsWatermarkCustomizerOpen] = useState(false);
   const [isReadabilityOpen, setIsReadabilityOpen] = useState(false);
+  const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -95,11 +101,13 @@ export default function App() {
 
   // Snapshot on meaningful update
   const pushHistory = (newDoc: DocumentModel) => {
+    const profile = SAMPLE_BRAND_PROFILES.find(item => item.id === newDoc.brandProfileId);
+    const normalizedDoc = normalizeDocumentDesign(newDoc, profile);
     const updatedHistory = history.slice(0, historyIndex + 1);
     updatedHistory.push(document);
     setHistory(updatedHistory);
     setHistoryIndex(updatedHistory.length - 1);
-    setDocument(newDoc);
+    setDocument(normalizedDoc);
   };
 
   const handleUndo = () => {
@@ -710,6 +718,80 @@ export default function App() {
     pushHistory(res.updatedDoc);
   };
 
+  const handleApplyDocumentDesign = (design: DocumentDesign) => {
+    pushHistory({
+      ...document,
+      design: deepCloneDesign(design),
+      version: document.version + 1,
+      updatedAt: new Date().toISOString()
+    });
+    addAiMessage('Applied document-wide visual design. Document content and structure were preserved.');
+    showToast('Document design applied');
+  };
+
+  const handleApplySectionDesign = (sectionId: string, design: SectionDesign) => {
+    const exists = document.sections.some(section => section.id === sectionId);
+    if (!exists) return;
+    pushHistory({
+      ...document,
+      sections: document.sections.map(section => section.id === sectionId
+        ? { ...section, design: deepCloneDesign(design) }
+        : section),
+      version: document.version + 1,
+      updatedAt: new Date().toISOString()
+    });
+    showToast('Section design applied');
+  };
+
+  const handleApplyTableDesign = (sectionId: string, tableId: string, design: TableDesign) => {
+    const section = document.sections.find(item => item.id === sectionId);
+    if (!section?.tables?.some(table => table.id === tableId)) return;
+    pushHistory({
+      ...document,
+      sections: document.sections.map(item => item.id !== sectionId ? item : ({
+        ...item,
+        tables: item.tables?.map(table => table.id === tableId
+          ? { ...table, design: deepCloneDesign(design) }
+          : table)
+      })),
+      version: document.version + 1,
+      updatedAt: new Date().toISOString()
+    });
+    showToast('Table design applied');
+  };
+
+  const handleResetSectionDesign = (sectionId: string) => {
+    pushHistory({
+      ...document,
+      sections: document.sections.map(section => section.id === sectionId
+        ? { ...section, design: undefined }
+        : section),
+      version: document.version + 1,
+      updatedAt: new Date().toISOString()
+    });
+    showToast('Section styling reset');
+  };
+
+  const handleResetTableDesign = (sectionId: string, tableId: string) => {
+    pushHistory({
+      ...document,
+      sections: document.sections.map(section => section.id !== sectionId ? section : ({
+        ...section,
+        tables: section.tables?.map(table => table.id === tableId
+          ? { ...table, design: undefined }
+          : table)
+      })),
+      version: document.version + 1,
+      updatedAt: new Date().toISOString()
+    });
+    showToast('Table styling reset');
+  };
+
+  const handleResetAllDesignOverrides = () => {
+    pushHistory(clearDesignOverrides(document));
+    showToast('All local styling overrides reset');
+  };
+
   return (
     <div className="app-root flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100 relative">
       <div className="desktop-workspace">
@@ -761,6 +843,7 @@ export default function App() {
         onRedo={handleRedo}
         onOpenFindReplace={() => setIsFindReplaceOpen(true)}
         onOpenRedaction={() => setIsRedactionOpen(true)}
+        onOpenDesign={() => setIsDesignModalOpen(true)}
         onAddSection={handleAddSection}
         onOpenInsertTable={() => {
           setInsertObjectTab('table');
@@ -1026,6 +1109,19 @@ export default function App() {
         document={document}
         isOpen={isReadabilityOpen}
         onClose={() => setIsReadabilityOpen(false)}
+      />
+
+      <DocumentDesignModal
+        document={document}
+        activeSectionId={activeSectionId}
+        isOpen={isDesignModalOpen}
+        onClose={() => setIsDesignModalOpen(false)}
+        onApplyDesign={handleApplyDocumentDesign}
+        onApplySectionDesign={handleApplySectionDesign}
+        onApplyTableDesign={handleApplyTableDesign}
+        onResetSectionDesign={handleResetSectionDesign}
+        onResetTableDesign={handleResetTableDesign}
+        onResetAllOverrides={handleResetAllDesignOverrides}
       />
 
       {/* Floating Action Feedback Toast */}
