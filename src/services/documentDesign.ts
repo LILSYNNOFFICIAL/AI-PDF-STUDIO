@@ -1,5 +1,6 @@
 import type {
   BorderConfig,
+  BorderSide,
   ColorFill,
   DesignColors,
   DocumentDesign,
