@@ -11,9 +11,9 @@ function cleanHeading(value: string): string {
   return value.replace(/^\\*{1,2}|\\*{1,2}$/g, '').replace(/^_{1,2}|_{1,2}$/g, '').trim();
 }
 
-function isLikelyPlainHeading(line: string): boolean {
+const SIGNATURE_ROLE_LABEL = /^(ARTIST|PRODUCER|PRIMARY ARTIST|FEATURED ARTIST|RECORDING ARTIST|LICENSOR|LICENSEE|PUBLISHER|WRITER|PARTY\\s+[A-Z0-9]+|COMPANY|WITNESS)(?:\\s*[:：])?$/i;\n\nfunction isLikelyPlainHeading(line: string): boolean {
   const value = line.trim();
-  if (!value || value.length > 110 || value.length < 3 || /[.!?]$/.test(value)) return false;
+  if (!value || value.length > 110 || value.length < 3 || /[.!?]$/.test(value) || SIGNATURE_ROLE_LABEL.test(value)) return false;
   if (/^[-*+•]\\s/.test(value)) return false;
   const letters = value.replace(/[^A-Za-z]/g, '');
   return letters.length >= 4 && letters === letters.toUpperCase();
