@@ -259,7 +259,7 @@ export function prepareLongInstruction(
 ): { instruction: string; document: DocumentModel } {
   if (instruction.length <= threshold) return { instruction, document: currentDoc };
 
-  const marker = /(?:source\s+content|document\s+content|text\s+to\s+include|following\s+text|following\s+content|full\s+text|source)\s*[:：]\s*/i;
+  const marker = /(?:source\s+content|document\s+content|text\s+to\s+include|following\s+text|following\s+content|full\s+text|source|content|text)\s*[:：]\s*/i;
   const match = marker.exec(instruction);
   if (!match || match.index === undefined) {
     throw new Error(
