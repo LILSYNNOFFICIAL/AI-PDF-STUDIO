@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import { assessDocumentQuality } from './src/orchestrator/orchestrator.ts';
 import { DocumentModel } from './src/types/document.ts';
-import { executeAiDocumentEdit } from './src/orchestrator/aiDocumentEditor.ts';
+import { executeAiDocumentEdit, prepareLongInstruction } from './src/orchestrator/aiDocumentEditor.ts';
 
 dotenv.config();
 
@@ -73,9 +73,10 @@ app.post('/api/orchestrate', async (req, res) => {
     }
 
     const doc = currentDoc as DocumentModel;
+    const prepared = prepareLongInstruction(instruction, doc);
     const result = await executeAiDocumentEdit({
-      instruction,
-      currentDoc: doc,
+      instruction: prepared.instruction,
+      currentDoc: prepared.document,
       persona: persona || 'auto_architect',
       aiClient: ai,
       model: process.env.GEMINI_MODEL || 'gemini-3.8-flash'
