@@ -88,7 +88,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
   const drawColorFill = (fill: ColorFill | undefined, x: number, y: number, width: number, height: number, detail = 24) => {
     if (!fill || width <= 0 || height <= 0) return;
-    const opacity = fill.type === 'solid' ? fill.opacity : undefined;
+    const opacity = fill.opacity;
     const restoreOpacity = applyOpacity(opacity);
     if (fill.type === 'solid') {
       pdf.setFillColor(...colorToRgb(fill.color));
