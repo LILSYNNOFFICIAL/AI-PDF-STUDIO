@@ -77,3 +77,11 @@ test('keeps explicit Markdown section numbering and classifies Markdown appendic
   assert.equal(appendix?.isAppendix, true);
   assert.match(appendix?.content || '', /Exhibit A is attached/);
 });
+
+test('reports a signature heading even when no participant details can be safely extracted', () => {
+  const source = '# Contract\n\n## SIGNATURES\n\nExecuted by the parties on the date written below.';
+  const doc = parseTextDocument(source, base);
+  assert.equal(doc.sourceIntegrity?.detectedSignatureSection, true);
+  assert.equal(doc.sourceIntegrity?.signaturePartyCount, 0);
+  assert.match(doc.sections.find(section => /SIGNATURES/.test(section.title))?.content || '', /Executed by the parties/);
+});
