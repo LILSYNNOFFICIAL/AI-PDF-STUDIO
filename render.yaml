@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ai-pdf-studio-api
+    runtime: bun
+    plan: free
+    buildCommand: bun install --frozen-lockfile && bun run lint && bun run test
+    startCommand: bun run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://lilsynnofficial.github.io
+      - key: GEMINI_MODEL
+        value: gemini-3.8-flash
+      - key: GEMINI_API_KEY
+        sync: false
