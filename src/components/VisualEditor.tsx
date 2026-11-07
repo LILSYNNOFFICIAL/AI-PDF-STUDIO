@@ -262,9 +262,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   style={{
                     background: fillToCss(sectionStyle.background),
                     color: sectionStyle.bodyTextColor,
-                    border: borderToCss(sectionStyle.border),
-                    padding: `${sectionStyle.padding}px`,
-                    borderTop: section.forcePageBreakBefore ? '2px dashed ' + documentDesign.colors.border : undefined
+                    border: 'none',
+                    borderTop: section.forcePageBreakBefore ? '2px dashed ' + documentDesign.colors.border : borderToCss(sectionStyle.border, 'top'),
+                    borderRight: borderToCss(sectionStyle.border, 'right'),
+                    borderBottom: borderToCss(sectionStyle.border, 'bottom'),
+                    borderLeft: borderToCss(sectionStyle.border, 'left'),
+                    padding: `${sectionStyle.padding}px`
                   }}
                 >
                   {/* Floating Contextual AI Bar on Section */}
