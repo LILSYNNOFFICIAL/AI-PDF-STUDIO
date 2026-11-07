@@ -65,12 +65,18 @@ export interface SectionRangeMove {
   targetSectionId: string;
 }
 
+export type JsonPatchOperation =
+  | { op: 'add' | 'replace' | 'test'; path: string; value: unknown }
+  | { op: 'remove'; path: string }
+  | { op: 'move' | 'copy'; from: string; path: string };
+
 export interface DocumentEditResponse {
   operationTitle: string;
   details: string[];
   sectionUpdates: SectionEdit[];
   sectionOrder?: string[];
   sectionRangeMoves?: SectionRangeMove[];
+  documentPatch?: JsonPatchOperation[];
   styles?: Partial<StyleConfig>;
   pageConfig?: Partial<PageConfig>;
   design?: DocumentDesignUpdate;
@@ -596,7 +602,228 @@ export function buildDocumentEditPrompt(
   ].join('\n\n');
 }
 
-export function applyDocumentEditResponse(
+export 
+const PATCHABLE_DOCUMENT_ROOTS = new Set([
+  'title', 'type', 'author', 'brandProfileId', 'styles', 'design',
+  'pageConfig', 'sections', 'signatures', 'definitions', 'dependencies', 'redactions'
+]);
+const FORBIDDEN_POINTER_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
+
+function jsonPointerTokens(path: string): string[] {
+  if (typeof path !== 'string' || !path.startsWith('/') || path === '/') {
+    throw new Error('JSON Patch paths must target an existing document field. Root replacement is not allowed.');
+  }
+  const tokens = path.slice(1).split('/').map(token => token.replace(/~1/g, '/').replace(/~0/g, '~'));
+  if (!tokens.length || !PATCHABLE_DOCUMENT_ROOTS.has(tokens[0])) {
+    throw new Error('JSON Patch path targets a protected or unsupported document field.');
+  }
+  if (tokens.some(token => FORBIDDEN_POINTER_SEGMENTS.has(token))) {
+    throw new Error('Unsafe JSON Patch path rejected to prevent prototype pollution.');
+  }
+  return tokens;
+}
+
+function arrayIndex(token: string, length: number, allowEnd: boolean): number {
+  if (allowEnd && token === '-') return length;
+  if (!/^(0|[1-9]\\d*)$/.test(token)) throw new Error('JSON Patch contains an invalid array index.');
+  const index = Number(token);
+  if (!Number.isSafeInteger(index) || index < 0 || index > (allowEnd ? length : length - 1)) {
+    throw new Error('JSON Patch array index does not exist or is out of range.');
+  }
+  return index;
+}
+
+function patchParent(root: Record<string, unknown>, path: string): { parent: Record<string, unknown> | unknown[]; key: string } {
+  const tokens = jsonPointerTokens(path);
+  let current: any = root;
+  for (const token of tokens.slice(0, -1)) {
+    if (current === null || typeof current !== 'object') throw new Error('JSON Patch path does not exist.');
+    if (Array.isArray(current)) current = current[arrayIndex(token, current.length, false)];
+    else {
+      if (!Object.prototype.hasOwnProperty.call(current, token)) throw new Error('JSON Patch path does not exist.');
+      current = current[token];
+    }
+  }
+  if (current === null || typeof current !== 'object') throw new Error('JSON Patch parent path does not exist.');
+  return { parent: current, key: tokens[tokens.length - 1] };
+}
+
+function patchGet(root: Record<string, unknown>, path: string): unknown {
+  const tokens = jsonPointerTokens(path);
+  let current: any = root;
+  for (const token of tokens) {
+    if (current === null || typeof current !== 'object') throw new Error('JSON Patch source path does not exist.');
+    if (Array.isArray(current)) current = current[arrayIndex(token, current.length, false)];
+    else {
+      if (!Object.prototype.hasOwnProperty.call(current, token)) throw new Error('JSON Patch source path does not exist.');
+      current = current[token];
+    }
+  }
+  return current;
+}
+
+function patchAdd(root: Record<string, unknown>, path: string, value: unknown): void {
+  const { parent, key } = patchParent(root, path);
+  const cloned = JSON.parse(JSON.stringify(value));
+  if (Array.isArray(parent)) parent.splice(arrayIndex(key, parent.length, true), 0, cloned);
+  else (parent as Record<string, unknown>)[key] = cloned;
+}
+
+function patchReplace(root: Record<string, unknown>, path: string, value: unknown): void {
+  const { parent, key } = patchParent(root, path);
+  const cloned = JSON.parse(JSON.stringify(value));
+  if (Array.isArray(parent)) parent[arrayIndex(key, parent.length, false)] = cloned;
+  else {
+    if (!Object.prototype.hasOwnProperty.call(parent, key)) throw new Error('JSON Patch replace target does not exist.');
+    (parent as Record<string, unknown>)[key] = cloned;
+  }
+}
+
+function patchRemove(root: Record<string, unknown>, path: string): unknown {
+  const { parent, key } = patchParent(root, path);
+  if (Array.isArray(parent)) return parent.splice(arrayIndex(key, parent.length, false), 1)[0];
+  if (!Object.prototype.hasOwnProperty.call(parent, key)) throw new Error('JSON Patch remove target does not exist.');
+  const value = (parent as Record<string, unknown>)[key];
+  delete (parent as Record<string, unknown>)[key];
+  return value;
+}
+
+function validatePatchedDocument(document: DocumentModel): void {
+  if (!document || typeof document.title !== 'string' || !Array.isArray(document.sections)) {
+    throw new Error('JSON Patch did not produce a valid document model.');
+  }
+  const sectionIds = new Set<string>();
+  const clauseIds = new Set<string>();
+  const tableIds = new Set<string>();
+  const chartIds = new Set<string>();
+  const imageIds = new Set<string>();
+
+  for (const section of document.sections) {
+    if (!section || typeof section.id !== 'string' || typeof section.title !== 'string' || !Array.isArray(section.clauses)) {
+      throw new Error('JSON Patch produced a section with invalid identity, title, or clause structure.');
+    }
+    if (sectionIds.has(section.id)) throw new Error(`JSON Patch produced duplicate section ID: ${section.id}.`);
+    sectionIds.add(section.id);
+    for (const clause of section.clauses) {
+      if (!clause || typeof clause.id !== 'string' || typeof clause.content !== 'string' || clauseIds.has(clause.id)) {
+        throw new Error('JSON Patch produced an invalid or duplicate clause.');
+      }
+      clauseIds.add(clause.id);
+    }
+    for (const table of section.tables || []) {
+      if (!table || typeof table.id !== 'string' || tableIds.has(table.id)) throw new Error('JSON Patch produced an invalid or duplicate table.');
+      tableIds.add(table.id);
+    }
+    for (const chart of section.charts || []) {
+      if (!chart || typeof chart.id !== 'string' || chartIds.has(chart.id)) throw new Error('JSON Patch produced an invalid or duplicate chart.');
+      chartIds.add(chart.id);
+    }
+    for (const image of section.images || []) {
+      if (!image || typeof image.id !== 'string' || imageIds.has(image.id)) throw new Error('JSON Patch produced an invalid or duplicate image.');
+      imageIds.add(image.id);
+    }
+    if (section.design) validateSectionDesign(section.design);
+    section.tables?.forEach(table => { if (table.design) validateTableDesign(table.design); });
+  }
+  if (document.design) validateDocumentDesign(document.design);
+}
+
+function applyDocumentJsonPatch(
+  currentDoc: DocumentModel,
+  response: DocumentEditResponse,
+  instruction: string
+): { updatedDoc: DocumentModel; summary: ExecutionResultSummary } {
+  const patch = response.documentPatch || [];
+  if (!patch.length || patch.length > 500) throw new Error('JSON Patch must contain between 1 and 500 operations.');
+  if (
+    response.sectionUpdates.length ||
+    response.sectionOrder !== undefined ||
+    response.sectionRangeMoves?.length ||
+    response.styles !== undefined ||
+    response.pageConfig !== undefined ||
+    response.design !== undefined ||
+    response.sectionDesignUpdates?.length ||
+    response.tableDesignUpdates?.length
+  ) {
+    throw new Error('JSON Patch cannot be mixed with other document-edit operation formats. No changes were applied.');
+  }
+
+  const candidate = JSON.parse(JSON.stringify(currentDoc)) as DocumentModel;
+  const instructionText = instruction.toLowerCase();
+  const changesSections = patch.some(operation => operation.path.startsWith('/sections') || ('from' in operation && operation.from.startsWith('/sections')));
+
+  for (const operation of patch) {
+    if (!operation || typeof operation.path !== 'string') throw new Error('JSON Patch contains an invalid operation.');
+    const path = jsonPointerTokens(operation.path);
+    void path;
+    if (operation.op === 'add') {
+      if (!/\\b(add|create|insert|append|include|build)\\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize adding document content. No changes were applied.');
+      }
+      patchAdd(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
+    } else if (operation.op === 'remove') {
+      if (!/\\b(delete|remove|erase|clear|drop|omit)\\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize deleting document content. No changes were applied.');
+      }
+      patchRemove(candidate as unknown as Record<string, unknown>, operation.path);
+    } else if (operation.op === 'replace') {
+      if (!/\\b(replace|rewrite|rename|change|update|modify|edit|set|correct|fix|format|style|design)\\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize replacing document content. No changes were applied.');
+      }
+      if (!('value' in operation)) throw new Error('JSON Patch replace operation is missing its value.');
+      patchReplace(candidate as unknown as Record<string, unknown>, operation.path, operation.value);
+    } else if (operation.op === 'move') {
+      if (!/\\b(move|transfer|relocate|reorder|rearrange|place|put|group|consolidate|merge|contain|inside|within)\\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize moving document content. No changes were applied.');
+      }
+      const fromTokens = jsonPointerTokens(operation.from);
+      const toTokens = jsonPointerTokens(operation.path);
+      if (toTokens.length > fromTokens.length && fromTokens.every((token, index) => token === toTokens[index])) {
+        throw new Error('JSON Patch cannot move a value into one of its descendants.');
+      }
+      const value = patchRemove(candidate as unknown as Record<string, unknown>, operation.from);
+      patchAdd(candidate as unknown as Record<string, unknown>, operation.path, value);
+    } else if (operation.op === 'copy') {
+      if (!/\\b(copy|duplicate|clone)\\b/i.test(instructionText)) {
+        throw new Error('The instruction does not authorize copying document content. No changes were applied.');
+      }
+      patchAdd(candidate as unknown as Record<string, unknown>, operation.path, patchGet(candidate as unknown as Record<string, unknown>, operation.from));
+    } else if (operation.op === 'test') {
+      const actual = patchGet(candidate as unknown as Record<string, unknown>, operation.path);
+      if (JSON.stringify(actual) !== JSON.stringify(operation.value)) {
+        throw new Error('JSON Patch test operation failed. No document changes were applied.');
+      }
+    } else {
+      throw new Error('JSON Patch operation is not supported. No document changes were applied.');
+    }
+  }
+
+  if (changesSections) {
+    candidate.sections = recalculateNumbering(candidate).sections;
+  }
+  candidate.version = currentDoc.version + 1;
+  candidate.updatedAt = new Date().toISOString();
+  candidate.changeSummary = response.operationTitle;
+  validatePatchedDocument(candidate);
+
+  const summary: ExecutionResultSummary = {
+    operationTitle: response.operationTitle || 'Document updated',
+    details: response.details,
+    verifications: [
+      { name: 'Atomic JSON Patch application', passed: true, notes: `${patch.length} operations applied to an isolated document copy.` },
+      { name: 'Document structure and unique block IDs', passed: true, notes: 'Sections, clauses, tables, charts, images, and design tokens validated.' },
+      { name: 'Source-of-truth metadata preservation', passed: candidate.sourceText === currentDoc.sourceText && JSON.stringify(candidate.sourceIntegrity) === JSON.stringify(currentDoc.sourceIntegrity) }
+    ],
+    timestamp: new Date().toLocaleTimeString(),
+    versionCreated: candidate.version
+  };
+  if (summary.verifications.some(check => !check.passed)) {
+    throw new Error('Document integrity verification failed. No changes were applied.');
+  }
+  return { updatedDoc: candidate, summary };
+}
+
+function applyDocumentEditResponse(
   currentDoc: DocumentModel,
   response: DocumentEditResponse,
   instruction: string
@@ -604,6 +831,7 @@ export function applyDocumentEditResponse(
   if (!response || !Array.isArray(response.sectionUpdates) || !Array.isArray(response.details)) {
     throw new Error('Invalid document-edit response. No changes were applied.');
   }
+  if (response.documentPatch !== undefined) return applyDocumentJsonPatch(currentDoc, response, instruction);
 
   const originalIds = currentDoc.sections.map(section => section.id);
   const knownIds = new Set(originalIds);
