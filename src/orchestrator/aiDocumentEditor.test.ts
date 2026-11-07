@@ -490,3 +490,46 @@ test('AI rejects ambiguous or destructive section-range moves without mutating t
   assert.throws(() => applyDocumentEditResponse(doc, response, 'Move the requested section range.'), /unknown section|range/i);
   assert.equal(JSON.stringify(doc), before);
 });
+
+
+test('structural executor gives Gemini the complete section inventory and applies range operations in one planning pass', async () => {
+  const doc = makeDocument();
+  const target = doc.sections[0];
+  target.title = 'WRITTEN DESCRIPTION + VISUAL REFERENCE';
+  const middle = { ...doc.sections[1], id: 'range-middle', title: 'ADDITIONAL VISUAL DETAILS', content: 'All additional detail.' };
+  const boundary = { ...doc.sections[2], id: 'range-boundary', title: 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY' };
+  doc.sections = [target, middle, boundary];
+  const prompts: string[] = [];
+  const client = {
+    models: {
+      generateContent: async ({ contents }: { model: string; contents: string; config?: { responseMimeType?: string } }) => {
+        prompts.push(contents);
+        return {
+          text: JSON.stringify({
+            operationTitle: 'Consolidated written description',
+            details: ['Moved the bounded section range into the destination section.'],
+            sectionUpdates: [],
+            sectionRangeMoves: [{
+              startSectionId: target.id,
+              endBeforeSectionId: boundary.id,
+              targetSectionId: target.id
+            }]
+          })
+        };
+      }
+    }
+  };
+
+  const result = await executeAiDocumentEdit({
+    instruction: "Everything from 'WRITTEN DESCRIPTION + VISUAL REFERENCE' to the box above 'REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY' belongs in the first box.",
+    currentDoc: doc,
+    persona: 'auto_architect',
+    aiClient: client
+  });
+
+  assert.equal(prompts.length, 1);
+  assert.match(prompts[0], /WRITTEN DESCRIPTION \\+ VISUAL REFERENCE/);
+  assert.match(prompts[0], /REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY/);
+  assert.deepEqual(result.updatedDoc.sections.map(section => section.id), [target.id, boundary.id]);
+  assert.match(result.updatedDoc.sections[0].content || '', /All additional detail\\./);
+});
