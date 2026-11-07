@@ -53,7 +53,8 @@ interface MenuBarProps {
   onExportPdf: () => void;
   onPrint: () => void;
   onExportJson: () => void;
-  onImportJson: () => void;\n  onImportText: () => void;
+  onImportJson: () => void;
+  onImportText: () => void;
   onExportMarkdown: () => void;
   onExportPlainText: () => void;
   onCopyDocumentText: () => void;
