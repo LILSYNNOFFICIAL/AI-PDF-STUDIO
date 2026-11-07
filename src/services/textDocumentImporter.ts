@@ -1,8 +1,8 @@
 import type { DocumentModel, Section } from '../types/document';
 
-const SECTION_HEADING = /^##\\s+(\\d{1,3})\\.\\s+(.+?)\\s*$/;
-const APPENDIX_HEADING = /^#\\s+(APPENDIX\\s+[A-Z0-9]+(?:\\.[^\\n]*)?)\\s*$/i;
-const REVIEW_HEADING = /^#\\s+(IMPORTANT REVIEW NOTE)\\s*$/i;
+const SECTION_HEADING = /^##\s+(\d{1,3})\.\s+(.+?)\s*$/;
+const APPENDIX_HEADING = /^#\s+(APPENDIX\s+[A-Z0-9]+(?:\.[^\n]*)?)\s*$/i;
+const REVIEW_HEADING = /^#\s+(IMPORTANT REVIEW NOTE)\s*$/i;
 
 /**
  * Imports Markdown/plain-text agreements without asking an LLM to reconstruct
@@ -15,17 +15,17 @@ export function parseTextDocument(
   baseDocument: DocumentModel,
   now = new Date().toISOString()
 ): DocumentModel {
-  const normalized = source.replace(/^\\uFEFF/, '').replace(/\\r\\n?/g, '\\n');
+  const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   if (!normalized.trim()) throw new Error('The document is empty.');
 
-  const lines = normalized.split('\\n');
-  const titleLineIndex = lines.findIndex(line => /^#\\s+\\S/.test(line));
+  const lines = normalized.split('\n');
+  const titleLineIndex = lines.findIndex(line => /^#\s+\S/.test(line));
   const rawTitle = titleLineIndex >= 0
-    ? lines[titleLineIndex].replace(/^#\\s+/, '').trim()
+    ? lines[titleLineIndex].replace(/^#\s+/, '').trim()
     : 'Imported Document';
-  const subtitle = lines.slice(Math.max(0, titleLineIndex + 1)).find(line => /^##\\s+[^0-9]/.test(line));
+  const subtitle = lines.slice(Math.max(0, titleLineIndex + 1)).find(line => /^##\s+[^0-9]/.test(line));
   const title = subtitle
-    ? `${rawTitle} ${subtitle.replace(/^##\\s+/, '').trim()}`
+    ? `${rawTitle} ${subtitle.replace(/^##\s+/, '').trim()}`
     : rawTitle;
 
   const boundaries: Array<{ line: number; number: string; title: string; appendix: boolean }> = [];
@@ -49,7 +49,7 @@ export function parseTextDocument(
 
   const sections: Section[] = boundaries.map((boundary, index) => {
     const end = boundaries[index + 1]?.line ?? lines.length;
-    const body = lines.slice(boundary.line + 1, end).join('\\n').replace(/^\\n+|\\n+$/g, '');
+    const body = lines.slice(boundary.line + 1, end).join('\n').replace(/^\n+|\n+$/g, '');
     return {
       id: `imported_${index + 1}_${Math.random().toString(36).slice(2, 9)}`,
       sectionNumber: boundary.number,
