@@ -309,6 +309,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 {(document.pageHeaderImages || []).map(image => (
                   <div key={image.id} className="relative">
                     <img src={image.url} alt={image.altText || 'Page header image'} className="h-20 max-w-40 rounded object-contain" />
+                    <input aria-label="Header image caption" value={image.caption || ''} placeholder="Caption" onChange={event => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id ? { ...item, caption: event.target.value } : item) })} className="mt-1 w-32 bg-transparent text-center text-[10px] outline-none" />
                     <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="absolute -right-2 -top-2 rounded-full bg-rose-600 px-1.5 text-xs text-white">×</button>
                   </div>
                 ))}
@@ -812,8 +813,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           {chart.labels.map((lbl, idx) => (
                             <div key={idx} className="flex items-center gap-2">
                               <span className="w-3 h-3 rounded-full" style={{ background: [documentDesign.colors.accent, documentDesign.colors.secondary, documentDesign.colors.primary, documentDesign.colors.border][idx % 4] }} />
-                              <span className="font-medium" style={{ color: documentDesign.colors.bodyText }}>{lbl}:</span>
-                              <span className="font-bold" style={{ color: documentDesign.colors.headingText }}>{chart.values[idx]}%</span>
+                              <input aria-label="Chart label" value={lbl} onChange={event => onUpdateSection({ ...section, charts: (section.charts || []).map(item => item.id === chart.id ? { ...item, labels: item.labels.map((label, labelIndex) => labelIndex === idx ? event.target.value : label) } : item) })} className="w-24 bg-transparent font-medium outline-none" style={{ color: documentDesign.colors.bodyText }} />
+                              <input aria-label="Chart value" type="number" value={chart.values[idx]} onChange={event => onUpdateSection({ ...section, charts: (section.charts || []).map(item => item.id === chart.id ? { ...item, values: item.values.map((value, valueIndex) => valueIndex === idx ? Number(event.target.value) : value) } : item) })} className="w-12 bg-transparent text-right font-bold outline-none" style={{ color: documentDesign.colors.headingText }} />%
                             </div>
                           ))}
                         </div>
