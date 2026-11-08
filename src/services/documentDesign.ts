@@ -141,6 +141,29 @@ export const DOCUMENT_DESIGN_PRESETS: DocumentDesign[] = [
     solid('#ffffff'), solid('#f3f8f5'), solid('#e1eee6'))
 ];
 
+DOCUMENT_DESIGN_PRESETS.push(makePreset(
+  'lil-synn',
+  'LIL SYNN',
+  {
+    primary: '#f5f5f5', secondary: '#d1d5db', accent: '#ff4fa3',
+    bodyText: '#f5f5f5', mutedText: '#c5c5c5', headingText: '#ff4fa3',
+    pageSurface: '#050505', sectionSurface: '#080808', border: '#d99a32',
+    tableHeaderSurface: '#111111', tableHeaderText: '#ff4fa3',
+    tableBodyText: '#f5f5f5', tableAlternateRowSurface: '#151515'
+  },
+  { bodyFontFamily: 'Inter', headingFontFamily: 'Inter', bodyFontSize: 10.5, heading1Size: 25, heading2Size: 15, heading3Size: 12, headingCase: 'none', textAlignment: 'left', verticalAlignment: 'top', contentBoxMinHeight: 0 },
+  solid('#050505'), solid('#080808'), solid('#111111')
+));
+const lilSynnPreset = DOCUMENT_DESIGN_PRESETS[DOCUMENT_DESIGN_PRESETS.length - 1];
+lilSynnPreset.sectionDefaults.border = { style: 'solid', color: '#d99a32', width: 1.2 };
+lilSynnPreset.sectionDefaults.padding = 12;
+lilSynnPreset.tableDefaults.gridlineColor = '#d99a32';
+lilSynnPreset.tableDefaults.gridlineWidth = 0.8;
+lilSynnPreset.pageFurniture.headerTextColor = '#ff4fa3';
+lilSynnPreset.pageFurniture.footerTextColor = '#c5c5c5';
+lilSynnPreset.pageFurniture.dividerColor = '#d99a32';
+lilSynnPreset.pageFurniture.dividerWidth = 0.8;
+
 function isHexColor(value: unknown): value is string {
   return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
 }
@@ -224,6 +247,9 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   if (typeof design.name !== 'string' || !design.name.trim()) throw new Error('Document design name must be a non-empty string.');
   if (design.typography?.bodyBold !== undefined && typeof design.typography.bodyBold !== 'boolean') throw new Error('typography.bodyBold must be a boolean.');
   if (design.typography?.bodyItalic !== undefined && typeof design.typography.bodyItalic !== 'boolean') throw new Error('typography.bodyItalic must be a boolean.');
+  if (design.typography?.textAlignment !== undefined && !['left', 'center', 'right', 'justify'].includes(design.typography.textAlignment)) throw new Error('typography.textAlignment is unsupported.');
+  if (design.typography?.verticalAlignment !== undefined && !['top', 'middle', 'bottom'].includes(design.typography.verticalAlignment)) throw new Error('typography.verticalAlignment is unsupported.');
+  if (design.typography?.contentBoxMinHeight !== undefined && (!Number.isFinite(design.typography.contentBoxMinHeight) || design.typography.contentBoxMinHeight < 0 || design.typography.contentBoxMinHeight > 1200)) throw new Error('typography.contentBoxMinHeight must be between 0 and 1200 pixels.');
   for (const [key, value] of Object.entries(design.colors || {})) validateColor(value, 'colors.' + key);
   const requiredColors = ['primary', 'secondary', 'accent', 'bodyText', 'mutedText', 'headingText', 'pageSurface', 'sectionSurface', 'border', 'tableHeaderSurface', 'tableHeaderText', 'tableBodyText', 'tableAlternateRowSurface'];
   for (const key of requiredColors) {
