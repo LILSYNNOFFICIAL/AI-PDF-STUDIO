@@ -241,6 +241,8 @@ export interface Section {
   sectionNumber: string; // e.g. "1.0", "SECTION 4"
   title: string;
   content?: string;
+  /** Long source material between [[ and ]] delimiters, shown in an independently scrollable editor panel. */
+  scrollableContent?: string;
   clauses: Clause[];
   tables?: TableBlock[];
   charts?: ChartBlock[];
