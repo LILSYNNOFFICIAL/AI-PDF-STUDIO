@@ -18,6 +18,7 @@ import {
   ArrowDownCircle
 } from 'lucide-react';
 import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock } from '../types/document';
+import { calculateImageResizeWidth } from '../services/imageResize';
 import {
   resolveDocumentDesign,
   resolveSectionDesign,
@@ -248,12 +249,52 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       window.document.body.style.userSelect = previousUserSelect;
     };
     const onMove = (moveEvent: PointerEvent) => {
-      nextWidth = Math.max(10, Math.min(100, startWidth + ((moveEvent.clientX - startX) / containerWidth) * 100 * direction));
+      nextWidth = calculateImageResizeWidth(startWidth, moveEvent.clientX - startX, containerWidth, corner);
       if (wrapper) wrapper.style.width = nextWidth + '%';
     };
     const onUp = () => {
       cleanup();
       onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === image.id ? { ...item, widthPercent: Math.round(nextWidth) } : item) });
+    };
+    const onCancel = () => {
+      if (wrapper) wrapper.style.width = startWidth + '%';
+      cleanup();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointercancel', onCancel, { once: true });
+  };
+
+  const startHeaderImageResize = (event: React.PointerEvent<HTMLButtonElement>, image: ImageBlock, corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
+    event.preventDefault();
+    event.stopPropagation();
+    const wrapper = event.currentTarget.parentElement as HTMLDivElement | null;
+    const containerWidth = wrapper?.parentElement?.getBoundingClientRect().width || 1;
+    const startX = event.clientX;
+    const startWidth = image.widthPercent ?? 80;
+    let nextWidth = startWidth;
+    const previousUserSelect = window.document.body.style.userSelect;
+    window.document.body.style.userSelect = 'none';
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.document.body.style.userSelect = previousUserSelect;
+    };
+    const onMove = (moveEvent: PointerEvent) => {
+      nextWidth = calculateImageResizeWidth(startWidth, moveEvent.clientX - startX, containerWidth, corner);
+      if (wrapper) wrapper.style.width = nextWidth + '%';
+    };
+    const onUp = () => {
+      cleanup();
+      onUpdateDocument({
+        ...document,
+        pageHeaderImages: (document.pageHeaderImages || []).map(item =>
+          item.id === image.id ? { ...item, widthPercent: Math.round(nextWidth) } : item
+        ),
+        updatedAt: new Date().toISOString()
+      });
     };
     const onCancel = () => {
       if (wrapper) wrapper.style.width = startWidth + '%';
@@ -373,12 +414,25 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handlePageHeaderImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-2">
+              <div className="flex w-full flex-wrap items-center justify-center gap-3 overflow-visible">
                 {(document.pageHeaderImages || []).map(image => (
-                  <div key={image.id} className="relative">
-                    <img src={image.url} alt={image.altText || 'Page header image'} className="h-20 max-w-40 rounded object-contain" />
-                    <input aria-label="Header image caption" value={image.caption || ''} placeholder="Caption" onChange={event => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id ? { ...item, caption: event.target.value } : item) })} className="mt-1 w-32 bg-transparent text-center text-[10px] outline-none" />
-                    <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="absolute -right-2 -top-2 rounded-full bg-rose-600 px-1.5 text-xs text-white">×</button>
+                  <div key={image.id} className="relative z-20 min-w-0 overflow-visible" style={{ width: `${image.widthPercent ?? 80}%`, maxWidth: '100%' }}>
+                    <div className="relative z-30 w-full overflow-visible">
+                      <img draggable={false} src={image.url} alt={image.altText || 'Page header image'} className="block max-h-96 w-full select-none rounded object-contain shadow-sm" />
+                      {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
+                        <button
+                          key={corner}
+                          type="button"
+                          aria-label={`Resize header image ${corner}`}
+                          title={`Drag to resize image (${corner.replace('-', ' ')})`}
+                          onPointerDown={event => startHeaderImageResize(event, image, corner)}
+                          className="absolute z-50 h-5 w-5 rounded-full border-2 border-white bg-blue-600 shadow-[0_0_0_2px_rgba(15,23,42,0.9)] transition-transform hover:scale-125 focus:scale-125 focus:outline-none"
+                          style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', touchAction: 'none', ...(corner.includes('top') ? { top: -9 } : { bottom: -9 }), ...(corner.endsWith('left') ? { left: -9 } : { right: -9 }) }}
+                        />
+                      ))}
+                    </div>
+                    <input aria-label="Header image caption" value={image.caption || ''} placeholder="Caption" onChange={event => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id ? { ...item, caption: event.target.value } : item) })} className="mt-2 w-full bg-transparent text-center text-[10px] outline-none" />
+                    <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
                   </div>
                 ))}
               </div>
