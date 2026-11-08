@@ -404,18 +404,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Bracket-delimited source material stays inside its parent section and scrolls independently. */}
                   {section.scrollableContent !== undefined && (
-                    <div className=\"mb-4 rounded-md border border-slate-300 bg-slate-50/80 p-2\">
-                      <div className=\"mb-1.5 flex items-center justify-between font-sans text-[10px] font-semibold uppercase tracking-wider text-slate-500\">
-                        <label htmlFor={`scrollable-content-${section.id}`}>Contained reference material</label>
+                    <div className="mb-4 rounded-md border border-slate-300 bg-slate-50/80 p-2">
+                      <div className="mb-1.5 flex items-center justify-between font-sans text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        <label htmlFor={\`scrollable-content-\${section.id}\`}>Contained reference material</label>
                         <span>Scroll to view all content</span>
                       </div>
                       <textarea
-                        id={`scrollable-content-${section.id}`}
+                        id={\`scrollable-content-\${section.id}\`}
                         rows={12}
                         value={section.scrollableContent}
                         onChange={(e) => onUpdateSection({ ...section, scrollableContent: e.target.value })}
-                        aria-label=\"Scrollable section content\"
-                        className=\"block h-72 max-h-[420px] min-h-40 w-full resize-y overflow-y-auto rounded border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100\"
+                        aria-label="Scrollable section content"
+                        className="block h-72 max-h-[420px] min-h-40 w-full resize-y overflow-y-auto rounded border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                       />
                     </div>
                   )}
