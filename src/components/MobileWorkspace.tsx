@@ -23,6 +23,7 @@ interface MobileWorkspaceProps {
   canUndo: boolean;
   canRedo: boolean;
   onUpdateTitle: (title: string) => void;
+  onUpdateDocument: (updatedDocument: DocumentModel) => void;
   onSelectPersona: (persona: AIPersona) => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -152,7 +153,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
             <VisualEditor document={props.document} activeSectionId={props.activeSectionId}
               onUpdateSection={props.onUpdateSection} onDeleteSection={props.onDeleteSection}
               onDuplicateSection={props.onDuplicateSection} onUpdateSignatures={props.onUpdateSignatures}
-              onQuickAIAction={props.onQuickAIAction}/>
+              onUpdateDocument={props.onUpdateDocument} onQuickAIAction={props.onQuickAIAction}/>
           </div>
         )}
         {activeTab === 'ai' && (

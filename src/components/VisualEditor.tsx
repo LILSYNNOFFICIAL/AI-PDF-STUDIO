@@ -17,7 +17,7 @@ import {
   FilePlus,
   ArrowDownCircle
 } from 'lucide-react';
-import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty } from '../types/document';
+import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock } from '../types/document';
 import {
   resolveDocumentDesign,
   resolveSectionDesign,
@@ -34,6 +34,7 @@ interface VisualEditorProps {
   onDeleteSection: (sectionId: string) => void;
   onDuplicateSection: (sectionId: string) => void;
   onUpdateSignatures: (signatures: any) => void;
+  onUpdateDocument: (updatedDocument: DocumentModel) => void;
   onQuickAIAction: (actionType: string, targetContext: { sectionId?: string; text?: string }) => void;
 }
 
@@ -44,6 +45,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onDeleteSection,
   onDuplicateSection,
   onUpdateSignatures,
+  onUpdateDocument,
   onQuickAIAction
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -54,6 +56,66 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     columnIndex: number;
   } | null>(null);
   const documentDesign = resolveDocumentDesign(document);
+
+  const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
+    if (!files?.length) return [];
+    const selected = Array.from(files);
+    if (selected.some(file => !file.type.startsWith('image/'))) {
+      throw new Error('Choose image files only.');
+    }
+    if (selected.some(file => file.size > 15 * 1024 * 1024)) {
+      throw new Error('Each image must be 15 MB or smaller.');
+    }
+    return Promise.all(selected.map(async file => {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+      const canvas = window.document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        bitmap.close();
+        throw new Error('Your browser could not prepare ' + file.name + '.');
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const mime = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+      const url = canvas.toDataURL(mime, 0.92);
+      return {
+        id: 'image_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        url,
+        altText: file.name.replace(/\.[^.]+$/, ''),
+        caption: '',
+        widthPercent: Math.max(20, Math.floor(100 / selected.length)),
+        alignment: 'center' as const
+      };
+    }));
+  };
+
+  const handlePageHeaderImages = async (files: FileList | null) => {
+    try {
+      const images = await readImageFiles(files);
+      if (!images.length) return;
+      onUpdateDocument({
+        ...document,
+        imageHeaderRequested: true,
+        pageHeaderImages: [...(document.pageHeaderImages || []), ...images],
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to add images.');
+    }
+  };
+
+  const handleSectionImages = async (section: Section, files: FileList | null) => {
+    try {
+      const images = await readImageFiles(files);
+      if (!images.length) return;
+      onUpdateSection({ ...section, images: [...(section.images || []), ...images] });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to add images.');
+    }
+  };
 
   // Elongation & Section Extension helpers
   const handleExtendSectionText = (section: Section) => {
@@ -244,13 +306,36 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             lineHeight: documentDesign.typography.bodyLineHeight
           }}
         >
+          {/* Source @ marker creates an image header area. */ }
+          {document.imageHeaderRequested && (
+            <div className="mb-4 rounded border border-dashed p-3" style={{ borderColor: documentDesign.colors.accent }}>
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold" style={{ color: documentDesign.colors.headingText }}>
+                <span>IMAGE HEADER</span>
+                <label className="cursor-pointer rounded px-3 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
+                  Add images
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handlePageHeaderImages(event.target.files); event.currentTarget.value = ''; }} />
+                </label>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {(document.pageHeaderImages || []).map(image => (
+                  <div key={image.id} className="relative">
+                    <img src={image.url} alt={image.altText || 'Page header image'} className="h-20 max-w-40 rounded object-contain" />
+                    <input aria-label="Header image caption" value={image.caption || ''} placeholder="Caption" onChange={event => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id ? { ...item, caption: event.target.value } : item) })} className="mt-1 w-32 bg-transparent text-center text-[10px] outline-none" />
+                    <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="absolute -right-2 -top-2 rounded-full bg-rose-600 px-1.5 text-xs text-white">×</button>
+                  </div>
+                ))}
+              </div>
+              {!document.pageHeaderImages?.length && <p className="text-center text-xs" style={{ color: documentDesign.colors.mutedText }}>Select one or more images from your computer.</p>}
+            </div>
+          )}
+
           {/* Running Header */}
-          {document.pageConfig.headerText && (
+          {true && (
             <div
               className="pb-2 mb-8 flex items-center justify-between text-[11px] font-sans tracking-wider uppercase"
               style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` }}
             >
-              <span>{document.pageConfig.headerText}</span>
+              <input aria-label="Running page header" value={document.pageConfig.headerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, headerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
               <span>CONFIDENTIAL</span>
             </div>
           )}
@@ -264,7 +349,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Document Title Header */}
           <div className="text-center pb-8 mb-8" style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
-            <h1 
+            <h1
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={event => onUpdateDocument({ ...document, title: event.currentTarget.textContent || '', updatedAt: new Date().toISOString() })}
               style={{
                 fontSize: `${documentDesign.typography.heading1Size || document.styles.heading1Size || 18}pt`,
                 fontFamily: documentDesign.typography.headingFontFamily,
@@ -287,6 +375,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               <span>Document Type: {document.type.replace('_', ' ').toUpperCase()}</span>
               <span>•</span>
               <span>Date: {new Date(document.updatedAt).toLocaleDateString()}</span>
+              <span>Author:</span>
+              <input aria-label="Document author" value={document.author} onChange={event => onUpdateDocument({ ...document, author: event.target.value })} className="w-28 bg-transparent text-center outline-none" />
             </div>
           </div>
 
@@ -377,9 +467,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Section Heading */}
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="font-bold font-mono text-xs" style={{ color: sectionStyle.headingColor }}>
-                      {section.sectionNumber}
-                    </span>
+                    <input type="text" aria-label="Section number" value={section.sectionNumber} onChange={event => onUpdateSection({ ...section, sectionNumber: event.target.value })} className="w-16 shrink-0 bg-transparent font-mono text-xs font-bold outline-none" style={{ color: sectionStyle.headingColor }} />
                     <input 
                       type="text" 
                       value={section.title}
@@ -446,9 +534,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     <div className="space-y-3 pl-3 border-l-2 border-slate-200 ml-1">
                       {section.clauses.map((clause, cIdx) => (
                         <div key={clause.id} className="relative group/clause flex items-baseline gap-2">
-                          <span className="font-mono text-xs font-semibold text-slate-500 shrink-0 select-none">
-                            {clause.clauseNumber}
-                          </span>
+                          <input aria-label="Clause number" value={clause.clauseNumber} onChange={event => { const updated = [...section.clauses]; updated[cIdx] = { ...clause, clauseNumber: event.target.value }; onUpdateSection({ ...section, clauses: updated }); }} className="w-14 shrink-0 bg-transparent font-mono text-xs font-semibold text-slate-500 outline-none" />
                           <div 
                             className="flex-1"
                             style={{ textAlign: document.styles.alignment || 'left' }}
@@ -549,7 +635,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     <div key={table.id} className="mt-4 rounded-md shadow-xs overflow-hidden" style={{ border: `1px solid ${tableStyle.gridlineColor}`, background: fillToCss(tableStyle.bodyBackground) }}>
                       {/* Table Header Bar with Actions */}
                       <div className="px-3 py-1.5 flex items-center justify-between" style={{ background: fillToCss(tableStyle.headerBackground), borderBottom: `${tableStyle.gridlineWidth}px solid ${tableStyle.gridlineColor}` }}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <TableIcon className="w-3.5 h-3.5 text-blue-600" />
                           <input
                             type="text"
@@ -563,6 +649,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                             className="font-bold text-xs bg-transparent border-none outline-none focus:bg-white px-1 rounded"
                             style={{ color: tableStyle.headerTextColor }}
                           />
+                          <input type="text" aria-label="Table caption" value={table.caption || ''} placeholder="Add table caption" onChange={event => { const updatedTables = [...(section.tables || [])]; updatedTables[tIdx] = { ...table, caption: event.target.value }; onUpdateSection({ ...section, tables: updatedTables }); }} className="min-w-40 flex-1 bg-transparent text-[11px] italic outline-none" style={{ color: tableStyle.captionColor }} />
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -709,7 +796,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     <div key={chart.id} className="mt-4 p-4 rounded-lg flex flex-col items-center" style={{ background: documentDesign.colors.sectionSurface, border: `1px solid ${documentDesign.colors.border}` }}>
                       <div className="text-xs font-bold mb-3 flex items-center gap-1.5" style={{ color: documentDesign.colors.headingText }}>
                         <PieChart className="w-4 h-4" style={{ color: documentDesign.colors.accent }} />
-                        <span>{chart.title}</span>
+                        <input aria-label="Chart title" value={chart.title} onChange={event => onUpdateSection({ ...section, charts: (section.charts || []).map(item => item.id === chart.id ? { ...item, title: event.target.value } : item) })} className="bg-transparent font-bold outline-none" style={{ color: documentDesign.colors.headingText }} />
                       </div>
                       
                       {/* SVG Donut / Bar Chart Representation */}
@@ -737,8 +824,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           {chart.labels.map((lbl, idx) => (
                             <div key={idx} className="flex items-center gap-2">
                               <span className="w-3 h-3 rounded-full" style={{ background: [documentDesign.colors.accent, documentDesign.colors.secondary, documentDesign.colors.primary, documentDesign.colors.border][idx % 4] }} />
-                              <span className="font-medium" style={{ color: documentDesign.colors.bodyText }}>{lbl}:</span>
-                              <span className="font-bold" style={{ color: documentDesign.colors.headingText }}>{chart.values[idx]}%</span>
+                              <input aria-label="Chart label" value={lbl} onChange={event => onUpdateSection({ ...section, charts: (section.charts || []).map(item => item.id === chart.id ? { ...item, labels: item.labels.map((label, labelIndex) => labelIndex === idx ? event.target.value : label) } : item) })} className="w-24 bg-transparent font-medium outline-none" style={{ color: documentDesign.colors.bodyText }} />
+                              <input aria-label="Chart value" type="number" value={chart.values[idx]} onChange={event => onUpdateSection({ ...section, charts: (section.charts || []).map(item => item.id === chart.id ? { ...item, values: item.values.map((value, valueIndex) => valueIndex === idx ? Number(event.target.value) : value) } : item) })} className="w-12 bg-transparent text-right font-bold outline-none" style={{ color: documentDesign.colors.headingText }} />%
                             </div>
                           ))}
                         </div>
@@ -746,7 +833,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     </div>
                   ))}
 
-                  {/* Images / Brand Artwork Block */}
+                  {/* Images / Brand Artwork Block */ }
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <span className="font-semibold" style={{ color: sectionStyle.headingColor }}>Section images</span>
+                    <label className="cursor-pointer rounded px-2 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
+                      Add image(s)
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handleSectionImages(section, event.target.files); event.currentTarget.value = ''; }} />
+                    </label>
+                  </div>
                   {section.images && section.images.map((img) => (
                     <div key={img.id} className="mt-4 flex flex-col items-center">
                       <img 
@@ -755,11 +849,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         className="rounded shadow-sm max-h-60 object-contain"
                         style={{ width: `${img.widthPercent || 80}%`, border: `1px solid ${documentDesign.colors.border}` }}
                       />
-                      {img.caption && (
-                        <p className="text-[11px] italic mt-1.5 text-center font-sans" style={{ color: documentDesign.colors.mutedText }}>
-                          {img.caption}
-                        </p>
-                      )}
+                      <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
+                      <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
                     </div>
                   ))}
                 </section>
@@ -777,11 +868,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               style={{ borderTop: `2px solid ${documentDesign.pageFurniture.dividerColor}` }}
             >
               <div className="text-center mb-6">
-                <h2 className="font-bold text-sm tracking-wider uppercase" style={{ color: documentDesign.colors.headingText }}>
-                  {document.signatures.title || 'SIGNATURES & EXECUTION'}
-                </h2>
-                <p className="text-xs italic mt-1" style={{ color: documentDesign.colors.mutedText }}>
-                  IN WITNESS WHEREOF, the Parties have executed this Agreement by their duly authorized representatives.
+                <input aria-label="Signature block title" value={document.signatures.title || ''} placeholder="SIGNATURES & EXECUTION" onChange={event => onUpdateSignatures({ ...document.signatures, title: event.target.value })} className="w-full bg-transparent text-center font-bold text-sm tracking-wider uppercase outline-none" style={{ color: documentDesign.colors.headingText }} />
+                <p contentEditable suppressContentEditableWarning onBlur={event => onUpdateSignatures({ ...document.signatures, executionText: event.currentTarget.textContent || '' })} className="text-xs italic mt-1 outline-none" style={{ color: documentDesign.colors.mutedText }}>
+                  {document.signatures.executionText || 'IN WITNESS WHEREOF, the Parties have executed this Agreement by their duly authorized representatives.'}
                 </p>
               </div>
 
@@ -798,9 +887,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                     {/* Signature Line */}
                     <div className="pb-1 mb-2 h-10 flex items-end" style={{ borderBottom: `1px solid ${documentDesign.colors.primary}` }}>
-                      <span className="font-mono italic text-sm" style={{ color: documentDesign.colors.accent }}>
-                        {party.signaturePlaceholder || `/s/ ${party.name}`}
-                      </span>
+                      <input aria-label="Signature placeholder" value={party.signaturePlaceholder || ''} placeholder={`/s/ ${party.name}`} onChange={event => handleUpdateParty(idx, 'signaturePlaceholder', event.target.value)} className="w-full bg-transparent font-mono text-sm italic outline-none" style={{ color: documentDesign.colors.accent }} />
                     </div>
 
                     <div className="text-xs space-y-1.5" style={{ color: documentDesign.colors.bodyText }}>
@@ -853,7 +940,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Running Footer */}
           <div className="mt-16 pt-4 border-t flex items-center justify-between text-[11px] font-sans" style={{ color: documentDesign.pageFurniture.footerTextColor, borderColor: documentDesign.pageFurniture.dividerColor, borderTopWidth: `${documentDesign.pageFurniture.dividerWidth}px` }}>
-            <span>{document.pageConfig.footerText || 'CONFIDENTIAL & PROPRIETARY'}</span>
+            <input aria-label="Running page footer" value={document.pageConfig.footerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, footerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
             <span>Page 1 of 1</span>
           </div>
         </main>

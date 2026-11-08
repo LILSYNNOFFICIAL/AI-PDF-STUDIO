@@ -195,3 +195,29 @@ test('PDF export includes all text from the scrollable editor block in normal do
   assert.ok(text.includes('REFERENCE-LINE-80-END'));
   assert.ok(text.includes('SCROLLABLE-BLOCK-END'));
 });
+
+
+test('page-header and section images are embedded in multi-page PDF output', () => {
+  const doc = buildDocumentFromPrompt('Image Header Agreement').updatedDoc;
+  const pixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC';
+  const image = {
+    id: 'test-image',
+    url: pixel,
+    altText: 'Test pixel',
+    caption: 'IMAGE-CAPTION-TEST',
+    widthPercent: 50,
+    alignment: 'center' as const
+  };
+  doc.imageHeaderRequested = true;
+  doc.pageHeaderImages = [image];
+  doc.sections = [{
+    ...doc.sections[0],
+    content: 'PDF-IMAGE-HEADER-START ' + 'Long page content. '.repeat(500),
+    images: [image]
+  }];
+  const pdf = generatePdfDocument(doc);
+  const output = pdf.output();
+  assert.ok(pdf.getNumberOfPages() > 1, 'Expected image-header document to paginate');
+  assert.ok(output.includes('/Subtype /Image'), 'Expected the selected image to be embedded in the PDF');
+  assert.ok(output.includes('IMAGE-CAPTION-TEST'));
+});

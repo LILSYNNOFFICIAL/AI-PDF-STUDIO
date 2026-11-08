@@ -156,13 +156,46 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     drawColorFill(fill, 0, 0, pageWidth, pageHeight, 28);
   };
 
+  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3) => {
+    const validImages = images.filter(image => typeof image.url === 'string' && image.url.startsWith('data:image/'));
+    if (!validImages.length) return 0;
+    const slotWidth = (contentWidth - gap * (validImages.length - 1)) / validImages.length;
+    let rowHeight = 0;
+    validImages.forEach((image, index) => {
+      try {
+        const properties = pdf.getImageProperties(image.url);
+        const ratio = properties.width / Math.max(1, properties.height);
+        const width = Math.min(slotWidth, maxHeight * ratio);
+        const height = Math.min(maxHeight, width / Math.max(0.01, ratio));
+        const x = margins.left + index * (slotWidth + gap) + (slotWidth - width) / 2;
+        const y = cursorY + (maxHeight - height) / 2;
+        const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
+        pdf.addImage(image.url, format, x, y, width, height);
+        rowHeight = Math.max(rowHeight, height);
+      } catch (error) {
+        console.warn('Skipping unsupported document image:', image.altText || image.id, error);
+      }
+    });
+    return rowHeight;
+  };
+
+  const drawPageHeaderImages = () => {
+    const images = doc.pageHeaderImages || [];
+    if (!doc.imageHeaderRequested || !images.length) return;
+    const maxHeight = Math.min(22, Math.max(10, margins.top - 2));
+    const drawnHeight = drawImageBlocks(images, maxHeight);
+    if (drawnHeight > 0) cursorY += maxHeight + 4;
+  };
+
   const addPage = () => {
     pdf.addPage();
     cursorY = margins.top;
     drawPageBackground(pdf.getNumberOfPages());
+    drawPageHeaderImages();
   };
 
   drawPageBackground(1);
+  drawPageHeaderImages();
 
   const ensureSpace = (height: number) => {
     if (cursorY + height > bottomLimit) addPage();
@@ -207,7 +240,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     // jsPDF positions text using its baseline. Give boxed text a separate
     // ascender-safe top inset so glyphs never touch or cross the top border.
     const hasBox = Boolean(options.background || options.border);
-    const baselineClearance = hasBox ? Math.max(1.4, size * 0.352778 * 0.38) : 0;
+    const baselineClearance = hasBox ? Math.max(2.2, size * 0.352778 * 0.78) : 0;
     const topInset = padding + baselineClearance;
     let lineIndex = 0;
     while (lineIndex < lines.length) {
@@ -434,6 +467,22 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
 
     for (const table of section.tables || []) drawTable(table, section);
+    if (section.images?.length) {
+      const imageHeight = 34;
+      const drawnHeight = drawImageBlocks(section.images, imageHeight, 4);
+      if (drawnHeight > 0) {
+        cursorY += imageHeight + 2;
+        section.images.forEach(image => {
+          if (image.caption?.trim()) {
+            drawWrappedText(image.caption, margins.left, contentWidth, {
+              font: primaryFont, style: 'italic', size: 8.5,
+              color: colorToRgb(design.colors.mutedText), align: image.alignment || 'center',
+              lineHeight: 4, after: 1
+            });
+          }
+        });
+      }
+    }
     cursorY += 3;
   }
 
@@ -446,7 +495,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       font: headingFont, style: 'bold', size: 14, color: colorToRgb(design.colors.headingText), lineHeight: 7, after: 2
     });
     drawWrappedText(
-      'IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date written below.',
+      doc.signatures.executionText || 'IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date written below.',
       margins.left, contentWidth,
       { font: primaryFont, style: 'italic', size: 9.5, color: colorToRgb(design.colors.mutedText), lineHeight: 4.5, after: 5 }
     );

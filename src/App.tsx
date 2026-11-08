@@ -1001,6 +1001,7 @@ export default function App() {
           onUpdateSignatures={(signatures) => {
             setDocument(prev => ({ ...prev, signatures, updatedAt: new Date().toISOString() }));
           }}
+          onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
           onQuickAIAction={handleQuickAIAction}
         />
 
@@ -1037,6 +1038,7 @@ export default function App() {
         canUndo={historyIndex >= 0}
         canRedo={historyIndex < history.length - 1}
         onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
+        onUpdateDocument={(updatedDocument: DocumentModel) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
         onSelectPersona={setPersona}
         onUndo={handleUndo}
         onRedo={handleRedo}

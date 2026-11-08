@@ -25,6 +25,7 @@ function detectHeadings(lines: string[], firstContentLine: number): HeadingMatch
   let insideScrollableBlock = false;
   for (let index = firstContentLine; index < lines.length; index += 1) {
     const value = lines[index].trim();
+    if (value === '@') continue;
     if (value === '[[') { insideScrollableBlock = true; continue; }
     if (value === ']]') { insideScrollableBlock = false; continue; }
     if (insideScrollableBlock || !value) continue;
@@ -160,8 +161,9 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   if (!source.trim()) throw new Error('The source document is empty. Paste your complete document before rendering.');
   const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const lines = normalized.split('\n');
-  const firstNonEmpty = lines.findIndex(line => line.trim().length > 0);
-  const firstLine = lines[firstNonEmpty].trim();
+  const imageHeaderRequested = lines.some(line => line.trim() === '@');
+  const firstNonEmpty = lines.findIndex(line => line.trim().length > 0 && line.trim() !== '@');
+  const firstLine = firstNonEmpty >= 0 ? lines[firstNonEmpty].trim() : 'Imported Document';
   const firstIsMarkdownTitle = MARKDOWN_HEADING.test(firstLine);
   const title = cleanHeading(firstIsMarkdownTitle ? firstLine.replace(/^#+\s*/, '') : firstLine).replace(/\*{1,2}/g, '').slice(0, 180) || 'Imported Document';
   const headings = detectHeadings(lines, firstNonEmpty + 1);
@@ -170,7 +172,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   let detectedTableRows = 0;
 
   const appendSection = (headingText: string, sourceHeading: string, contentLines: string[], appendix = false, sectionNumber?: string) => {
-    const extracted = extractScrollableBlock(contentLines);
+    const extracted = extractScrollableBlock(contentLines.filter(line => line.trim() !== '@'));
     const parsed = parseTableLines(extracted.contentLines, sections.length + 1);
     detectedTableRows += parsed.rowCount;
     const isSignatureSection = SIGNATURE_HEADING.test(headingText);
@@ -205,7 +207,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   });
 
   if (!sections.length) {
-    const parsed = parseTableLines(lines.slice(firstNonEmpty + 1), 1);
+    const parsed = parseTableLines(lines.slice(firstNonEmpty + 1).filter(line => line.trim() !== '@'), 1);
     detectedTableRows = parsed.rowCount;
     sections.push({
       id: 'source_section_1', sectionNumber: '1', title: 'DOCUMENT CONTENT', sourceHeading: '',
@@ -230,6 +232,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
     createdAt: now,
     updatedAt: now,
     sections,
+    imageHeaderRequested,
     signatures: signatureParties.length ? {
       id: 'source_signature_block',
       title: 'SIGNATURES & EXECUTION',

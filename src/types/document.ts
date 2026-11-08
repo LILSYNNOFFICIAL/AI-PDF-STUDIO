@@ -231,6 +231,7 @@ export interface SignatureParty {
 export interface SignatureBlock {
   id: string;
   title?: string;
+  executionText?: string;
   parties: SignatureParty[];
   layout?: 'side_by_side' | 'stacked';
   onDedicatedPage?: boolean;
@@ -307,6 +308,10 @@ export interface DocumentModel {
   dependencies?: DocumentDependency[];
   redactions?: RedactionRecord[];
   changeSummary?: string;
+  /** True when the source contains a standalone @ image-header marker. */
+  imageHeaderRequested?: boolean;
+  /** Images placed in the running page header, selected from the user's device. */
+  pageHeaderImages?: ImageBlock[];
   /** Exact, unmodified user-provided source used to render this document. */
   sourceText?: string;
   sourceIntegrity?: {
