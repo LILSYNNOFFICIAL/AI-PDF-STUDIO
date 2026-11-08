@@ -240,7 +240,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     // jsPDF positions text using its baseline. Give boxed text a separate
     // ascender-safe top inset so glyphs never touch or cross the top border.
     const hasBox = Boolean(options.background || options.border);
-    const baselineClearance = hasBox ? Math.max(1.4, size * 0.352778 * 0.38) : 0;
+    const baselineClearance = hasBox ? Math.max(2.2, size * 0.352778 * 0.78) : 0;
     const topInset = padding + baselineClearance;
     let lineIndex = 0;
     while (lineIndex < lines.length) {
