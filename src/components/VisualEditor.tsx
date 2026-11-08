@@ -233,7 +233,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     event.preventDefault();
     event.stopPropagation();
     const wrapper = event.currentTarget.parentElement;
-    const imageElement = wrapper?.querySelector('img');
     const containerWidth = wrapper?.parentElement?.clientWidth || 1;
     const startX = event.clientX;
     const startWidth = image.widthPercent || 80;
