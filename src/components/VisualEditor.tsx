@@ -552,11 +552,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                 </label>
                               </div>
                               {renderSectionImages(section)}
-                                  </div>
-                                  <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
-                                  <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
-                                </div>
-                              ))}
                               {!section.images?.length && <p className="text-center text-xs" style={{ color: documentDesign.colors.mutedText }}>Images added here will appear at this exact point in the document.</p>}
                             </div>
                           )}
