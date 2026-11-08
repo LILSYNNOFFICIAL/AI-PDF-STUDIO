@@ -58,8 +58,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   const interpolate = (a: [number, number, number], b: [number, number, number], amount: number): [number, number, number] =>
     [0, 1, 2].map(index => Math.round(a[index] + (b[index] - a[index]) * amount)) as [number, number, number];
 
-  const colorAt = (fill: Extract<ColorFill, { type: 'linear-gradient' }>, position: number): [number, number, number] => {
-    const stops = [...fill.stops].sort((a, b) => a.position - b.position);
+  const colorAt = (fill: Extract<ColorFill, { type: 'linear-gradient' }>, position: number, stops: typeof fill.stops): [number, number, number] => {
     if (position <= stops[0].position) return colorToRgb(stops[0].color);
     if (position >= stops[stops.length - 1].position) return colorToRgb(stops[stops.length - 1].color);
     for (let index = 0; index < stops.length - 1; index++) {
@@ -98,6 +97,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
 
     // A small vector color mesh keeps PDF text selectable and avoids rasterizing the page.
+    const sortedStops = [...fill.stops].sort((a, b) => a.position - b.position);
     const radians = ((fill.angle % 360) * Math.PI) / 180;
     const dx = Math.cos(radians);
     const dy = Math.sin(radians);
@@ -113,7 +113,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         const nx = (column + 0.5) / columns;
         const ny = (row + 0.5) / rows;
         const position = ((nx * dx + ny * dy - minimum) / span) * 100;
-        pdf.setFillColor(...colorAt(fill, position));
+        pdf.setFillColor(...colorAt(fill, position, sortedStops));
         pdf.rect(
           x + (column * width) / columns,
           y + (row * height) / rows,
@@ -153,7 +153,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     const fill = pageNumber === 1 && design.page.firstPageBackground
       ? design.page.firstPageBackground
       : design.page.background;
-    drawColorFill(fill, 0, 0, pageWidth, pageHeight, 28);
+    drawColorFill(fill, 0, 0, pageWidth, pageHeight, 12);
   };
 
   const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3) => {
@@ -165,9 +165,12 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       try {
         const properties = pdf.getImageProperties(image.url);
         const ratio = properties.width / Math.max(1, properties.height);
-        const width = Math.min(slotWidth, maxHeight * ratio);
+        const requestedWidth = slotWidth * Math.max(10, Math.min(100, image.widthPercent ?? 100)) / 100;
+        const width = Math.min(requestedWidth, maxHeight * ratio);
         const height = Math.min(maxHeight, width / Math.max(0.01, ratio));
-        const x = margins.left + index * (slotWidth + gap) + (slotWidth - width) / 2;
+        const slotX = margins.left + index * (slotWidth + gap);
+        const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
+        const x = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth - width : slotX + (slotWidth - width) / 2;
         const y = cursorY + (maxHeight - height) / 2;
         const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
         pdf.addImage(image.url, format, x, y, width, height);
@@ -191,7 +194,6 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     pdf.addPage();
     cursorY = margins.top;
     drawPageBackground(pdf.getNumberOfPages());
-    drawPageHeaderImages();
   };
 
   drawPageBackground(1);
@@ -435,10 +437,10 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     };
     const drawSectionImages = () => {
       if (!section.images?.length) return;
-      const imageHeight = 34;
+      const imageHeight = 100;
       const drawnHeight = drawImageBlocks(section.images, imageHeight, 4);
       if (drawnHeight > 0) {
-        cursorY += imageHeight + 2;
+        cursorY += drawnHeight + 2;
         section.images.forEach(image => {
           if (image.caption?.trim()) drawWrappedText(image.caption, margins.left, contentWidth, {
             font: primaryFont, style: 'italic', size: 8.5,

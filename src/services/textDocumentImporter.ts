@@ -163,9 +163,9 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   if (!source.trim()) throw new Error('The source document is empty. Paste your complete document before rendering.');
   const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const lines = normalized.split('\n');
-  // A marker before the title requests a page-header image slot. Markers inside
-  // document content are retained as section-local insertion points instead.
-  const imageHeaderRequested = lines.slice(0, Math.max(0, lines.findIndex(line => line.trim() && !isImageMarkerLine(line)))).some(line => line.trim() === '@');
+  // A marker before the title creates a one-time image insertion point before
+  // the title. Markers inside document content remain section-local.
+  const imageHeaderRequested = lines.slice(0, Math.max(0, lines.findIndex(line => line.trim() && !isImageMarkerLine(line)))).some(isImageMarkerLine);
   const firstNonEmpty = lines.findIndex(line => line.trim().length > 0 && !isImageMarkerLine(line));
   const firstLine = firstNonEmpty >= 0 ? lines[firstNonEmpty].trim() : 'Imported Document';
   const firstIsMarkdownTitle = MARKDOWN_HEADING.test(firstLine);
