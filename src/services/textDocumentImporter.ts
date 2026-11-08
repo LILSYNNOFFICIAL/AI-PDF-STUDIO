@@ -161,7 +161,9 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   if (!source.trim()) throw new Error('The source document is empty. Paste your complete document before rendering.');
   const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const lines = normalized.split('\n');
-  const imageHeaderRequested = lines.some(line => line.trim() === '@');
+  // A marker before the title requests a page-header image slot. Markers inside
+  // document content are retained as section-local insertion points instead.
+  const imageHeaderRequested = lines.slice(0, Math.max(0, lines.findIndex(line => line.trim() && line.trim() !== '@'))).some(line => line.trim() === '@');
   const firstNonEmpty = lines.findIndex(line => line.trim().length > 0 && line.trim() !== '@');
   const firstLine = firstNonEmpty >= 0 ? lines[firstNonEmpty].trim() : 'Imported Document';
   const firstIsMarkdownTitle = MARKDOWN_HEADING.test(firstLine);
@@ -172,6 +174,9 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   let detectedTableRows = 0;
 
   const appendSection = (headingText: string, sourceHeading: string, contentLines: string[], appendix = false, sectionNumber?: string) => {
+    const imageMarkerLine = contentLines.findIndex(line => line.trim() === '@');
+    const markerPrefix = imageMarkerLine >= 0 ? contentLines.slice(0, imageMarkerLine) : [];
+    const markerPrefixContent = parseTableLines(extractScrollableBlock(markerPrefix).contentLines, sections.length + 1).content;
     const extracted = extractScrollableBlock(contentLines.filter(line => line.trim() !== '@'));
     const parsed = parseTableLines(extracted.contentLines, sections.length + 1);
     detectedTableRows += parsed.rowCount;
@@ -191,6 +196,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
       ...(extracted.scrollableContent !== undefined ? { scrollableContent: extracted.scrollableContent } : {}),
       clauses: [],
       ...(parsed.tables.length ? { tables: parsed.tables } : {}),
+      ...(imageMarkerLine >= 0 ? { imageMarkerPosition: markerPrefixContent.length } : {}),
       orderIndex: sections.length + 1,
       ...(isAppendix ? { isAppendix: true, appendixCode: number } : {}),
       sourceReference: 'Original source text retained in the Source of Truth record.'
@@ -199,7 +205,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
 
   const preambleEnd = headings[0]?.line ?? lines.length;
   const preamble = lines.slice(firstNonEmpty + 1, preambleEnd);
-  if (preamble.join('\n').trim()) appendSection('INTRODUCTION', '', preamble);
+  if (preamble.join('\n').trim() || preamble.some(line => line.trim() === '@')) appendSection('INTRODUCTION', '', preamble);
 
   headings.forEach((heading, index) => {
     const nextLine = headings[index + 1]?.line ?? lines.length;
@@ -207,11 +213,20 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   });
 
   if (!sections.length) {
-    const parsed = parseTableLines(lines.slice(firstNonEmpty + 1).filter(line => line.trim() !== '@'), 1);
+    const fallbackLines = lines.slice(firstNonEmpty + 1);
+    const markerLine = fallbackLines.findIndex(line => line.trim() === '@');
+    const markerPrefix = markerLine >= 0 ? fallbackLines.slice(0, markerLine) : [];
+    const markerPrefixContent = parseTableLines(markerPrefix, 1).content;
+    const parsed = parseTableLines(fallbackLines.filter(line => line.trim() !== '@'), 1);
     detectedTableRows = parsed.rowCount;
+    const fallbackContent = [lines[firstNonEmpty], parsed.content].filter(Boolean).join('\n');
+    const imageMarkerPosition = markerLine >= 0
+      ? [lines[firstNonEmpty], markerPrefixContent].filter(Boolean).join('\n').length
+      : undefined;
     sections.push({
       id: 'source_section_1', sectionNumber: '1', title: 'DOCUMENT CONTENT', sourceHeading: '',
-      content: [lines[firstNonEmpty], parsed.content].filter(Boolean).join('\n'),
+      content: fallbackContent,
+      ...(imageMarkerPosition !== undefined ? { imageMarkerPosition } : {}),
       clauses: [], ...(parsed.tables.length ? { tables: parsed.tables } : {}), orderIndex: 1,
       sourceReference: 'Complete unstructured source retained verbatim.'
     });

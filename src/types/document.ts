@@ -259,6 +259,8 @@ export interface Section {
   tables?: TableBlock[];
   charts?: ChartBlock[];
   images?: ImageBlock[];
+  /** Character offset in content where the source @ image marker was placed. */
+  imageMarkerPosition?: number;
   orderIndex: number;
   isAppendix?: boolean;
   appendixCode?: string; // e.g. "APPENDIX A"
