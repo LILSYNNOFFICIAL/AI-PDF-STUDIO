@@ -433,7 +433,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           backgroundColor: section.design?.scrollableBackgroundColor || documentDesign.colors.pageSurface,
                           color: section.design?.scrollableTextColor || documentDesign.colors.bodyText,
                           borderColor: section.design?.scrollableBorderColor || documentDesign.colors.border,
-                          caretColor: section.design?.scrollableTextColor || documentDesign.colors.bodyText
+                          caretColor: section.design?.scrollableTextColor || documentDesign.colors.bodyText,
+                          textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left'
                         }}
                         className="block h-72 max-h-[420px] min-h-40 w-full resize-y overflow-y-auto rounded border p-3 text-sm leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-400"
                       />
