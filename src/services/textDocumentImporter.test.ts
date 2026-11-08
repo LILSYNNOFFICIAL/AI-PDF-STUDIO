@@ -189,10 +189,12 @@ test('preserves an @ image marker between paragraphs as an exact section inserti
   assert.equal(doc.imageHeaderRequested, false);
 });
 
-test('supports the image-header marker before the document title', () => {
-  const source = ['@', '# Header Image Agreement', '', 'Opening paragraph.'].join('\n');
-  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
-  assert.equal(doc.title, 'Header Image Agreement');
-  assert.equal(doc.imageHeaderRequested, true);
-  assert.match(doc.sections[0].content || '', /Opening paragraph/);
+test('supports standalone and labeled leading @ markers as one-time pre-title image insertion points', () => {
+  for (const marker of ['@', '@ add cover image']) {
+    const source = [marker, '# Header Image Agreement', '', 'Opening paragraph.'].join('\n');
+    const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+    assert.equal(doc.title, 'Header Image Agreement');
+    assert.equal(doc.imageHeaderRequested, true);
+    assert.match(doc.sections[0].content || '', /Opening paragraph/);
+  }
 });
