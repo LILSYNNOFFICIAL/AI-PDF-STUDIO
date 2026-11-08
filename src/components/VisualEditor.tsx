@@ -84,7 +84,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return {
         id: 'image_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         url,
-        altText: file.name.replace(/\\.[^.]+$/, ''),
+        altText: file.name.replace(/\.[^.]+$/, ''),
         caption: '',
         widthPercent: Math.max(20, Math.floor(100 / selected.length)),
         alignment: 'center' as const
