@@ -37,6 +37,7 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
   // Image form state
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&auto=format&fit=crop&q=80');
   const [imageCaption, setImageCaption] = useState('Official Studio Master Recording Seal & Archival Stamp');
+  const [isInsertingImage, setIsInsertingImage] = useState(false);
 
   // Signature form state
   const [partyRole, setPartyRole] = useState('EXECUTIVE WITNESS / LEGAL COUNSEL');
@@ -86,35 +87,40 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
     }
   };
 
-  // Insert Image
-  const handleInsertImage = () => {
-    if (!targetSectionId) return;
-    const updatedSections = document.sections.map(s => {
-      if (s.id === targetSectionId) {
-        return {
-          ...s,
-          images: [
-            ...(s.images || []),
-            {
-              id: `img_${Date.now()}`,
-              url: imageUrl,
-              caption: imageCaption,
-              alignment: 'center' as const,
-              widthPercent: 80
-            }
-          ]
-        };
+  // Embed remote artwork so the editor and PDF renderer share a self-contained asset.
+  const handleInsertImage = async () => {
+    if (!targetSectionId || isInsertingImage) return;
+    setIsInsertingImage(true);
+    try {
+      let storedImageUrl = imageUrl.trim();
+      if (!storedImageUrl) throw new Error('Enter an image URL or asset.');
+      if (!storedImageUrl.startsWith('data:image/')) {
+        const response = await fetch(storedImageUrl, { mode: 'cors' });
+        if (!response.ok) throw new Error('Image server returned HTTP ' + response.status + '.');
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/')) throw new Error('The supplied URL did not return an image.');
+        if (blob.size > 15 * 1024 * 1024) throw new Error('The image must be 15 MB or smaller.');
+        storedImageUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('Unable to read the downloaded image asset.'));
+          reader.readAsDataURL(blob);
+        });
       }
-      return s;
-    });
-    const updatedDoc: DocumentModel = {
-      ...document,
-      sections: updatedSections,
-      version: document.version + 1,
-      updatedAt: new Date().toISOString()
-    };
-    onApplyUpdate(updatedDoc, `Inserted artwork/image into target section.`);
-    onClose();
+      const updatedSections = document.sections.map(section => section.id === targetSectionId
+        ? { ...section, images: [...(section.images || []), {
+            id: 'img_' + Date.now(), url: storedImageUrl, caption: imageCaption,
+            altText: imageCaption || 'Document artwork', alignment: 'center' as const, widthPercent: 80
+          }] }
+        : section);
+      const updatedDoc: DocumentModel = { ...document, sections: updatedSections, version: document.version + 1, updatedAt: new Date().toISOString() };
+      onApplyUpdate(updatedDoc, 'Inserted artwork/image into the selected section.');
+      onClose();
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Image insertion failed.');
+    } finally {
+      setIsInsertingImage(false);
+    }
   };
 
   // Add Signatory Party
@@ -466,13 +472,13 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
             onClick={() => {
               if (activeTab === 'table') handleInsertTable();
               else if (activeTab === 'chart') handleInsertChart();
-              else if (activeTab === 'image') handleInsertImage();
+              else if (activeTab === 'image') void handleInsertImage();
               else if (activeTab === 'signature') handleAddSignatureParty();
             }}
             className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-md shadow-blue-900/30 transition-all"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>Insert Object</span>
+            <span>{activeTab === 'image' && isInsertingImage ? 'Preparing Image…' : 'Insert Object'}</span>
           </button>
         </div>
       </div>
