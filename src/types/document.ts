@@ -231,6 +231,7 @@ export interface SignatureParty {
 export interface SignatureBlock {
   id: string;
   title?: string;
+  executionText?: string;
   parties: SignatureParty[];
   layout?: 'side_by_side' | 'stacked';
   onDedicatedPage?: boolean;
