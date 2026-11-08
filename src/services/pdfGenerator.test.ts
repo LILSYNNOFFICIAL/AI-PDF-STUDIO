@@ -174,3 +174,24 @@ test('design presets, page gradients, section fills, borders and table overrides
     assert.ok(output.includes(marker), 'Expected exported PDF to contain ' + marker);
   }
 });
+
+test('PDF export includes all text from the scrollable editor block in normal document flow', () => {
+  const doc = buildDocumentFromPrompt('Agreement').updatedDoc;
+  doc.sections = [{
+    ...doc.sections[0],
+    content: 'SECTION-INTRO-RETAINED',
+    scrollableContent: [
+      'SCROLLABLE-BLOCK-BEGIN',
+      ...Array.from({ length: 80 }, (_, index) => `Reference line ${index + 1} remains present in the exported PDF.`),
+      'SCROLLABLE-BLOCK-END'
+    ].join('\\n')
+  }];
+  const pdf = generatePdfDocument(doc);
+  const text = outputText(pdf);
+
+  assert.ok(pdf.getNumberOfPages() > 1, 'Long scrollable source material should paginate in PDF output');
+  assert.ok(text.includes('SECTION-INTRO-RETAINED'));
+  assert.ok(text.includes('SCROLLABLE-BLOCK-BEGIN'));
+  assert.ok(text.includes('Reference line 80 remains present'));
+  assert.ok(text.includes('SCROLLABLE-BLOCK-END'));
+});
