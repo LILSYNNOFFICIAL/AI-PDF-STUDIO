@@ -691,14 +691,27 @@ export default function App() {
   };
 
 
-  const handleRenderSourceTruth = () => {
+  const handleRenderSourceTruth = (panelDesign: { backgroundColor: string; textColor: string; borderColor: string; labelColor: string }) => {
     if (!sourceTruthText.trim()) {
       showToast('Paste your complete document before rendering');
       return;
     }
     setIsRenderingSource(true);
     try {
-      const rendered = parseTextDocument(sourceTruthText, document, new Date().toISOString(), sourceTruthPresetId);
+      const parsedDocument = parseTextDocument(sourceTruthText, document, new Date().toISOString(), sourceTruthPresetId);
+      const rendered = {
+        ...parsedDocument,
+        sections: parsedDocument.sections.map(section => section.scrollableContent !== undefined ? {
+          ...section,
+          design: {
+            ...section.design,
+            scrollableBackgroundColor: panelDesign.backgroundColor,
+            scrollableTextColor: panelDesign.textColor,
+            scrollableBorderColor: panelDesign.borderColor,
+            scrollableLabelColor: panelDesign.labelColor
+          }
+        } : section)
+      };
       // Commit directly rather than passing through legacy style synchronization,
       // which could carry the old sample document's formatting into the new render.
       const nextHistory = history.slice(0, historyIndex + 1);

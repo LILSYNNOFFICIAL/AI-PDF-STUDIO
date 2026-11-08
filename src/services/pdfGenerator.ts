@@ -382,12 +382,20 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
 
     if (section.scrollableContent) {
+      const panelTextColor = section.design?.scrollableTextColor || sectionStyle.bodyTextColor;
+      const panelBorderColor = section.design?.scrollableBorderColor || sectionStyle.border.color;
       drawWrappedText(section.scrollableContent, sectionX, sectionWidth, {
         font: primaryFont, size: design.typography.bodyFontSize || doc.styles.fontSize || 10.5,
-        color: colorToRgb(sectionStyle.bodyTextColor),
+        color: colorToRgb(panelTextColor),
         lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
         after: design.typography.paragraphSpacing * 0.264583,
-        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
+        background: section.design?.scrollableBackgroundColor
+          ? { type: 'solid', color: section.design.scrollableBackgroundColor, opacity: 1 }
+          : sectionStyle.background,
+        border: section.design?.scrollableBorderColor
+          ? { ...sectionStyle.border, color: panelBorderColor }
+          : sectionStyle.border,
+        padding: sectionPadding
       });
     }
 
