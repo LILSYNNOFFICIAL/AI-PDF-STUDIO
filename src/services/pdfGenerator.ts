@@ -207,14 +207,17 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     // jsPDF positions text using its baseline. Give boxed text a separate
     // ascender-safe top inset so glyphs never touch or cross the top border.
     const hasBox = Boolean(options.background || options.border);
-    const baselineClearance = hasBox ? Math.max(1.4, size * 0.352778 * 0.38) : 0;
+    // Center the text's visible glyph area vertically within the padded border box.
+    // jsPDF uses a baseline origin, so reserve a full line-height plus the font's
+    // approximate ascender/descender difference above that baseline.
+    const baselineClearance = hasBox ? Math.max(1.4, lineHeight + size * 0.352778 * 0.6) : 0;
     const topInset = padding + baselineClearance;
     let lineIndex = 0;
     while (lineIndex < lines.length) {
       let linesAvailable = Math.floor((bottomLimit - cursorY - topInset - padding) / lineHeight);
       if (linesAvailable < 1) {
         addPage();
-        linesAvailable = Math.floor((bottomLimit - cursorY - padding * 2) / lineHeight);
+        linesAvailable = Math.floor((bottomLimit - cursorY - topInset - padding) / lineHeight);
       }
       const segmentCount = Math.max(1, Math.min(lines.length - lineIndex, linesAvailable));
       const textHeight = segmentCount * lineHeight + topInset + padding;
