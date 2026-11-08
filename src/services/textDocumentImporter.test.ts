@@ -150,6 +150,15 @@ test('treats a standalone @ line as an image-header marker rather than document 
   const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
   const body = doc.sections.map(section => section.content || '').join('\n');
   assert.equal(doc.imageHeaderRequested, true);
-  assert.doesNotMatch(body, /^\\s*@\\s*$/m);
+  assert.doesNotMatch(body, /^\s*@\s*$/m);
   assert.equal(doc.sourceText, source);
+});
+
+
+test('supports the image-header marker before the document title', () => {
+  const source = ['@', '# Header Image Agreement', '', 'Opening paragraph.'].join('\\n');
+  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+  assert.equal(doc.title, 'Header Image Agreement');
+  assert.equal(doc.imageHeaderRequested, true);
+  assert.match(doc.sections[0].content || '', /Opening paragraph/);
 });
