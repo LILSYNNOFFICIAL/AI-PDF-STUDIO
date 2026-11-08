@@ -571,6 +571,16 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <ColorFillControl label="Section background" value={sectionDraft.background} fallback={design.colors.sectionSurface} onChange={fill => setSectionDraft(current => ({ ...current, background: fill }))} />
                 <ColorControl label="Section heading color" value={sectionDraft.headingColor || design.colors.headingText} onChange={color => setSectionDraft(current => ({ ...current, headingColor: color }))} />
                 <ColorControl label="Section body text" value={sectionDraft.bodyTextColor || design.colors.bodyText} onChange={color => setSectionDraft(current => ({ ...current, bodyTextColor: color }))} />
+                <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div>
+                    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-300">Contained Reference Material</h4>
+                    <p className="mt-1 text-[10px] text-slate-500">Colorize the independently scrollable [[...]] panel in this section.</p>
+                  </div>
+                  <ColorControl label="Panel background" value={sectionDraft.scrollableBackgroundColor || design.colors.pageSurface} onChange={color => setSectionDraft(current => ({ ...current, scrollableBackgroundColor: color }))} />
+                  <ColorControl label="Panel text" value={sectionDraft.scrollableTextColor || design.colors.bodyText} onChange={color => setSectionDraft(current => ({ ...current, scrollableTextColor: color }))} />
+                  <ColorControl label="Panel border" value={sectionDraft.scrollableBorderColor || design.colors.border} onChange={color => setSectionDraft(current => ({ ...current, scrollableBorderColor: color }))} />
+                  <ColorControl label="Panel label" value={sectionDraft.scrollableLabelColor || design.colors.mutedText} onChange={color => setSectionDraft(current => ({ ...current, scrollableLabelColor: color }))} />
+                </div>
               </section>
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Section Border & Spacing</h3>
