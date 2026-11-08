@@ -199,7 +199,7 @@ test('PDF export includes all text from the scrollable editor block in normal do
 
 test('page-header and section images are embedded in multi-page PDF output', () => {
   const doc = buildDocumentFromPrompt('Image Header Agreement').updatedDoc;
-  const pixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+  const pixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC';
   const image = {
     id: 'test-image',
     url: pixel,
