@@ -192,6 +192,6 @@ test('PDF export includes all text from the scrollable editor block in normal do
   assert.ok(pdf.getNumberOfPages() > 1, 'Long scrollable source material should paginate in PDF output');
   assert.ok(text.includes('SECTION-INTRO-RETAINED'));
   assert.ok(text.includes('SCROLLABLE-BLOCK-BEGIN'));
-  assert.ok(text.includes('Reference line 80 remains present'));
+  assert.ok(text.includes('REFERENCE-LINE-80-END'));
   assert.ok(text.includes('SCROLLABLE-BLOCK-END'));
 });
