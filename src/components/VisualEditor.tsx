@@ -66,19 +66,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (selected.some(file => file.size > 15 * 1024 * 1024)) {
       throw new Error('Each image must be 15 MB or smaller.');
     }
-    return Promise.all(selected.map(file => new Promise<ImageBlock>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve({
+    return Promise.all(selected.map(async file => {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
+      const canvas = window.document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) {
+        bitmap.close();
+        throw new Error('Your browser could not prepare ' + file.name + '.');
+      }
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      const mime = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+      const url = canvas.toDataURL(mime, 0.92);
+      return {
         id: 'image_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-        url: String(reader.result),
+        url,
         altText: file.name.replace(/\\.[^.]+$/, ''),
         caption: '',
         widthPercent: Math.max(20, Math.floor(100 / selected.length)),
-        alignment: 'center'
-      });
-      reader.onerror = () => reject(new Error('Could not read ' + file.name + '.'));
-      reader.readAsDataURL(file);
-    })));
+        alignment: 'center' as const
+      };
+    }));
   };
 
   const handlePageHeaderImages = async (files: FileList | null) => {
