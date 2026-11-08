@@ -157,27 +157,35 @@ function extractScrollableBlock(lines: string[]): { contentLines: string[]; scro
   };
 }
 
+const isImageMarkerLine = (line: string) => /^\s*@(?:\s+.*)?$/.test(line);
+
 export function parseTextDocument(source: string, baseDocument: DocumentModel, now = new Date().toISOString(), presetId?: string): DocumentModel {
   if (!source.trim()) throw new Error('The source document is empty. Paste your complete document before rendering.');
   const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const lines = normalized.split('\n');
   // A marker before the title requests a page-header image slot. Markers inside
   // document content are retained as section-local insertion points instead.
-  const imageHeaderRequested = lines.slice(0, Math.max(0, lines.findIndex(line => line.trim() && line.trim() !== '@'))).some(line => line.trim() === '@');
-  const firstNonEmpty = lines.findIndex(line => line.trim().length > 0 && line.trim() !== '@');
+  const imageHeaderRequested = lines.slice(0, Math.max(0, lines.findIndex(line => line.trim() && !isImageMarkerLine(line)))).some(line => line.trim() === '@');
+  const firstNonEmpty = lines.findIndex(line => line.trim().length > 0 && !isImageMarkerLine(line));
   const firstLine = firstNonEmpty >= 0 ? lines[firstNonEmpty].trim() : 'Imported Document';
   const firstIsMarkdownTitle = MARKDOWN_HEADING.test(firstLine);
-  const title = cleanHeading(firstIsMarkdownTitle ? firstLine.replace(/^#+\s*/, '') : firstLine).replace(/\*{1,2}/g, '').slice(0, 180) || 'Imported Document';
+  // A sentence-like first line is body copy, not a document title. Preserve it
+  // in the introduction instead of silently moving it into the title field.
+  const firstLineIsBody = !firstIsMarkdownTitle && /[.!?]$/.test(firstLine);
+  const title = firstLineIsBody
+    ? 'Imported Document'
+    : cleanHeading(firstIsMarkdownTitle ? firstLine.replace(/^#+\s*/, '') : firstLine).replace(/\*{1,2}/g, '').slice(0, 180) || 'Imported Document';
+  const contentStartLine = firstLineIsBody ? firstNonEmpty : firstNonEmpty + 1;
   const headings = detectHeadings(lines, firstNonEmpty + 1);
   const sections: Section[] = [];
   let signatureParties: SignatureParty[] = [];
   let detectedTableRows = 0;
 
   const appendSection = (headingText: string, sourceHeading: string, contentLines: string[], appendix = false, sectionNumber?: string) => {
-    const imageMarkerLine = contentLines.findIndex(line => line.trim() === '@');
+    const imageMarkerLine = contentLines.findIndex(isImageMarkerLine);
     const markerPrefix = imageMarkerLine >= 0 ? contentLines.slice(0, imageMarkerLine) : [];
     const markerPrefixContent = parseTableLines(extractScrollableBlock(markerPrefix).contentLines, sections.length + 1).content;
-    const extracted = extractScrollableBlock(contentLines.filter(line => line.trim() !== '@'));
+    const extracted = extractScrollableBlock(contentLines.filter(line => !isImageMarkerLine(line)));
     const parsed = parseTableLines(extracted.contentLines, sections.length + 1);
     detectedTableRows += parsed.rowCount;
     const isSignatureSection = SIGNATURE_HEADING.test(headingText);
@@ -204,8 +212,8 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   };
 
   const preambleEnd = headings[0]?.line ?? lines.length;
-  const preamble = lines.slice(firstNonEmpty + 1, preambleEnd);
-  if (preamble.join('\n').trim() || preamble.some(line => line.trim() === '@')) appendSection('INTRODUCTION', '', preamble);
+  const preamble = lines.slice(contentStartLine, preambleEnd);
+  if (preamble.join('\n').trim() || preamble.some(isImageMarkerLine)) appendSection('INTRODUCTION', '', preamble);
 
   headings.forEach((heading, index) => {
     const nextLine = headings[index + 1]?.line ?? lines.length;
@@ -213,11 +221,11 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   });
 
   if (!sections.length) {
-    const fallbackLines = lines.slice(firstNonEmpty + 1);
-    const markerLine = fallbackLines.findIndex(line => line.trim() === '@');
+    const fallbackLines = lines.slice(contentStartLine);
+    const markerLine = fallbackLines.findIndex(isImageMarkerLine);
     const markerPrefix = markerLine >= 0 ? fallbackLines.slice(0, markerLine) : [];
     const markerPrefixContent = parseTableLines(markerPrefix, 1).content;
-    const parsed = parseTableLines(fallbackLines.filter(line => line.trim() !== '@'), 1);
+    const parsed = parseTableLines(fallbackLines.filter(line => !isImageMarkerLine(line)), 1);
     detectedTableRows = parsed.rowCount;
     const fallbackContent = [lines[firstNonEmpty], parsed.content].filter(Boolean).join('\n');
     const imageMarkerPosition = markerLine >= 0
