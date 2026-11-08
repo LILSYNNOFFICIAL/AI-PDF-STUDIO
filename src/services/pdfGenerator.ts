@@ -169,7 +169,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         const height = Math.min(maxHeight, width / Math.max(0.01, ratio));
         const x = margins.left + index * (slotWidth + gap) + (slotWidth - width) / 2;
         const y = cursorY + (maxHeight - height) / 2;
-        const format = /image\\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
+        const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
         pdf.addImage(image.url, format, x, y, width, height);
         rowHeight = Math.max(rowHeight, height);
       } catch (error) {
