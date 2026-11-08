@@ -100,6 +100,11 @@ export interface SectionDesign {
   background?: ColorFill;
   bodyTextColor?: string;
   headingColor?: string;
+  /** Independent appearance controls for [[...]] contained source panels. */
+  scrollableBackgroundColor?: string;
+  scrollableTextColor?: string;
+  scrollableBorderColor?: string;
+  scrollableLabelColor?: string;
   border?: BorderConfig;
   padding?: number;
 }

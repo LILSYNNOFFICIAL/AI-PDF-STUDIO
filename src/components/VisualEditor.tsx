@@ -404,10 +404,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Bracket-delimited source material stays inside its parent section and scrolls independently. */}
                   {section.scrollableContent !== undefined && (
-                    <div className="mb-4 rounded-md border border-slate-300 bg-slate-50/80 p-2">
-                      <div className="mb-1.5 flex items-center justify-between font-sans text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                        <label htmlFor={"scrollable-content-" + section.id}>Contained reference material</label>
-                        <span>Scroll to view all content</span>
+                    <div
+                      className="mb-4 rounded-md border p-2"
+                      style={{
+                        backgroundColor: section.design?.scrollableBackgroundColor || documentDesign.colors.pageSurface,
+                        borderColor: section.design?.scrollableBorderColor || documentDesign.colors.border
+                      }}
+                    >
+                      <div className="mb-1.5 flex items-center justify-between font-sans text-[10px] font-semibold uppercase tracking-wider">
+                        <label htmlFor={"scrollable-content-" + section.id} style={{ color: section.design?.scrollableLabelColor || documentDesign.colors.mutedText }}>Contained reference material</label>
+                        <span style={{ color: section.design?.scrollableLabelColor || documentDesign.colors.mutedText }}>Scroll to view all content</span>
                       </div>
                       <textarea
                         id={"scrollable-content-" + section.id}
@@ -415,7 +421,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         value={section.scrollableContent}
                         onChange={(e) => onUpdateSection({ ...section, scrollableContent: e.target.value })}
                         aria-label="Scrollable section content"
-                        className="block h-72 max-h-[420px] min-h-40 w-full resize-y overflow-y-auto rounded border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-800 shadow-inner focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        style={{
+                          backgroundColor: section.design?.scrollableBackgroundColor || documentDesign.colors.pageSurface,
+                          color: section.design?.scrollableTextColor || documentDesign.colors.bodyText,
+                          borderColor: section.design?.scrollableBorderColor || documentDesign.colors.border,
+                          caretColor: section.design?.scrollableTextColor || documentDesign.colors.bodyText
+                        }}
+                        className="block h-72 max-h-[420px] min-h-40 w-full resize-y overflow-y-auto rounded border p-3 text-sm leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-400"
                       />
                     </div>
                   )}
