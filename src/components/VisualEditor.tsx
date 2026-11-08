@@ -68,19 +68,24 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
     return Promise.all(selected.map(async file => {
       const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 2400 / Math.max(bitmap.width, bitmap.height));
-      const canvas = window.document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-      const context = canvas.getContext('2d');
-      if (!context) {
-        bitmap.close();
-        throw new Error('Your browser could not prepare ' + file.name + '.');
-      }
-      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      bitmap.close();
-      const mime = file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png';
-      const url = canvas.toDataURL(mime, 0.92);
+      try {
+        const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+        const canvas = window.document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Your browser could not prepare ' + file.name + '.');
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(value => value ? resolve(value) : reject(new Error('Image encoding failed for ' + file.name + '.')), mime, 0.88);
+        });
+        const url = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('Could not read the prepared image ' + file.name + '.'));
+          reader.readAsDataURL(blob);
+        });
       return {
         id: 'image_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         url,
@@ -88,7 +93,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         caption: '',
         widthPercent: Math.max(20, Math.floor(100 / selected.length)),
         alignment: 'center' as const
-      };
+        };
+      } finally {
+        bitmap.close();
+      }
     }));
   };
 
@@ -532,7 +540,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                               </div>
                               {(section.images || []).map(img => (
                                 <div key={img.id} className="relative mx-auto mt-3 w-full" style={{ textAlign: img.alignment || 'center' }}>
-                                  <div className="relative inline-block max-w-full">
+                                  <div className="relative inline-block max-w-full" style={{ width: '100%' }}>
                                     <img src={img.url} alt={img.altText || 'Document artwork'} className="max-h-96 rounded object-contain shadow-sm" style={{ width: `${img.widthPercent || 80}%`, maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
                                     {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
                                       <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', ...(corner.includes('top') ? { top: -5 } : { bottom: -5 }), ...(corner.endsWith('left') ? { left: -5 } : { right: -5 }) }} />
