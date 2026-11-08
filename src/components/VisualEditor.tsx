@@ -92,7 +92,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         url,
         altText: file.name.replace(/\.[^.]+$/, ''),
         caption: '',
-        widthPercent: Math.max(20, Math.floor(100 / selected.length)),
+        widthPercent: Math.max(20, Math.min(80, Math.floor(100 / selected.length))),
         alignment: 'center' as const
         };
       } finally {
@@ -346,7 +346,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const renderSectionImages = (section: Section) => (section.images || []).map(img => (
     <div key={img.id} className="relative z-0 mx-auto mt-3 w-full overflow-visible" style={{ textAlign: img.alignment || 'center' }}>
       <div className="relative z-0 mx-auto max-w-full overflow-visible" style={{ width: `${img.widthPercent || 80}%`, marginLeft: img.alignment === 'left' ? 0 : 'auto', marginRight: img.alignment === 'right' ? 0 : 'auto' }}>
-        <img draggable={false} src={img.url} alt={img.altText || 'Document artwork'} className="block max-h-96 w-full select-none rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
+        <img draggable={false} src={img.url} alt={img.altText || 'Document artwork'} className="block h-auto w-full select-none rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
         {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
           <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute z-30 h-4 w-4 rounded-full border-2 border-white bg-blue-600 shadow-[0_0_0_1px_rgba(15,23,42,0.85)] transition-transform hover:scale-125 focus:scale-125 focus:outline-none" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', touchAction: 'none', ...(corner.includes('top') ? { top: -7 } : { bottom: -7 }), ...(corner.endsWith('left') ? { left: -7 } : { right: -7 }) }} />
         ))}
