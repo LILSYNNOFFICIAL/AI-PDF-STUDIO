@@ -155,6 +155,7 @@ DOCUMENT_DESIGN_PRESETS.push(makePreset(
   solid('#050505'), solid('#080808'), solid('#111111')
 ));
 const lilSynnPreset = DOCUMENT_DESIGN_PRESETS[DOCUMENT_DESIGN_PRESETS.length - 1];
+lilSynnPreset.tableDefaults.bodyBackground = solid('#050505');
 lilSynnPreset.sectionDefaults.border = { style: 'solid', color: '#d99a32', width: 1.2 };
 lilSynnPreset.sectionDefaults.padding = 12;
 lilSynnPreset.tableDefaults.gridlineColor = '#d99a32';
