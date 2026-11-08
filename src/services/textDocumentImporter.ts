@@ -22,9 +22,12 @@ function isLikelyPlainHeading(line: string): boolean {
 
 function detectHeadings(lines: string[], firstContentLine: number): HeadingMatch[] {
   const headings: HeadingMatch[] = [];
+  let insideScrollableBlock = false;
   for (let index = firstContentLine; index < lines.length; index += 1) {
     const value = lines[index].trim();
-    if (!value) continue;
+    if (value === '[[') { insideScrollableBlock = true; continue; }
+    if (value === ']]') { insideScrollableBlock = false; continue; }
+    if (insideScrollableBlock || !value) continue;
     const markdown = MARKDOWN_HEADING.exec(value);
     if (markdown) {
       const markdownText = cleanHeading(markdown[2]);
@@ -124,6 +127,38 @@ function parseSignatureParties(content: string): SignatureParty[] {
   return parties;
 }
 
+function extractScrollableBlock(lines: string[]): { contentLines: string[]; scrollableContent?: string } {
+  const contentLines: string[] = [];
+  const scrollableLines: string[] = [];
+  let inside = false;
+  let found = false;
+
+  for (const line of lines) {
+    const marker = line.trim();
+    if (marker === '[[') {
+      if (inside) throw new Error('Nested [[ delimiters are not supported. Close the current scrollable block before opening another.');
+      inside = true;
+      found = true;
+      continue;
+    }
+    if (marker === ']]') {
+      if (!inside) throw new Error('Unmatched closing ]] delimiter in the source document.');
+      inside = false;
+      continue;
+    }
+    (inside ? scrollableLines : contentLines).push(line);
+  }
+
+  if (inside) throw new Error('Unmatched opening [[ delimiter. Add the closing ]] delimiter before rendering.');
+  return {
+    contentLines,
+    ...(found ? { scrollableContent: scrollableLines.join('\
+').replace(/^\
++|\
++$/g, '') } : {})
+  };
+}
+
 export function parseTextDocument(source: string, baseDocument: DocumentModel, now = new Date().toISOString(), presetId?: string): DocumentModel {
   if (!source.trim()) throw new Error('The source document is empty. Paste your complete document before rendering.');
   const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
@@ -138,7 +173,8 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   let detectedTableRows = 0;
 
   const appendSection = (headingText: string, sourceHeading: string, contentLines: string[], appendix = false, sectionNumber?: string) => {
-    const parsed = parseTableLines(contentLines, sections.length + 1);
+    const extracted = extractScrollableBlock(contentLines);
+    const parsed = parseTableLines(extracted.contentLines, sections.length + 1);
     detectedTableRows += parsed.rowCount;
     const isSignatureSection = SIGNATURE_HEADING.test(headingText);
     const parties = isSignatureSection ? parseSignatureParties(parsed.content) : [];
@@ -153,6 +189,7 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
       title: headingText,
       sourceHeading,
       content: isSignatureSection && parties.length ? '' : parsed.content,
+      ...(extracted.scrollableContent !== undefined ? { scrollableContent: extracted.scrollableContent } : {}),
       clauses: [],
       ...(parsed.tables.length ? { tables: parsed.tables } : {}),
       orderIndex: sections.length + 1,
@@ -236,6 +273,7 @@ export function getSourceIntegrityReport(doc: DocumentModel) {
   const rendered = [doc.title, ...doc.sections.map(section => [
     section.sourceHeading || '',
     section.content || '',
+    section.scrollableContent || '',
     ...(section.tables || []).flatMap(table => [table.headers.map(cell => cell.content).join(' '), ...table.rows.map(row => row.map(cell => cell.content).join(' '))])
   ].join('\n')), ...(doc.signatures?.parties || []).flatMap(party => [
     party.role, party.name, party.title || '', party.company || '', party.date || '', party.signaturePlaceholder || ''
