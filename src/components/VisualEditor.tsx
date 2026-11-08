@@ -319,7 +319,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           )}
 
           {/* Running Header */}
-          {document.pageConfig.headerText && (
+          {true && (
             <div
               className="pb-2 mb-8 flex items-center justify-between text-[11px] font-sans tracking-wider uppercase"
               style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` }}
@@ -858,8 +858,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             >
               <div className="text-center mb-6">
                 <input aria-label="Signature block title" value={document.signatures.title || ''} placeholder="SIGNATURES & EXECUTION" onChange={event => onUpdateSignatures({ ...document.signatures, title: event.target.value })} className="w-full bg-transparent text-center font-bold text-sm tracking-wider uppercase outline-none" style={{ color: documentDesign.colors.headingText }} />
-                <p className="text-xs italic mt-1" style={{ color: documentDesign.colors.mutedText }}>
-                  IN WITNESS WHEREOF, the Parties have executed this Agreement by their duly authorized representatives.
+                <p contentEditable suppressContentEditableWarning onBlur={event => onUpdateSignatures({ ...document.signatures, executionText: event.currentTarget.textContent || '' })} className="text-xs italic mt-1 outline-none" style={{ color: documentDesign.colors.mutedText }}>
+                  {document.signatures.executionText || 'IN WITNESS WHEREOF, the Parties have executed this Agreement by their duly authorized representatives.'}
                 </p>
               </div>
 
