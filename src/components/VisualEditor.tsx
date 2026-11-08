@@ -522,9 +522,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     <div className="space-y-3 pl-3 border-l-2 border-slate-200 ml-1">
                       {section.clauses.map((clause, cIdx) => (
                         <div key={clause.id} className="relative group/clause flex items-baseline gap-2">
-                          <span className="font-mono text-xs font-semibold text-slate-500 shrink-0 select-none">
-                            {clause.clauseNumber}
-                          </span>
+                          <input aria-label="Clause number" value={clause.clauseNumber} onChange={event => { const updated = [...section.clauses]; updated[cIdx] = { ...clause, clauseNumber: event.target.value }; onUpdateSection({ ...section, clauses: updated }); }} className="w-14 shrink-0 bg-transparent font-mono text-xs font-semibold text-slate-500 outline-none" />
                           <div 
                             className="flex-1"
                             style={{ textAlign: document.styles.alignment || 'left' }}
@@ -625,7 +623,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     <div key={table.id} className="mt-4 rounded-md shadow-xs overflow-hidden" style={{ border: `1px solid ${tableStyle.gridlineColor}`, background: fillToCss(tableStyle.bodyBackground) }}>
                       {/* Table Header Bar with Actions */}
                       <div className="px-3 py-1.5 flex items-center justify-between" style={{ background: fillToCss(tableStyle.headerBackground), borderBottom: `${tableStyle.gridlineWidth}px solid ${tableStyle.gridlineColor}` }}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <TableIcon className="w-3.5 h-3.5 text-blue-600" />
                           <input
                             type="text"
@@ -639,6 +637,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                             className="font-bold text-xs bg-transparent border-none outline-none focus:bg-white px-1 rounded"
                             style={{ color: tableStyle.headerTextColor }}
                           />
+                          <input type="text" aria-label="Table caption" value={table.caption || ''} placeholder="Add table caption" onChange={event => { const updatedTables = [...(section.tables || [])]; updatedTables[tIdx] = { ...table, caption: event.target.value }; onUpdateSection({ ...section, tables: updatedTables }); }} className="min-w-40 flex-1 bg-transparent text-[11px] italic outline-none" style={{ color: tableStyle.captionColor }} />
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -785,7 +784,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     <div key={chart.id} className="mt-4 p-4 rounded-lg flex flex-col items-center" style={{ background: documentDesign.colors.sectionSurface, border: `1px solid ${documentDesign.colors.border}` }}>
                       <div className="text-xs font-bold mb-3 flex items-center gap-1.5" style={{ color: documentDesign.colors.headingText }}>
                         <PieChart className="w-4 h-4" style={{ color: documentDesign.colors.accent }} />
-                        <span>{chart.title}</span>
+                        <input aria-label="Chart title" value={chart.title} onChange={event => onUpdateSection({ ...section, charts: (section.charts || []).map(item => item.id === chart.id ? { ...item, title: event.target.value } : item) })} className="bg-transparent font-bold outline-none" style={{ color: documentDesign.colors.headingText }} />
                       </div>
                       
                       {/* SVG Donut / Bar Chart Representation */}
@@ -857,9 +856,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               style={{ borderTop: `2px solid ${documentDesign.pageFurniture.dividerColor}` }}
             >
               <div className="text-center mb-6">
-                <h2 className="font-bold text-sm tracking-wider uppercase" style={{ color: documentDesign.colors.headingText }}>
-                  {document.signatures.title || 'SIGNATURES & EXECUTION'}
-                </h2>
+                <input aria-label="Signature block title" value={document.signatures.title || ''} placeholder="SIGNATURES & EXECUTION" onChange={event => onUpdateSignatures({ ...document.signatures, title: event.target.value })} className="w-full bg-transparent text-center font-bold text-sm tracking-wider uppercase outline-none" style={{ color: documentDesign.colors.headingText }} />
                 <p className="text-xs italic mt-1" style={{ color: documentDesign.colors.mutedText }}>
                   IN WITNESS WHEREOF, the Parties have executed this Agreement by their duly authorized representatives.
                 </p>
@@ -878,9 +875,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                     {/* Signature Line */}
                     <div className="pb-1 mb-2 h-10 flex items-end" style={{ borderBottom: `1px solid ${documentDesign.colors.primary}` }}>
-                      <span className="font-mono italic text-sm" style={{ color: documentDesign.colors.accent }}>
-                        {party.signaturePlaceholder || `/s/ ${party.name}`}
-                      </span>
+                      <input aria-label="Signature placeholder" value={party.signaturePlaceholder || ''} placeholder={`/s/ ${party.name}`} onChange={event => handleUpdateParty(idx, 'signaturePlaceholder', event.target.value)} className="w-full bg-transparent font-mono text-sm italic outline-none" style={{ color: documentDesign.colors.accent }} />
                     </div>
 
                     <div className="text-xs space-y-1.5" style={{ color: documentDesign.colors.bodyText }}>
