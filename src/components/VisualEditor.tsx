@@ -17,7 +17,7 @@ import {
   FilePlus,
   ArrowDownCircle
 } from 'lucide-react';
-import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty } from '../types/document';
+import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock } from '../types/document';
 import {
   resolveDocumentDesign,
   resolveSectionDesign,
@@ -337,7 +337,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Document Title Header */}
           <div className="text-center pb-8 mb-8" style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
-            <h1 
+            <h1
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={event => onUpdateDocument({ ...document, title: event.currentTarget.textContent || '', updatedAt: new Date().toISOString() })}
               style={{
                 fontSize: `${documentDesign.typography.heading1Size || document.styles.heading1Size || 18}pt`,
                 fontFamily: documentDesign.typography.headingFontFamily,
@@ -360,6 +363,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               <span>Document Type: {document.type.replace('_', ' ').toUpperCase()}</span>
               <span>•</span>
               <span>Date: {new Date(document.updatedAt).toLocaleDateString()}</span>
+              <span>Author:</span>
+              <input aria-label="Document author" value={document.author} onChange={event => onUpdateDocument({ ...document, author: event.target.value })} className="w-28 bg-transparent text-center outline-none" />
             </div>
           </div>
 
