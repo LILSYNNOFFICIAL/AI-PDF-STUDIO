@@ -222,6 +222,6 @@ test('page-header and section images are embedded in multi-page PDF output', () 
   assert.ok(output.includes('IMAGE-CAPTION-TEST'));
   const firstPageContent = pdf.internal.pages[1].join('');
   const secondPageContent = pdf.internal.pages[2].join('');
-  assert.match(firstPageContent, /Do\b/, 'The leading @ image should appear on the first page');
-  assert.doesNotMatch(secondPageContent, /Do\b/, 'The leading @ image must not repeat on later pages');
+  assert.match(firstPageContent, /\/I\d+ Do/, 'The leading @ image should appear on the first page');
+  assert.doesNotMatch(secondPageContent, /\/I\d+ Do/, 'The leading @ image must not repeat on later pages');
 });
