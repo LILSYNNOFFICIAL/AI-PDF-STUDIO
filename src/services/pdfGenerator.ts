@@ -421,8 +421,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       verticalAlign: design.typography.verticalAlignment || 'top'
     });
 
-    if (section.content) {
-      drawWrappedText(section.content, sectionX, sectionWidth, {
+    const drawSectionBody = (bodyText: string) => {
+      if (!bodyText) return;
+      drawWrappedText(bodyText, sectionX, sectionWidth, {
         font: primaryFont, size: design.typography.bodyFontSize || doc.styles.fontSize || 10.5,
         color: colorToRgb(sectionStyle.bodyTextColor),
         lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
@@ -431,6 +432,33 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
         verticalAlign: design.typography.verticalAlignment || 'top'
       });
+    };
+    const drawSectionImages = () => {
+      if (!section.images?.length) return;
+      const imageHeight = 34;
+      const drawnHeight = drawImageBlocks(section.images, imageHeight, 4);
+      if (drawnHeight > 0) {
+        cursorY += imageHeight + 2;
+        section.images.forEach(image => {
+          if (image.caption?.trim()) drawWrappedText(image.caption, margins.left, contentWidth, {
+            font: primaryFont, style: 'italic', size: 8.5,
+            color: colorToRgb(design.colors.mutedText), align: image.alignment || 'center',
+            lineHeight: 4, after: 1
+          });
+        });
+      }
+    };
+    if (section.content) {
+      const marker = section.imageMarkerPosition;
+      if (typeof marker === 'number') {
+        drawSectionBody(section.content.slice(0, marker));
+        drawSectionImages();
+        drawSectionBody(section.content.slice(marker));
+      } else {
+        drawSectionBody(section.content);
+      }
+    } else if (typeof section.imageMarkerPosition === 'number') {
+      drawSectionImages();
     }
 
     if (section.scrollableContent) {
@@ -467,22 +495,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
 
     for (const table of section.tables || []) drawTable(table, section);
-    if (section.images?.length) {
-      const imageHeight = 34;
-      const drawnHeight = drawImageBlocks(section.images, imageHeight, 4);
-      if (drawnHeight > 0) {
-        cursorY += imageHeight + 2;
-        section.images.forEach(image => {
-          if (image.caption?.trim()) {
-            drawWrappedText(image.caption, margins.left, contentWidth, {
-              font: primaryFont, style: 'italic', size: 8.5,
-              color: colorToRgb(design.colors.mutedText), align: image.alignment || 'center',
-              lineHeight: 4, after: 1
-            });
-          }
-        });
-      }
-    }
+    if (typeof section.imageMarkerPosition !== 'number' && section.images?.length) drawSectionImages();
     cursorY += 3;
   }
 
