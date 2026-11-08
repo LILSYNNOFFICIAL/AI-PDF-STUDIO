@@ -1001,6 +1001,7 @@ export default function App() {
           onUpdateSignatures={(signatures) => {
             setDocument(prev => ({ ...prev, signatures, updatedAt: new Date().toISOString() }));
           }}
+          onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
           onQuickAIAction={handleQuickAIAction}
         />
 
