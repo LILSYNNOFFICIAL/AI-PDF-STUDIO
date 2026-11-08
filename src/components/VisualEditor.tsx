@@ -232,23 +232,36 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const startImageResize = (event: React.PointerEvent<HTMLButtonElement>, section: Section, image: ImageBlock, corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
     event.preventDefault();
     event.stopPropagation();
-    const wrapper = event.currentTarget.parentElement;
-    const containerWidth = wrapper?.parentElement?.clientWidth || 1;
+    const wrapper = event.currentTarget.parentElement as HTMLDivElement | null;
+    const containerWidth = wrapper?.parentElement?.getBoundingClientRect().width || 1;
     const startX = event.clientX;
     const startWidth = image.widthPercent || 80;
     const direction = corner.endsWith('right') ? 1 : -1;
     let nextWidth = startWidth;
+    const previousUserSelect = window.document.body.style.userSelect;
+    window.document.body.style.userSelect = 'none';
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.document.body.style.userSelect = previousUserSelect;
+    };
     const onMove = (moveEvent: PointerEvent) => {
       nextWidth = Math.max(10, Math.min(100, startWidth + ((moveEvent.clientX - startX) / containerWidth) * 100 * direction));
       if (wrapper) wrapper.style.width = nextWidth + '%';
     };
     const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      cleanup();
       onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === image.id ? { ...item, widthPercent: Math.round(nextWidth) } : item) });
+    };
+    const onCancel = () => {
+      if (wrapper) wrapper.style.width = startWidth + '%';
+      cleanup();
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointercancel', onCancel, { once: true });
   };
 
   const colorForPicker = (value: string): string => {
@@ -291,11 +304,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   };
 
   const renderSectionImages = (section: Section) => (section.images || []).map(img => (
-    <div key={img.id} className="relative mx-auto mt-3 w-full" style={{ textAlign: img.alignment || 'center' }}>
-      <div className="relative mx-auto max-w-full" style={{ width: `${img.widthPercent || 80}%`, marginLeft: img.alignment === 'left' ? 0 : 'auto', marginRight: img.alignment === 'right' ? 0 : 'auto' }}>
-        <img src={img.url} alt={img.altText || 'Document artwork'} className="block max-h-96 w-full rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
+    <div key={img.id} className="relative z-0 mx-auto mt-3 w-full overflow-visible" style={{ textAlign: img.alignment || 'center' }}>
+      <div className="relative z-0 mx-auto max-w-full overflow-visible" style={{ width: `${img.widthPercent || 80}%`, marginLeft: img.alignment === 'left' ? 0 : 'auto', marginRight: img.alignment === 'right' ? 0 : 'auto' }}>
+        <img draggable={false} src={img.url} alt={img.altText || 'Document artwork'} className="block max-h-96 w-full select-none rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
         {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
-          <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', ...(corner.includes('top') ? { top: -5 } : { bottom: -5 }), ...(corner.endsWith('left') ? { left: -5 } : { right: -5 }) }} />
+          <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute z-30 h-4 w-4 rounded-full border-2 border-white bg-blue-600 shadow-[0_0_0_1px_rgba(15,23,42,0.85)] transition-transform hover:scale-125 focus:scale-125 focus:outline-none" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', touchAction: 'none', ...(corner.includes('top') ? { top: -7 } : { bottom: -7 }), ...(corner.endsWith('left') ? { left: -7 } : { right: -7 }) }} />
         ))}
       </div>
       <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
@@ -350,11 +363,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             lineHeight: documentDesign.typography.bodyLineHeight
           }}
         >
-          {/* Source @ marker creates an image header area. */ }
+          {/* A leading @ marker inserts an image once before the document title. */ }
           {document.imageHeaderRequested && (
             <div className="mb-4 rounded border border-dashed p-3" style={{ borderColor: documentDesign.colors.accent }}>
               <div className="mb-2 flex items-center justify-between text-xs font-semibold" style={{ color: documentDesign.colors.headingText }}>
-                <span>IMAGE HEADER</span>
+                <span>IMAGE INSERTION POINT</span>
                 <label className="cursor-pointer rounded px-3 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
                   Add images
                   <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handlePageHeaderImages(event.target.files); event.currentTarget.value = ''; }} />
