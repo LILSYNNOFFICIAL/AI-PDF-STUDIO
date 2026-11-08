@@ -85,3 +85,54 @@ test('reports a signature heading even when no participant details can be safely
   assert.equal(doc.sourceIntegrity?.signaturePartyCount, 0);
   assert.match(doc.sections.find(section => /SIGNATURES/.test(section.title))?.content || '', /Executed by the parties/);
 });
+
+
+test('keeps bracket-delimited reference material in one scrollable block within its parent section', () => {
+  const source = [
+    '# Collaboration Agreement',
+    '',
+    '## 17. LIL SYNN CHARACTER REFERENCE AND UNIVERSE',
+    'The following reference material governs the recurring characters.',
+    '',
+    '[[',
+    '# MASTER CHARACTER REFERENCE',
+    'LIL SYNN remains faceless in every scene.',
+    '## THE SHADOW MAN',
+    'The Shadow Man wears a dark hood.',
+    '## THE GIRL',
+    'The Girl wears a yellow dress.',
+    '## THE BLACK MAINE COON',
+    'A black Maine Coon appears throughout the universe.',
+    ']]',
+    '',
+    '## 18. REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY',
+    'The parties remain responsible for all required clearances.'
+  ].join('\n');
+
+  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+  const reference = doc.sections.find(section => /LIL SYNN CHARACTER REFERENCE/.test(section.title));
+  const next = doc.sections.find(section => /REPRESENTATIONS, CLEARANCES/.test(section.title));
+
+  assert.ok(reference, 'Section 17 should remain a single section');
+  assert.ok(next, 'Section 18 should remain a separate following section');
+  assert.equal(reference.scrollableContent, [
+    '# MASTER CHARACTER REFERENCE',
+    'LIL SYNN remains faceless in every scene.',
+    '## THE SHADOW MAN',
+    'The Shadow Man wears a dark hood.',
+    '## THE GIRL',
+    'The Girl wears a yellow dress.',
+    '## THE BLACK MAINE COON',
+    'A black Maine Coon appears throughout the universe.'
+  ].join('\n'));
+  assert.match(reference.content || '', /following reference material governs/);
+  assert.doesNotMatch(reference.content || '', /MASTER CHARACTER REFERENCE/);
+  assert.match(next.content || '', /required clearances/);
+  assert.equal(doc.sections.filter(section => /MASTER CHARACTER REFERENCE|SHADOW MAN|THE GIRL|MAINE COON/.test(section.title)).length, 0);
+  assert.equal(doc.sourceText, source);
+});
+
+test('rejects unmatched bracket delimiters rather than silently flattening the reference block', () => {
+  const source = '# Agreement\n\n## 17. CHARACTER REFERENCE\n[[\nReference content';
+  assert.throws(() => parseTextDocument(source, base), /unmatched|closing.*\\]\\]/i);
+});
