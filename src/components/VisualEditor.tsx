@@ -221,6 +221,29 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     onUpdateSection({ ...section, tables: updatedTables });
   };
 
+  const startImageResize = (event: React.PointerEvent<HTMLButtonElement>, section: Section, image: ImageBlock, corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
+    event.preventDefault();
+    event.stopPropagation();
+    const wrapper = event.currentTarget.parentElement;
+    const imageElement = wrapper?.querySelector('img');
+    const containerWidth = wrapper?.parentElement?.clientWidth || 1;
+    const startX = event.clientX;
+    const startWidth = image.widthPercent || 80;
+    const direction = corner.endsWith('right') ? 1 : -1;
+    let nextWidth = startWidth;
+    const onMove = (moveEvent: PointerEvent) => {
+      nextWidth = Math.max(10, Math.min(100, startWidth + ((moveEvent.clientX - startX) / containerWidth) * 100 * direction));
+      if (imageElement) imageElement.style.width = nextWidth + '%';
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === image.id ? { ...item, widthPercent: Math.round(nextWidth) } : item) });
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  };
+
   const colorForPicker = (value: string): string => {
     if (/^#[0-9a-f]{6}$/i.test(value)) return value;
     if (/^#[0-9a-f]{3}$/i.test(value)) return '#' + value.slice(1).split('').map(char => char + char).join('');
@@ -478,24 +501,54 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     />
                   </div>
 
-                  {/* Section Content Intro & Multi-line Elongation Area */}
+                  {/* Section text is split around the exact source @ insertion point. */}
                   <div className="mb-3">
-                    <textarea 
-                      rows={Math.max(2, (section.content || '').split('\n').length + 1)}
-                      value={section.content || ''}
-                      placeholder="Add introductory text, recitals, or general section covenants here (click or drag to expand)..."
-                      onChange={(e) => onUpdateSection({ ...section, content: e.target.value })}
-                      aria-label="Section Content"
-                      style={{ 
+                    {(() => {
+                      const content = section.content || '';
+                      const marker = section.imageMarkerPosition;
+                      const hasMarker = typeof marker === 'number';
+                      const before = hasMarker ? content.slice(0, marker) : content;
+                      const after = hasMarker ? content.slice(marker) : '';
+                      const textareaStyle = {
                         fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
                         lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
                         textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left',
                         color: sectionStyle.bodyTextColor,
                         backgroundColor: document.styles.highlightColor || 'transparent',
                         fontFamily: documentDesign.typography.bodyFontFamily
-                      }}
-                      className="w-full bg-transparent hover:bg-slate-100/50 focus:bg-white rounded p-1.5 border border-transparent focus:border-blue-300 focus:outline-none resize-y placeholder:italic placeholder:text-slate-400"
-                    />
+                      } as React.CSSProperties;
+                      const textareaClass = "w-full bg-transparent hover:bg-slate-100/50 focus:bg-white rounded p-1.5 border border-transparent focus:border-blue-300 focus:outline-none resize-y placeholder:italic placeholder:text-slate-400";
+                      return (
+                        <>
+                          {(before || !hasMarker) && <textarea rows={Math.max(1, before.split('\n').length)} value={before} placeholder="Add introductory text, recitals, or general section covenants here..." aria-label="Section Content" style={textareaStyle} className={textareaClass} onChange={event => onUpdateSection({ ...section, content: hasMarker ? event.target.value + after : event.target.value, ...(hasMarker ? { imageMarkerPosition: event.target.value.length } : {}) })} />}
+                          {hasMarker && (
+                            <div className="my-3 rounded-lg border-2 border-dashed p-3" style={{ borderColor: documentDesign.colors.accent, background: documentDesign.colors.pageSurface }}>
+                              <div className="mb-2 flex items-center justify-between text-xs font-semibold" style={{ color: documentDesign.colors.headingText }}>
+                                <span>IMAGE INSERTION POINT</span>
+                                <label className="cursor-pointer rounded px-3 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
+                                  Add image(s)
+                                  <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handleSectionImages(section, event.target.files); event.currentTarget.value = ''; }} />
+                                </label>
+                              </div>
+                              {(section.images || []).map(img => (
+                                <div key={img.id} className="relative mx-auto mt-3 w-full" style={{ textAlign: img.alignment || 'center' }}>
+                                  <div className="relative inline-block max-w-full">
+                                    <img src={img.url} alt={img.altText || 'Document artwork'} className="max-h-96 rounded object-contain shadow-sm" style={{ width: `${img.widthPercent || 80}%`, maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
+                                    {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
+                                      <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', ...(corner.includes('top') ? { top: -5 } : { bottom: -5 }), ...(corner.endsWith('left') ? { left: -5 } : { right: -5 }) }} />
+                                    ))}
+                                  </div>
+                                  <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
+                                  <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
+                                </div>
+                              ))}
+                              {!section.images?.length && <p className="text-center text-xs" style={{ color: documentDesign.colors.mutedText }}>Images added here will appear at this exact point in the document.</p>}
+                            </div>
+                          )}
+                          {hasMarker && <textarea rows={Math.max(1, after.split('\n').length)} value={after} placeholder="Continue writing after the image..." aria-label="Section Content After Image" style={textareaStyle} className={textareaClass} onChange={event => onUpdateSection({ ...section, content: before + event.target.value })} />}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Bracket-delimited source material stays inside its parent section and scrolls independently. */}
@@ -833,26 +886,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     </div>
                   ))}
 
-                  {/* Images / Brand Artwork Block */ }
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <span className="font-semibold" style={{ color: sectionStyle.headingColor }}>Section images</span>
-                    <label className="cursor-pointer rounded px-2 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
-                      Add image(s)
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handleSectionImages(section, event.target.files); event.currentTarget.value = ''; }} />
-                    </label>
-                  </div>
-                  {section.images && section.images.map((img) => (
-                    <div key={img.id} className="mt-4 flex flex-col items-center">
-                      <img 
-                        src={img.url} 
-                        alt={img.altText || 'Document Artwork'} 
-                        className="rounded shadow-sm max-h-60 object-contain"
-                        style={{ width: `${img.widthPercent || 80}%`, border: `1px solid ${documentDesign.colors.border}` }}
-                      />
-                      <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
-                      <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
-                    </div>
-                  ))}
+
                 </section>
               );
             })}
