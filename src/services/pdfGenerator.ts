@@ -204,19 +204,24 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     setTextStyle(options.font || primaryFont, options.style || 'normal', size, options.color);
     const lines = pdf.splitTextToSize(String(text ?? ''), Math.max(8, width)) as string[];
     const align = options.align || design.typography.textAlignment || 'left';
+    // jsPDF positions text using its baseline. Give boxed text a separate
+    // ascender-safe top inset so glyphs never touch or cross the top border.
+    const hasBox = Boolean(options.background || options.border);
+    const baselineClearance = hasBox ? Math.max(1.4, size * 0.352778 * 0.38) : 0;
+    const topInset = padding + baselineClearance;
     let lineIndex = 0;
     while (lineIndex < lines.length) {
-      let linesAvailable = Math.floor((bottomLimit - cursorY - padding * 2) / lineHeight);
+      let linesAvailable = Math.floor((bottomLimit - cursorY - topInset - padding) / lineHeight);
       if (linesAvailable < 1) {
         addPage();
         linesAvailable = Math.floor((bottomLimit - cursorY - padding * 2) / lineHeight);
       }
       const segmentCount = Math.max(1, Math.min(lines.length - lineIndex, linesAvailable));
-      const textHeight = segmentCount * lineHeight + padding * 2;
+      const textHeight = segmentCount * lineHeight + topInset + padding;
       const isFinalSegment = lineIndex + segmentCount >= lines.length;
       const minHeight = isFinalSegment && lineIndex === 0 ? (options.minHeight ?? 0) : 0;
       const segmentHeight = Math.max(textHeight, minHeight);
-      const boxTop = cursorY - padding;
+      const boxTop = cursorY - topInset;
       if (options.background) drawColorFill(options.background, x - padding, boxTop, width + padding * 2, segmentHeight, 8);
       if (options.border) drawBorder(x - padding, boxTop, width + padding * 2, segmentHeight, options.border);
       const extraHeight = Math.max(0, segmentHeight - textHeight);
