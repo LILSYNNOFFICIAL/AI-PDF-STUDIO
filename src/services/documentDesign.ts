@@ -151,7 +151,7 @@ DOCUMENT_DESIGN_PRESETS.push(makePreset(
     tableHeaderSurface: '#111111', tableHeaderText: '#ff4fa3',
     tableBodyText: '#f5f5f5', tableAlternateRowSurface: '#151515'
   },
-  { bodyFontFamily: 'Inter', headingFontFamily: 'Inter', bodyFontSize: 10.5, heading1Size: 25, heading2Size: 15, heading3Size: 12, headingCase: 'none', textAlignment: 'left', verticalAlignment: 'top', contentBoxMinHeight: 0 },
+  { bodyFontFamily: 'Inter', headingFontFamily: 'Inter', bodyFontSize: 10.5, heading1Size: 25, heading2Size: 15, heading3Size: 12, headingCase: 'none', textAlignment: 'left', verticalAlignment: 'middle', contentBoxMinHeight: 0 },
   solid('#050505'), solid('#080808'), solid('#111111')
 ));
 const lilSynnPreset = DOCUMENT_DESIGN_PRESETS[DOCUMENT_DESIGN_PRESETS.length - 1];
