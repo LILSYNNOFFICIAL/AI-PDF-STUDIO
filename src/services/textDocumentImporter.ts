@@ -152,10 +152,7 @@ function extractScrollableBlock(lines: string[]): { contentLines: string[]; scro
   if (inside) throw new Error('Unmatched opening [[ delimiter. Add the closing ]] delimiter before rendering.');
   return {
     contentLines,
-    ...(found ? { scrollableContent: scrollableLines.join('\
-').replace(/^\
-+|\
-+$/g, '') } : {})
+    ...(found ? { scrollableContent: scrollableLines.join('\n').replace(/^\n+|\n+$/g, '') } : {})
   };
 }
 
