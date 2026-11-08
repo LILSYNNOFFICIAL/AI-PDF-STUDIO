@@ -218,6 +218,6 @@ test('page-header and section images are embedded in multi-page PDF output', () 
   const pdf = generatePdfDocument(doc);
   const output = pdf.output();
   assert.ok(pdf.getNumberOfPages() > 1, 'Expected image-header document to paginate');
-  assert.match(output, /\\/Subtype \\/Image/, 'Expected the selected image to be embedded in the PDF');
+  assert.ok(output.includes('/Subtype /Image'), 'Expected the selected image to be embedded in the PDF');
   assert.ok(output.includes('IMAGE-CAPTION-TEST'));
 });
