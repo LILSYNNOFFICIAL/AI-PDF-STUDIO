@@ -406,11 +406,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   {section.scrollableContent !== undefined && (
                     <div className="mb-4 rounded-md border border-slate-300 bg-slate-50/80 p-2">
                       <div className="mb-1.5 flex items-center justify-between font-sans text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                        <label htmlFor={\`scrollable-content-\${section.id}\`}>Contained reference material</label>
+                        <label htmlFor={"scrollable-content-" + section.id}>Contained reference material</label>
                         <span>Scroll to view all content</span>
                       </div>
                       <textarea
-                        id={\`scrollable-content-\${section.id}\`}
+                        id={"scrollable-content-" + section.id}
                         rows={12}
                         value={section.scrollableContent}
                         onChange={(e) => onUpdateSection({ ...section, scrollableContent: e.target.value })}
