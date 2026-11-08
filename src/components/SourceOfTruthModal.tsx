@@ -1,6 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FileText, WandSparkles, X, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { DOCUMENT_DESIGN_PRESETS } from '../services/documentDesign';
+
+export interface ScrollablePanelDesign {
+  backgroundColor: string;
+  textColor: string;
+  borderColor: string;
+  labelColor: string;
+}
 
 interface SourceOfTruthModalProps {
   isOpen: boolean;
@@ -8,7 +15,7 @@ interface SourceOfTruthModalProps {
   selectedPresetId: string;
   onSourceChange: (value: string) => void;
   onPresetChange: (value: string) => void;
-  onRender: () => void;
+  onRender: (panelDesign: ScrollablePanelDesign) => void;
   onClose: () => void;
   isRendering?: boolean;
 }
@@ -16,6 +23,12 @@ interface SourceOfTruthModalProps {
 export const SourceOfTruthModal: React.FC<SourceOfTruthModalProps> = ({
   isOpen, source, selectedPresetId, onSourceChange, onPresetChange, onRender, onClose, isRendering = false
 }) => {
+  const [panelDesign, setPanelDesign] = useState<ScrollablePanelDesign>({
+    backgroundColor: '#f8fafc',
+    textColor: '#1e293b',
+    borderColor: '#cbd5e1',
+    labelColor: '#64748b'
+  });
   const metrics = useMemo(() => ({
     characters: source.length,
     words: source.trim() ? source.trim().split(/\s+/).length : 0,
@@ -66,6 +79,27 @@ export const SourceOfTruthModal: React.FC<SourceOfTruthModalProps> = ({
               <p className="mt-2 text-[10px] leading-5 text-slate-500">The design changes typography, colors, page styling, section surfaces and table styling. It does not rewrite your text.</p>
             </div>
 
+            <div className="space-y-3 rounded-xl border border-blue-800/60 bg-blue-950/20 p-4">
+              <div>
+                <h3 className="text-xs font-semibold text-blue-200">Contained Reference Material</h3>
+                <p className="mt-1 text-[10px] leading-5 text-slate-400">Customize the independently scrollable content created by [[ and ]]. These colors are applied when you render the document.</p>
+              </div>
+              {([
+                ['backgroundColor', 'Panel background'],
+                ['textColor', 'Panel text'],
+                ['borderColor', 'Panel border'],
+                ['labelColor', 'Panel label']
+              ] as const).map(([key, label]) => (
+                <label key={key} className="flex items-center justify-between gap-3 text-[11px] text-slate-300">
+                  <span>{label}</span>
+                  <span className="flex items-center gap-2">
+                    <input type="color" value={panelDesign[key]} onChange={event => setPanelDesign(current => ({ ...current, [key]: event.target.value }))} aria-label={label + ' color'} className="h-8 w-10 cursor-pointer rounded border border-slate-700 bg-slate-900 p-0.5" />
+                    <span className="w-16 font-mono text-[10px] text-slate-500">{panelDesign[key]}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+
             <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4">
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-emerald-300"><ShieldCheck className="h-4 w-4" /> Source protection</div>
               <ul className="space-y-2 text-[10px] leading-5 text-emerald-100/80">
@@ -87,7 +121,7 @@ export const SourceOfTruthModal: React.FC<SourceOfTruthModalProps> = ({
           <p className="text-[10px] text-slate-500">The current canvas is replaced only after rendering succeeds.</p>
           <div className="flex items-center justify-end gap-2">
             <button onClick={onClose} className="rounded-lg border border-slate-700 px-4 py-2 text-xs text-slate-300 hover:bg-slate-800">Cancel</button>
-            <button onClick={onRender} disabled={!source.trim() || isRendering} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-950/40 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40">
+            <button onClick={() => onRender(panelDesign)} disabled={!source.trim() || isRendering} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-950/40 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40">
               <WandSparkles className="h-4 w-4" /> {isRendering ? 'Rendering…' : 'Render Document'}
             </button>
           </div>
