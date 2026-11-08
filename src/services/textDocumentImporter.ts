@@ -162,8 +162,8 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   const normalized = source.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const lines = normalized.split('\n');
   const imageHeaderRequested = lines.some(line => line.trim() === '@');
-  const firstNonEmpty = lines.findIndex(line => line.trim().length > 0);
-  const firstLine = lines[firstNonEmpty].trim();
+  const firstNonEmpty = lines.findIndex(line => line.trim().length > 0 && line.trim() !== '@');
+  const firstLine = firstNonEmpty >= 0 ? lines[firstNonEmpty].trim() : 'Imported Document';
   const firstIsMarkdownTitle = MARKDOWN_HEADING.test(firstLine);
   const title = cleanHeading(firstIsMarkdownTitle ? firstLine.replace(/^#+\s*/, '') : firstLine).replace(/\*{1,2}/g, '').slice(0, 180) || 'Imported Document';
   const headings = detectHeadings(lines, firstNonEmpty + 1);
