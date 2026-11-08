@@ -856,7 +856,6 @@ export default function App() {
       <Navbar
         document={document}
         onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
-        onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
         persona={persona}
         onSelectPersona={setPersona}
         brand={brand}
@@ -1039,6 +1038,7 @@ export default function App() {
         canUndo={historyIndex >= 0}
         canRedo={historyIndex < history.length - 1}
         onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
+        onUpdateDocument={(updatedDocument: DocumentModel) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
         onSelectPersona={setPersona}
         onUndo={handleUndo}
         onRedo={handleRedo}
