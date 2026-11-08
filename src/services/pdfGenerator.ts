@@ -381,6 +381,16 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       });
     }
 
+    if (section.scrollableContent) {
+      drawWrappedText(section.scrollableContent, sectionX, sectionWidth, {
+        font: primaryFont, size: design.typography.bodyFontSize || doc.styles.fontSize || 10.5,
+        color: colorToRgb(sectionStyle.bodyTextColor),
+        lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
+        after: design.typography.paragraphSpacing * 0.264583,
+        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
+      });
+    }
+
     for (const clause of section.clauses || []) {
       const heading = clause.heading ? `${clause.heading}: ` : '';
       drawWrappedText(`${clause.clauseNumber}  ${heading}${clause.content}`, sectionX + 4, Math.max(8, sectionWidth - 4), {
