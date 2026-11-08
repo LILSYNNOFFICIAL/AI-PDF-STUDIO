@@ -233,7 +233,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     event.preventDefault();
     event.stopPropagation();
     const wrapper = event.currentTarget.parentElement;
-    const imageElement = wrapper?.querySelector('img');
     const containerWidth = wrapper?.parentElement?.clientWidth || 1;
     const startX = event.clientX;
     const startWidth = image.widthPercent || 80;
@@ -241,7 +240,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     let nextWidth = startWidth;
     const onMove = (moveEvent: PointerEvent) => {
       nextWidth = Math.max(10, Math.min(100, startWidth + ((moveEvent.clientX - startX) / containerWidth) * 100 * direction));
-      if (imageElement) imageElement.style.width = nextWidth + '%';
+      if (wrapper) wrapper.style.width = nextWidth + '%';
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
@@ -540,8 +539,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                               </div>
                               {(section.images || []).map(img => (
                                 <div key={img.id} className="relative mx-auto mt-3 w-full" style={{ textAlign: img.alignment || 'center' }}>
-                                  <div className="relative inline-block max-w-full" style={{ width: '100%' }}>
-                                    <img src={img.url} alt={img.altText || 'Document artwork'} className="max-h-96 rounded object-contain shadow-sm" style={{ width: `${img.widthPercent || 80}%`, maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
+                                  <div className="relative mx-auto max-w-full" style={{ width: `${img.widthPercent || 80}%`, marginLeft: img.alignment === 'left' ? 0 : 'auto', marginRight: img.alignment === 'right' ? 0 : 'auto' }}>
+                                    <img src={img.url} alt={img.altText || 'Document artwork'} className="block max-h-96 w-full rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
                                     {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
                                       <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', ...(corner.includes('top') ? { top: -5 } : { bottom: -5 }), ...(corner.endsWith('left') ? { left: -5 } : { right: -5 }) }} />
                                     ))}
