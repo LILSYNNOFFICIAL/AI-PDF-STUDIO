@@ -237,7 +237,6 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     const containerWidth = wrapper?.parentElement?.getBoundingClientRect().width || 1;
     const startX = event.clientX;
     const startWidth = image.widthPercent || 80;
-    const direction = corner.endsWith('right') ? 1 : -1;
     let nextWidth = startWidth;
     const previousUserSelect = window.document.body.style.userSelect;
     window.document.body.style.userSelect = 'none';
