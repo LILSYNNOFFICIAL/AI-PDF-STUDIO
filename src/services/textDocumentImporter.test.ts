@@ -155,6 +155,22 @@ test('treats a standalone @ line as an image-header marker rather than document 
 });
 
 
+
+test('preserves an @ image marker between paragraphs as an exact section insertion point', () => {
+  const source = [
+    '# Marker Position Agreement',
+    '## 1. DETAILS',
+    'Text before the image.',
+    '@',
+    'Text after the image.'
+  ].join('\n');
+  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+  const section = doc.sections[0];
+  assert.equal(section.imageMarkerPosition, 'Text before the image.'.length);
+  assert.equal(section.content, 'Text before the image.\nText after the image.');
+  assert.equal(doc.imageHeaderRequested, false);
+});
+
 test('supports the image-header marker before the document title', () => {
   const source = ['@', '# Header Image Agreement', '', 'Opening paragraph.'].join('\n');
   const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
