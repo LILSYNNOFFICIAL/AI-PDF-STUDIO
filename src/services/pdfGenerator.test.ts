@@ -182,9 +182,9 @@ test('PDF export includes all text from the scrollable editor block in normal do
     content: 'SECTION-INTRO-RETAINED',
     scrollableContent: [
       'SCROLLABLE-BLOCK-BEGIN',
-      ...Array.from({ length: 80 }, (_, index) => `Reference line ${index + 1} remains present in the exported PDF.`),
+      ...Array.from({ length: 80 }, (_, index) => `Reference line ${index + 1} remains present in the exported PDF. REFERENCE-LINE-${index + 1}-END`),
       'SCROLLABLE-BLOCK-END'
-    ].join('\\n')
+    ].join(' ')
   }];
   const pdf = generatePdfDocument(doc);
   const text = outputText(pdf);
