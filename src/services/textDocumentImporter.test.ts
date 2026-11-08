@@ -107,7 +107,7 @@ test('keeps bracket-delimited reference material in one scrollable block within 
     '',
     '## 18. REPRESENTATIONS, CLEARANCES AND RESPONSIBILITY',
     'The parties remain responsible for all required clearances.'
-  ].join('\\n');
+  ].join('\n');
 
   const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
   const reference = doc.sections.find(section => /LIL SYNN CHARACTER REFERENCE/.test(section.title));
@@ -124,7 +124,7 @@ test('keeps bracket-delimited reference material in one scrollable block within 
     'The Girl wears a yellow dress.',
     '## THE BLACK MAINE COON',
     'A black Maine Coon appears throughout the universe.'
-  ].join('\\n'));
+  ].join('\n'));
   assert.match(reference.content || '', /following reference material governs/);
   assert.doesNotMatch(reference.content || '', /MASTER CHARACTER REFERENCE/);
   assert.match(next.content || '', /required clearances/);
@@ -133,6 +133,6 @@ test('keeps bracket-delimited reference material in one scrollable block within 
 });
 
 test('rejects unmatched bracket delimiters rather than silently flattening the reference block', () => {
-  const source = '# Agreement\\n\\n## 17. CHARACTER REFERENCE\\n[[\\nReference content';
+  const source = '# Agreement\n\n## 17. CHARACTER REFERENCE\n[[\nReference content';
   assert.throws(() => parseTextDocument(source, base), /unmatched|closing.*\\]\\]/i);
 });
