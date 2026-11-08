@@ -495,7 +495,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       font: headingFont, style: 'bold', size: 14, color: colorToRgb(design.colors.headingText), lineHeight: 7, after: 2
     });
     drawWrappedText(
-      'IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date written below.',
+      doc.signatures.executionText || 'IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date written below.',
       margins.left, contentWidth,
       { font: primaryFont, style: 'italic', size: 9.5, color: colorToRgb(design.colors.mutedText), lineHeight: 4.5, after: 5 }
     );
