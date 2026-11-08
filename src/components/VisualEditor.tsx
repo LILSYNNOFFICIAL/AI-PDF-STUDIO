@@ -312,7 +312,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     borderRight: borderToCss(sectionStyle.border, 'right'),
                     borderBottom: borderToCss(sectionStyle.border, 'bottom'),
                     borderLeft: borderToCss(sectionStyle.border, 'left'),
-                    padding: `${sectionStyle.padding}px`
+                    padding: `${sectionStyle.padding}px`,
+                    textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left',
+                    display: (documentDesign.typography.contentBoxMinHeight || 0) > 0 ? 'flex' : undefined,
+                    flexDirection: (documentDesign.typography.contentBoxMinHeight || 0) > 0 ? 'column' : undefined,
+                    justifyContent: (documentDesign.typography.contentBoxMinHeight || 0) > 0
+                      ? ({ top: 'flex-start', middle: 'center', bottom: 'flex-end' } as const)[documentDesign.typography.verticalAlignment || 'top']
+                      : undefined,
+                    minHeight: (documentDesign.typography.contentBoxMinHeight || 0) > 0 ? `${documentDesign.typography.contentBoxMinHeight}px` : undefined,
+                    boxSizing: 'border-box'
                   }}
                 >
                   {/* Floating Contextual AI Bar on Section */}
@@ -393,7 +401,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       style={{ 
                         fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
                         lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
-                        textAlign: document.styles.alignment || 'left',
+                        textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left',
                         color: sectionStyle.bodyTextColor,
                         backgroundColor: document.styles.highlightColor || 'transparent',
                         fontFamily: documentDesign.typography.bodyFontFamily
@@ -425,7 +433,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           backgroundColor: section.design?.scrollableBackgroundColor || documentDesign.colors.pageSurface,
                           color: section.design?.scrollableTextColor || documentDesign.colors.bodyText,
                           borderColor: section.design?.scrollableBorderColor || documentDesign.colors.border,
-                          caretColor: section.design?.scrollableTextColor || documentDesign.colors.bodyText
+                          caretColor: section.design?.scrollableTextColor || documentDesign.colors.bodyText,
+                          textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left'
                         }}
                         className="block h-72 max-h-[420px] min-h-40 w-full resize-y overflow-y-auto rounded border p-3 text-sm leading-relaxed shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-400"
                       />
@@ -477,6 +486,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                   document.styles.isStrikethrough ? 'line-through' : ''
                                 ].filter(Boolean).join(' ') || 'none',
                                 color: sectionStyle.bodyTextColor,
+                                textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left',
                                 backgroundColor: document.styles.highlightColor || 'transparent',
                                 fontFamily: documentDesign.typography.bodyFontFamily
                               }}

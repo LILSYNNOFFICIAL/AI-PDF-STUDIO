@@ -194,6 +194,8 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       background?: ColorFill;
       border?: BorderConfig;
       padding?: number;
+      minHeight?: number;
+      verticalAlign?: 'top' | 'middle' | 'bottom';
     } = {}
   ) => {
     const size = options.size ?? design.typography.bodyFontSize ?? 10.5;
@@ -201,6 +203,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     const padding = options.padding ?? 0;
     setTextStyle(options.font || primaryFont, options.style || 'normal', size, options.color);
     const lines = pdf.splitTextToSize(String(text ?? ''), Math.max(8, width)) as string[];
+    const align = options.align || design.typography.textAlignment || 'left';
     let lineIndex = 0;
     while (lineIndex < lines.length) {
       let linesAvailable = Math.floor((bottomLimit - cursorY - padding * 2) / lineHeight);
@@ -209,16 +212,23 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         linesAvailable = Math.floor((bottomLimit - cursorY - padding * 2) / lineHeight);
       }
       const segmentCount = Math.max(1, Math.min(lines.length - lineIndex, linesAvailable));
-      const segmentHeight = segmentCount * lineHeight + padding * 2;
-      if (options.background) drawColorFill(options.background, x - padding, cursorY - padding, width + padding * 2, segmentHeight, 8);
-      if (options.border) drawBorder(x - padding, cursorY - padding, width + padding * 2, segmentHeight, options.border);
+      const textHeight = segmentCount * lineHeight + padding * 2;
+      const isFinalSegment = lineIndex + segmentCount >= lines.length;
+      const minHeight = isFinalSegment && lineIndex === 0 ? (options.minHeight ?? 0) : 0;
+      const segmentHeight = Math.max(textHeight, minHeight);
+      const boxTop = cursorY - padding;
+      if (options.background) drawColorFill(options.background, x - padding, boxTop, width + padding * 2, segmentHeight, 8);
+      if (options.border) drawBorder(x - padding, boxTop, width + padding * 2, segmentHeight, options.border);
+      const extraHeight = Math.max(0, segmentHeight - textHeight);
+      const verticalOffset = options.verticalAlign === 'middle' ? extraHeight / 2 : options.verticalAlign === 'bottom' ? extraHeight : 0;
+      cursorY += verticalOffset;
       for (let offset = 0; offset < segmentCount; offset++) {
         const line = lines[lineIndex + offset];
-        const textX = options.align === 'center' ? x + width / 2 : options.align === 'right' ? x + width : x;
-        pdf.text(line, textX, cursorY, options.align ? { align: options.align } : undefined);
+        const textX = align === 'center' ? x + width / 2 : align === 'right' ? x + width : x;
+        pdf.text(line, textX, cursorY, { align });
         cursorY += lineHeight;
       }
-      cursorY += padding * 2;
+      cursorY = boxTop + segmentHeight + padding;
       lineIndex += segmentCount;
     }
     cursorY += options.after ?? 2;
@@ -368,7 +378,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     drawWrappedText(applyHeadingCase(`${section.sectionNumber} ${section.title}`), sectionX, sectionWidth, {
       font: headingFont, style: 'bold', size: design.typography.heading2Size || doc.styles.heading2Size || 13,
       color: colorToRgb(sectionStyle.headingColor), lineHeight: 6, after: 2,
-      background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
+      background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+      align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
+      verticalAlign: design.typography.verticalAlignment || 'top'
     });
 
     if (section.content) {
@@ -377,7 +389,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         color: colorToRgb(sectionStyle.bodyTextColor),
         lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
         after: design.typography.paragraphSpacing * 0.264583,
-        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
+        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+        align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
+        verticalAlign: design.typography.verticalAlignment || 'top'
       });
     }
 
@@ -395,7 +409,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         border: section.design?.scrollableBorderColor
           ? { ...sectionStyle.border, color: panelBorderColor }
           : sectionStyle.border,
-        padding: sectionPadding
+        padding: sectionPadding,
+        align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
+        verticalAlign: design.typography.verticalAlignment || 'top'
       });
     }
 
@@ -406,7 +422,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         color: colorToRgb(sectionStyle.bodyTextColor),
         lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
         after: design.typography.paragraphSpacing * 0.264583,
-        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding
+        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+        align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
+        verticalAlign: design.typography.verticalAlignment || 'top'
       });
     }
 

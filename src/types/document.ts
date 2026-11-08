@@ -59,6 +59,12 @@ export interface DesignTypography {
   headingCase: StyleConfig['headingCase'];
   bodyBold?: boolean;
   bodyItalic?: boolean;
+  /** Default horizontal alignment for section and body text. */
+  textAlignment?: Alignment;
+  /** Vertical placement within explicitly sized section boxes. */
+  verticalAlignment?: 'top' | 'middle' | 'bottom';
+  /** Minimum section box height in CSS pixels; zero keeps content-height sizing. */
+  contentBoxMinHeight?: number;
 }
 
 export interface DesignTableDefaults {
