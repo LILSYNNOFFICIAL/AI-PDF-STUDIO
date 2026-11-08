@@ -170,7 +170,7 @@ test('recognizes a labeled @ marker between sentence paragraphs and preserves bo
   assert.equal(doc.title, 'Imported Document');
   assert.match(section.content || '', /^This is the first paragraph/);
   assert.match(section.content || '', /This is the second paragraph/);
-  assert.equal(section.imageMarkerPosition, (section.content || '').indexOf('\n\n'));
+  assert.equal(section.imageMarkerPosition, 'This is the first paragraph of my test document. It contains important information that needs to be reviewed carefully by all parties involved in the agreement.'.length);
   assert.doesNotMatch(section.content || '', /^\s*@/m);
 });
 
