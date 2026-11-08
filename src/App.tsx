@@ -856,6 +856,7 @@ export default function App() {
       <Navbar
         document={document}
         onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
+        onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
         persona={persona}
         onSelectPersona={setPersona}
         brand={brand}
