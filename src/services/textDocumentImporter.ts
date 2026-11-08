@@ -213,11 +213,20 @@ export function parseTextDocument(source: string, baseDocument: DocumentModel, n
   });
 
   if (!sections.length) {
-    const parsed = parseTableLines(lines.slice(firstNonEmpty + 1).filter(line => line.trim() !== '@'), 1);
+    const fallbackLines = lines.slice(firstNonEmpty + 1);
+    const markerLine = fallbackLines.findIndex(line => line.trim() === '@');
+    const markerPrefix = markerLine >= 0 ? fallbackLines.slice(0, markerLine) : [];
+    const markerPrefixContent = parseTableLines(markerPrefix, 1).content;
+    const parsed = parseTableLines(fallbackLines.filter(line => line.trim() !== '@'), 1);
     detectedTableRows = parsed.rowCount;
+    const fallbackContent = [lines[firstNonEmpty], parsed.content].filter(Boolean).join('\n');
+    const imageMarkerPosition = markerLine >= 0
+      ? [lines[firstNonEmpty], markerPrefixContent].filter(Boolean).join('\n').length
+      : undefined;
     sections.push({
       id: 'source_section_1', sectionNumber: '1', title: 'DOCUMENT CONTENT', sourceHeading: '',
-      content: [lines[firstNonEmpty], parsed.content].filter(Boolean).join('\n'),
+      content: fallbackContent,
+      ...(imageMarkerPosition !== undefined ? { imageMarkerPosition } : {}),
       clauses: [], ...(parsed.tables.length ? { tables: parsed.tables } : {}), orderIndex: 1,
       sourceReference: 'Complete unstructured source retained verbatim.'
     });
