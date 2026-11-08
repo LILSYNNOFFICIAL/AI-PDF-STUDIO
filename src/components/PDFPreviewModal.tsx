@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Download, Printer, CheckCircle, RefreshCw, FileText, ExternalLink } from 'lucide-react';
 import { DocumentModel } from '../types/document';
-import { generatePdfBlobUrl, downloadPdf } from '../services/pdfGenerator';
+import { downloadPdf } from '../services/pdfGenerator';
 
 interface PDFPreviewModalProps {
   document: DocumentModel;
@@ -18,22 +18,39 @@ export const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setIsGenerating(true);
-      try {
-        const url = generatePdfBlobUrl(document);
-        setBlobUrl(url);
-      } catch (err) {
-        console.error('Error generating PDF preview:', err);
-      } finally {
-        setIsGenerating(false);
-      }
-    } else {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-        setBlobUrl(null);
-      }
+    if (!isOpen) {
+      setBlobUrl(current => {
+        if (current) URL.revokeObjectURL(current);
+        return null;
+      });
+      setIsGenerating(false);
+      return;
     }
+
+    setIsGenerating(true);
+    setBlobUrl(null);
+    let generatedUrl: string | null = null;
+    const worker = new Worker(new URL('../workers/pdfPreview.worker.ts', import.meta.url), { type: 'module' });
+    worker.onmessage = (event: MessageEvent<{ buffer?: ArrayBuffer; error?: string }>) => {
+      if (event.data.error || !event.data.buffer) {
+        console.error('Error generating PDF preview:', event.data.error || 'No PDF data returned.');
+        setIsGenerating(false);
+        return;
+      }
+      generatedUrl = URL.createObjectURL(new Blob([event.data.buffer], { type: 'application/pdf' }));
+      setBlobUrl(generatedUrl);
+      setIsGenerating(false);
+    };
+    worker.onerror = event => {
+      console.error('PDF preview worker failed:', event.message);
+      setIsGenerating(false);
+    };
+    worker.postMessage(document);
+
+    return () => {
+      worker.terminate();
+      if (generatedUrl) URL.revokeObjectURL(generatedUrl);
+    };
   }, [isOpen, document]);
 
   if (!isOpen) return null;
@@ -87,7 +104,7 @@ export const PDFPreviewModal: React.FC<PDFPreviewModalProps> = ({
             </div>
           ) : blobUrl ? (
             <iframe 
-              src={blobUrl} 
+              src={`${blobUrl}#view=FitH&toolbar=0&navpanes=0`} 
               title="PDF Preview"
               className="w-full h-full rounded border border-slate-800 bg-white"
             />
