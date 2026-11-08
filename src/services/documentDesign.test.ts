@@ -26,8 +26,8 @@ class MemoryStorage {
   removeItem(key: string): void { this.data.delete(key); }
 }
 
-test('all eight built-in presets contain valid semantic tokens', () => {
-  assert.equal(DOCUMENT_DESIGN_PRESETS.length, 8);
+test('all nine built-in presets contain valid semantic tokens', () => {
+  assert.equal(DOCUMENT_DESIGN_PRESETS.length, 9);
   for (const preset of DOCUMENT_DESIGN_PRESETS) {
     validateDocumentDesign(preset);
     assert.ok(preset.colors.primary);
@@ -37,6 +37,15 @@ test('all eight built-in presets contain valid semantic tokens', () => {
     assert.ok(preset.page.background);
     assert.ok(preset.tableDefaults.headerBackground);
   }
+  const lilSynn = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'lil-synn');
+  assert.ok(lilSynn);
+  assert.equal(lilSynn.name, 'LIL SYNN');
+  assert.equal(lilSynn.colors.pageSurface, '#050505');
+  assert.equal(lilSynn.colors.bodyText, '#f5f5f5');
+  assert.equal(lilSynn.colors.headingText, '#ff4fa3');
+  assert.equal(lilSynn.colors.border, '#d99a32');
+  assert.equal(lilSynn.tableDefaults.bodyBackground.type, 'solid');
+  assert.equal(lilSynn.tableDefaults.bodyBackground.color, '#050505');
 });
 
 test('legacy design migration preserves all document content and structure', () => {
