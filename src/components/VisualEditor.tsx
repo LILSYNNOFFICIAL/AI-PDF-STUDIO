@@ -290,6 +290,20 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     });
   };
 
+  const renderSectionImages = (section: Section) => (section.images || []).map(img => (
+    <div key={img.id} className="relative mx-auto mt-3 w-full" style={{ textAlign: img.alignment || 'center' }}>
+      <div className="relative mx-auto max-w-full" style={{ width: `${img.widthPercent || 80}%`, marginLeft: img.alignment === 'left' ? 0 : 'auto', marginRight: img.alignment === 'right' ? 0 : 'auto' }}>
+        <img src={img.url} alt={img.altText || 'Document artwork'} className="block max-h-96 w-full rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
+        {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
+          <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', ...(corner.includes('top') ? { top: -5 } : { bottom: -5 }), ...(corner.endsWith('left') ? { left: -5 } : { right: -5 }) }} />
+        ))}
+      </div>
+      <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
+      <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
+    </div>
+  ));
+
+
   return (
     <div className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-4 sm:p-8 relative">
       {/* Floating Viewport & Zoom Bar */}
@@ -537,22 +551,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                   <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handleSectionImages(section, event.target.files); event.currentTarget.value = ''; }} />
                                 </label>
                               </div>
-                              {(section.images || []).map(img => (
-                                <div key={img.id} className="relative mx-auto mt-3 w-full" style={{ textAlign: img.alignment || 'center' }}>
-                                  <div className="relative mx-auto max-w-full" style={{ width: `${img.widthPercent || 80}%`, marginLeft: img.alignment === 'left' ? 0 : 'auto', marginRight: img.alignment === 'right' ? 0 : 'auto' }}>
-                                    <img src={img.url} alt={img.altText || 'Document artwork'} className="block max-h-96 w-full rounded object-contain shadow-sm" style={{ width: '100%', maxWidth: '100%', border: `1px solid ${documentDesign.colors.border}` }} />
-                                    {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
-                                      <button key={corner} type="button" aria-label={`Resize image ${corner}`} onPointerDown={event => startImageResize(event, section, img, corner)} className="absolute h-3 w-3 rounded-full border-2 border-white bg-blue-600 shadow" style={{ cursor: corner.includes('left') ? 'nwse-resize' : 'nesw-resize', ...(corner.includes('top') ? { top: -5 } : { bottom: -5 }), ...(corner.endsWith('left') ? { left: -5 } : { right: -5 }) }} />
-                                    ))}
-                                  </div>
-                                  <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
-                                  <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
-                                </div>
-                              ))}
+                              {renderSectionImages(section)}
                               {!section.images?.length && <p className="text-center text-xs" style={{ color: documentDesign.colors.mutedText }}>Images added here will appear at this exact point in the document.</p>}
                             </div>
                           )}
                           {hasMarker && <textarea rows={Math.max(1, after.split('\n').length)} value={after} placeholder="Continue writing after the image..." aria-label="Section Content After Image" style={textareaStyle} className={textareaClass} onChange={event => onUpdateSection({ ...section, content: before + event.target.value })} />}
+                          {!hasMarker && section.images?.length ? (
+                            <div className="my-3 rounded-lg border border-dashed p-3" style={{ borderColor: documentDesign.colors.border, background: documentDesign.colors.pageSurface }}>
+                              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: documentDesign.colors.mutedText }}>Section artwork</div>
+                              {renderSectionImages(section)}
+                            </div>
+                          ) : null}
                         </>
                       );
                     })()}

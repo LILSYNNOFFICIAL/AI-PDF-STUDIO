@@ -157,6 +157,23 @@ test('treats a standalone @ line as an image-header marker rather than document 
 
 
 
+test('recognizes a labeled @ marker between sentence paragraphs and preserves both paragraphs', () => {
+  const source = [
+    'This is the first paragraph of my test document. It contains important information that needs to be reviewed carefully by all parties involved in the agreement.',
+    '',
+    '@ marker between paragraphs',
+    '',
+    'This is the second paragraph of my test document. It follows the image marker and should remain after it.'
+  ].join('\n');
+  const doc = parseTextDocument(source, base, '2026-01-01T00:00:00.000Z');
+  const section = doc.sections[0];
+  assert.equal(doc.title, 'Imported Document');
+  assert.match(section.content || '', /^This is the first paragraph/);
+  assert.match(section.content || '', /This is the second paragraph/);
+  assert.equal(section.imageMarkerPosition, 'This is the first paragraph of my test document. It contains important information that needs to be reviewed carefully by all parties involved in the agreement.'.length);
+  assert.doesNotMatch(section.content || '', /^\s*@/m);
+});
+
 test('preserves an @ image marker between paragraphs as an exact section insertion point', () => {
   const source = [
     '# Marker Position Agreement',
