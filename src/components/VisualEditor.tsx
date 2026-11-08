@@ -34,6 +34,7 @@ interface VisualEditorProps {
   onDeleteSection: (sectionId: string) => void;
   onDuplicateSection: (sectionId: string) => void;
   onUpdateSignatures: (signatures: any) => void;
+  onUpdateDocument: (updatedDocument: DocumentModel) => void;
   onQuickAIAction: (actionType: string, targetContext: { sectionId?: string; text?: string }) => void;
 }
 
@@ -44,6 +45,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onDeleteSection,
   onDuplicateSection,
   onUpdateSignatures,
+  onUpdateDocument,
   onQuickAIAction
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
@@ -54,6 +56,55 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     columnIndex: number;
   } | null>(null);
   const documentDesign = resolveDocumentDesign(document);
+
+  const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
+    if (!files?.length) return [];
+    const selected = Array.from(files);
+    if (selected.some(file => !file.type.startsWith('image/'))) {
+      throw new Error('Choose image files only.');
+    }
+    if (selected.some(file => file.size > 15 * 1024 * 1024)) {
+      throw new Error('Each image must be 15 MB or smaller.');
+    }
+    return Promise.all(selected.map(file => new Promise<ImageBlock>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        id: 'image_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        url: String(reader.result),
+        altText: file.name.replace(/\\.[^.]+$/, ''),
+        caption: '',
+        widthPercent: Math.max(20, Math.floor(100 / selected.length)),
+        alignment: 'center'
+      });
+      reader.onerror = () => reject(new Error('Could not read ' + file.name + '.'));
+      reader.readAsDataURL(file);
+    })));
+  };
+
+  const handlePageHeaderImages = async (files: FileList | null) => {
+    try {
+      const images = await readImageFiles(files);
+      if (!images.length) return;
+      onUpdateDocument({
+        ...document,
+        imageHeaderRequested: true,
+        pageHeaderImages: [...(document.pageHeaderImages || []), ...images],
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to add images.');
+    }
+  };
+
+  const handleSectionImages = async (section: Section, files: FileList | null) => {
+    try {
+      const images = await readImageFiles(files);
+      if (!images.length) return;
+      onUpdateSection({ ...section, images: [...(section.images || []), ...images] });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to add images.');
+    }
+  };
 
   // Elongation & Section Extension helpers
   const handleExtendSectionText = (section: Section) => {
@@ -244,13 +295,35 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             lineHeight: documentDesign.typography.bodyLineHeight
           }}
         >
+          {/* Source @ marker creates an image header area. */ }
+          {document.imageHeaderRequested && (
+            <div className="mb-4 rounded border border-dashed p-3" style={{ borderColor: documentDesign.colors.accent }}>
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold" style={{ color: documentDesign.colors.headingText }}>
+                <span>IMAGE HEADER</span>
+                <label className="cursor-pointer rounded px-3 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
+                  Add images
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handlePageHeaderImages(event.target.files); event.currentTarget.value = ''; }} />
+                </label>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {(document.pageHeaderImages || []).map(image => (
+                  <div key={image.id} className="relative">
+                    <img src={image.url} alt={image.altText || 'Page header image'} className="h-20 max-w-40 rounded object-contain" />
+                    <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="absolute -right-2 -top-2 rounded-full bg-rose-600 px-1.5 text-xs text-white">×</button>
+                  </div>
+                ))}
+              </div>
+              {!document.pageHeaderImages?.length && <p className="text-center text-xs" style={{ color: documentDesign.colors.mutedText }}>Select one or more images from your computer.</p>}
+            </div>
+          )}
+
           {/* Running Header */}
           {document.pageConfig.headerText && (
             <div
               className="pb-2 mb-8 flex items-center justify-between text-[11px] font-sans tracking-wider uppercase"
               style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` }}
             >
-              <span>{document.pageConfig.headerText}</span>
+              <input aria-label="Running page header" value={document.pageConfig.headerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, headerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
               <span>CONFIDENTIAL</span>
             </div>
           )}
@@ -377,9 +450,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Section Heading */}
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="font-bold font-mono text-xs" style={{ color: sectionStyle.headingColor }}>
-                      {section.sectionNumber}
-                    </span>
+                    <input type="text" aria-label="Section number" value={section.sectionNumber} onChange={event => onUpdateSection({ ...section, sectionNumber: event.target.value })} className="w-16 shrink-0 bg-transparent font-mono text-xs font-bold outline-none" style={{ color: sectionStyle.headingColor }} />
                     <input 
                       type="text" 
                       value={section.title}
@@ -746,7 +817,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     </div>
                   ))}
 
-                  {/* Images / Brand Artwork Block */}
+                  {/* Images / Brand Artwork Block */ }
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <span className="font-semibold" style={{ color: sectionStyle.headingColor }}>Section images</span>
+                    <label className="cursor-pointer rounded px-2 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
+                      Add image(s)
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handleSectionImages(section, event.target.files); event.currentTarget.value = ''; }} />
+                    </label>
+                  </div>
                   {section.images && section.images.map((img) => (
                     <div key={img.id} className="mt-4 flex flex-col items-center">
                       <img 
@@ -755,11 +833,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         className="rounded shadow-sm max-h-60 object-contain"
                         style={{ width: `${img.widthPercent || 80}%`, border: `1px solid ${documentDesign.colors.border}` }}
                       />
-                      {img.caption && (
-                        <p className="text-[11px] italic mt-1.5 text-center font-sans" style={{ color: documentDesign.colors.mutedText }}>
-                          {img.caption}
-                        </p>
-                      )}
+                      <input aria-label="Image caption" value={img.caption || ''} placeholder="Add image caption" onChange={event => onUpdateSection({ ...section, images: (section.images || []).map(item => item.id === img.id ? { ...item, caption: event.target.value } : item) })} className="mt-1.5 w-full bg-transparent text-center text-[11px] italic outline-none" style={{ color: documentDesign.colors.mutedText }} />
+                      <button type="button" onClick={() => onUpdateSection({ ...section, images: (section.images || []).filter(item => item.id !== img.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
                     </div>
                   ))}
                 </section>
@@ -853,7 +928,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Running Footer */}
           <div className="mt-16 pt-4 border-t flex items-center justify-between text-[11px] font-sans" style={{ color: documentDesign.pageFurniture.footerTextColor, borderColor: documentDesign.pageFurniture.dividerColor, borderTopWidth: `${documentDesign.pageFurniture.dividerWidth}px` }}>
-            <span>{document.pageConfig.footerText || 'CONFIDENTIAL & PROPRIETARY'}</span>
+            <input aria-label="Running page footer" value={document.pageConfig.footerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, footerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
             <span>Page 1 of 1</span>
           </div>
         </main>
