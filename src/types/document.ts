@@ -78,6 +78,29 @@ export interface DesignTableDefaults {
   captionColor: string;
 }
 
+export interface CoverPageDesign {
+  enabled: boolean;
+  style: 'midnight-executive' | 'art-deco' | 'dark-luxury' | 'editorial' | 'minimal';
+  background: ColorFill;
+  titleColor: string;
+  detailColor: string;
+  borderColor: string;
+  eyebrow: string;
+  brandLine: string;
+  showFrame: boolean;
+  showLogoPlaceholder: boolean;
+  showOrnamentalRule: boolean;
+}
+
+export interface DocumentLayoutDefaults {
+  sectionHeadingStyle: 'editorial-rule' | 'numbered-card' | 'minimal' | 'banner';
+  sectionSpacing: number;
+  headerRule: boolean;
+  footerRule: boolean;
+  paragraphIndent: number;
+  sectionPadding: number;
+}
+
 export interface DocumentDesign {
   schemaVersion: 1;
   presetId: string;
@@ -101,6 +124,8 @@ export interface DocumentDesign {
     border: BorderConfig;
     padding: number;
   };
+  coverPage: CoverPageDesign;
+  layoutDefaults: DocumentLayoutDefaults;
   pageFurniture: {
     headerTextColor: string;
     footerTextColor: string;
