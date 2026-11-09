@@ -498,18 +498,20 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
   };
 
   const tabs: Array<{ id: TabId; label: string }> = [
-    { id: 'presets', label: 'Templates' },
-    { id: 'page', label: 'Colors & Pages' },
+    { id: 'presets', label: 'Themes' },
+    { id: 'cover', label: 'Cover' },
+    { id: 'page', label: 'Page & Colors' },
+    { id: 'layout', label: 'Layout' },
     { id: 'typography', label: 'Typography' },
     { id: 'section', label: 'Sections' },
     { id: 'table', label: 'Tables' },
     { id: 'signatures', label: 'Signatures' },
-    { id: 'saved', label: 'My Themes' }
+    { id: 'saved', label: 'Saved & Export' }
   ];
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm">
-      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl">
         <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-5 py-3">
           <div className="flex items-center gap-2">
             <Palette className="h-4 w-4 text-blue-400" />
