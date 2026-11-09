@@ -14,6 +14,7 @@ import {
   Plus
 } from 'lucide-react';
 import { DocumentModel, AIPersona, BrandProfile } from '../types/document';
+import { SAMPLE_BRAND_PROFILES } from '../services/sampleDocuments';
 
 interface NavbarProps {
   document: DocumentModel;
@@ -21,7 +22,6 @@ interface NavbarProps {
   persona: AIPersona;
   onSelectPersona: (persona: AIPersona) => void;
   brand: BrandProfile;
-  brandProfiles: BrandProfile[];
   onSelectBrand: (brand: BrandProfile) => void;
   canUndo: boolean;
   canRedo: boolean;
@@ -50,7 +50,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   persona,
   onSelectPersona,
   brand,
-  brandProfiles,
   onSelectBrand,
   canUndo,
   canRedo,
@@ -126,12 +125,12 @@ export const Navbar: React.FC<NavbarProps> = ({
               aria-label="Select Brand Profile"
               value={brand.id}
               onChange={(e) => {
-                const found = brandProfiles.find(b => b.id === e.target.value);
+                const found = SAMPLE_BRAND_PROFILES.find(b => b.id === e.target.value);
                 if (found) onSelectBrand(found);
               }}
               className="bg-transparent text-slate-200 cursor-pointer focus:outline-none appearance-none pr-4 font-medium"
             >
-              {brandProfiles.map((b) => (
+              {SAMPLE_BRAND_PROFILES.map((b) => (
                 <option key={b.id} value={b.id} className="bg-slate-900 text-slate-200">
                   {b.name}
                 </option>
@@ -140,7 +139,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             <ChevronDown className="w-3 h-3 text-slate-400 absolute right-2 pointer-events-none" />
           </div>
         </div>
-        <button onClick={onOpenBrandModal} title="Create, edit and manage saved brand identities" className="rounded-md border border-indigo-400/30 bg-indigo-500/10 px-2.5 py-1.5 text-[11px] font-medium text-indigo-200 transition-colors hover:bg-indigo-500/20">Manage brands</button>
       </div>
 
       {/* Right Action Buttons */}

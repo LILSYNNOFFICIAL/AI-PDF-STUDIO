@@ -18,12 +18,10 @@ import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal'
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
 import { DocumentDesignModal } from './components/DocumentDesignModal';
 import { TemplateGalleryModal } from './components/TemplateGalleryModal';
-import { BrandManagerModal } from './components/BrandManagerModal';
 import { SourceOfTruthModal } from './components/SourceOfTruthModal';
 import { parseTextDocument, getSourceIntegrityReport } from './services/textDocumentImporter';
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides, applyDocumentPreset } from './services/documentDesign';
 import { buildTemplateDocument, getTemplateById } from './services/templateCatalog';
-import { loadBrandProfiles, saveBrandProfiles } from './services/brandProfiles';
 import { 
   DocumentModel, 
   AIPersona, 
@@ -63,8 +61,7 @@ export default function App() {
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [activeSectionId, setActiveSectionId] = useState<string | null>('sec_1');
   const [persona, setPersona] = useState<AIPersona>('music_specialist');
-  const [brandProfiles, setBrandProfiles] = useState<BrandProfile[]>(() => loadBrandProfiles());
-  const [brand, setBrand] = useState<BrandProfile>(() => loadBrandProfiles()[0] || SAMPLE_BRAND_PROFILES[0]);
+  const [brand, setBrand] = useState<BrandProfile>(SAMPLE_BRAND_PROFILES[0]);
   
   // View layout state
   const [isOutlineVisible, setIsOutlineVisible] = useState(true);
@@ -86,47 +83,11 @@ export default function App() {
   const [isReadabilityOpen, setIsReadabilityOpen] = useState(false);
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
-  const [isBrandManagerOpen, setIsBrandManagerOpen] = useState(false);
   const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(true);
   const [sourceTruthText, setSourceTruthText] = useState('');
   const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
   const [isRenderingSource, setIsRenderingSource] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    const result = saveBrandProfiles(brandProfiles);
-    if (!result.ok && result.error) console.warn(result.error);
-  }, [brandProfiles]);
-
-  const applyBrandProfile = (newBrand: BrandProfile) => {
-    setBrand(newBrand);
-    const formatted = applyFormatting(document, {
-      fontFamily: newBrand.fontFamily,
-      primaryColor: newBrand.primaryColor,
-      accentColor: newBrand.secondaryColor
-    }, {
-      headerText: newBrand.headerNote || '',
-      footerText: newBrand.footerDisclaimer || ''
-    });
-    const updated = {
-      ...formatted.updatedDoc,
-      brandProfileId: newBrand.id,
-      brandName: newBrand.name,
-      brandLogoUrl: newBrand.logoUrl,
-      design: formatted.updatedDoc.design ? {
-        ...formatted.updatedDoc.design,
-        colors: {
-          ...formatted.updatedDoc.design.colors,
-          primary: newBrand.primaryColor,
-          secondary: newBrand.secondaryColor,
-          accent: newBrand.secondaryColor
-        }
-      } : formatted.updatedDoc.design
-    };
-    pushHistory(updated);
-    addAiMessage(`Applied brand profile: "${newBrand.name}".`);
-    showToast(`Brand applied: ${newBrand.name}`);
-  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -948,8 +909,16 @@ export default function App() {
         persona={persona}
         onSelectPersona={setPersona}
         brand={brand}
-        brandProfiles={brandProfiles}
-        onSelectBrand={applyBrandProfile}
+        onSelectBrand={(newBrand) => {
+          setBrand(newBrand);
+          const formatted = applyFormatting(document, { fontFamily: newBrand.fontFamily }, {
+            headerText: newBrand.headerNote,
+            footerText: newBrand.footerDisclaimer
+          });
+          pushHistory(formatted.updatedDoc);
+          addAiMessage(`Applied brand profile: "${newBrand.name}".`);
+          showToast(`Brand applied: ${newBrand.name}`);
+        }}
         canUndo={historyIndex >= 0}
         canRedo={historyIndex < history.length - 1}
         onUndo={handleUndo}
@@ -957,7 +926,7 @@ export default function App() {
         onOpenPdfPreview={() => setIsPdfPreviewOpen(true)}
         onOpenValidation={() => setIsValidationOpen(true)}
         onOpenMultiDoc={() => setIsMultiDocOpen(true)}
-        onOpenBrandModal={() => setIsBrandManagerOpen(true)}
+        onOpenBrandModal={() => {}}
         onNewDocument={handleNewDocument}
       />
 
@@ -1009,7 +978,7 @@ export default function App() {
         onOpenMultiDoc={() => setIsMultiDocOpen(true)}
         onSelectPersona={setPersona}
         persona={persona}
-        onSelectBrand={applyBrandProfile}
+        onSelectBrand={setBrand}
         brand={brand}
         toggleOutline={() => setIsOutlineVisible(prev => !prev)}
         toggleAI={() => setIsAIVisible(prev => !prev)}
@@ -1277,20 +1246,6 @@ export default function App() {
         onRender={handleRenderSourceTruth}
         onClose={() => setIsSourceTruthOpen(false)}
         isRendering={isRenderingSource}
-      />
-
-      <BrandManagerModal
-        isOpen={isBrandManagerOpen}
-        profiles={brandProfiles}
-        activeBrandId={brand.id}
-        onClose={() => setIsBrandManagerOpen(false)}
-        onSave={(profiles) => {
-          setBrandProfiles(profiles);
-          const activeProfile = profiles.find(profile => profile.id === brand.id);
-          if (activeProfile) setBrand(activeProfile);
-          else if (profiles[0]) applyBrandProfile(profiles[0]);
-        }}
-        onApply={applyBrandProfile}
       />
 
       <TemplateGalleryModal
