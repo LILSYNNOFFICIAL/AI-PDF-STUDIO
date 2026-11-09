@@ -45,7 +45,7 @@ function imagePlacements(doc: DocumentModel, pageNumber = 1): ImagePlacement[] {
   const pdf = generatePdfDocument(doc);
   const pages = (pdf as any).internal.pages as string[][];
   const content = pages[pageNumber]?.join('') || '';
-  const expression = /([-0-9.]+)\\s+0\\s+0\\s+([-0-9.]+)\\s+([-0-9.]+)\\s+([-0-9.]+)\\s+cm\\s*\\/I\\d+\\s+Do/g;
+  const expression = /([-0-9.]+)\s+0\s+0\s+([-0-9.]+)\s+([-0-9.]+)\s+([-0-9.]+)\s+cm\s*\/I\d+\s+Do/g;
   return [...content.matchAll(expression)].map(match => ({
     widthPoints: Math.abs(Number(match[1])),
     heightPoints: Math.abs(Number(match[2])),
