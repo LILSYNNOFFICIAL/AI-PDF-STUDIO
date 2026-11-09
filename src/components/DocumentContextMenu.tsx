@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Check, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { clampContextMenuPosition, type ContextMenuItem } from '../services/contextMenu';
 
 interface DocumentContextMenuProps {
