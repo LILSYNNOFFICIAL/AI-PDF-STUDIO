@@ -687,6 +687,14 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                     </label>
                   ))}
                 </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-[11px] text-slate-300">Running header text
+                    <input value={pageConfigDraft.headerText} onChange={event => updatePageConfigDraft({ headerText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="COMPANY • AGREEMENT NAME" />
+                  </label>
+                  <label className="block text-[11px] text-slate-300">Running footer text
+                    <input value={pageConfigDraft.footerText} onChange={event => updatePageConfigDraft({ footerText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="CONFIDENTIAL • DOCUMENT VERSION" />
+                  </label>
+                </div>
                 <div className="mt-3 flex flex-wrap items-center gap-4">
                   <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={pageConfigDraft.showPageNumbers} onChange={event => updatePageConfigDraft({ showPageNumbers: event.target.checked })} className="accent-blue-500" /> Page numbers</label>
                   <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={pageConfigDraft.firstPageDifferent} onChange={event => updatePageConfigDraft({ firstPageDifferent: event.target.checked })} className="accent-blue-500" /> Different first page furniture</label>
