@@ -77,6 +77,23 @@ export const BrandManagerModal: React.FC<BrandManagerModalProps> = ({
     setIsNew(false);
     setMessage('Brand profile saved.');
   };
+  const applyDraft = () => {
+    if (!draft.name.trim() || !draft.companyName.trim()) {
+      setMessage('Brand name and company name are required.');
+      return;
+    }
+    if (!/^#[0-9a-f]{6}$/i.test(draft.primaryColor) || !/^#[0-9a-f]{6}$/i.test(draft.secondaryColor)) {
+      setMessage('Use valid six-digit HEX colors.');
+      return;
+    }
+    const normalizedDraft = { ...draft, name: draft.name.trim(), companyName: draft.companyName.trim() };
+    const next = isNew
+      ? [...profiles, normalizedDraft]
+      : profiles.map(profile => profile.id === draft.id ? normalizedDraft : profile);
+    onSave(next);
+    onApply(normalizedDraft);
+    onClose();
+  };
   const startNew = () => {
     const next = EMPTY_PROFILE();
     setDraft(next);
@@ -213,7 +230,7 @@ export const BrandManagerModal: React.FC<BrandManagerModalProps> = ({
                     <p className="mt-8 border-t border-slate-200 pt-2 text-[8px] text-slate-500">{draft.footerDisclaimer || 'Footer disclaimer'}</p>
                   </div>
                 </div>
-                <button disabled={!selectedProfile && !isNew} onClick={() => { if (!isNew && selectedProfile) { onApply(draft); onClose(); } else { saveDraft(); setMessage('Save the new profile, then apply it.'); } }} className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-40"><Check className="h-4 w-4" /> Apply to document</button>
+                <button disabled={!selectedProfile && !isNew} onClick={applyDraft} className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:opacity-40"><Check className="h-4 w-4" /> Apply to document</button>
               </aside>
             </div>
             {message && <p role="status" className="mt-4 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-300">{message}</p>}

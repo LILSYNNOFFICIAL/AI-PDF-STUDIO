@@ -290,3 +290,19 @@ test('disabled cover page keeps title and body content together on the first pag
   assert.ok(firstPage.includes('NO COVER TITLE'));
   assert.ok(firstPage.includes('NO COVER BODY'));
 });
+
+
+test('cover page embeds the selected brand logo instead of printing a static BRAND placeholder', () => {
+  const doc = buildDocumentFromPrompt('Brand logo cover test').updatedDoc;
+  doc.design = {
+    ...doc.design!,
+    coverPage: { ...doc.design!.coverPage, enabled: true, showLogoPlaceholder: true }
+  };
+  doc.brandName = 'SYNTIENT RECORDS';
+  doc.brandLogoUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+  const pdf = generatePdfDocument(doc);
+  const output = outputText(pdf);
+
+  assert.match(output, /\/Subtype \/Image/);
+  assert.ok(!output.includes('(BRAND)'));
+});

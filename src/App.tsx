@@ -1284,7 +1284,12 @@ export default function App() {
         profiles={brandProfiles}
         activeBrandId={brand.id}
         onClose={() => setIsBrandManagerOpen(false)}
-        onSave={setBrandProfiles}
+        onSave={(profiles) => {
+          setBrandProfiles(profiles);
+          const activeProfile = profiles.find(profile => profile.id === brand.id);
+          if (activeProfile) setBrand(activeProfile);
+          else if (profiles[0]) applyBrandProfile(profiles[0]);
+        }}
         onApply={applyBrandProfile}
       />
 
