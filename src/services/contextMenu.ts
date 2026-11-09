@@ -1,4 +1,4 @@
-export type DocumentContextTargetType = 'text' | 'section' | 'clause' | 'image' | 'header-image' | 'table' | 'signature';
+export type DocumentContextTargetType = 'document' | 'cover-logo' | 'cover-text' | 'text' | 'section' | 'clause' | 'image' | 'header-image' | 'table' | 'signature';
 
 export interface ContextMenuPosition {
   x: number;
@@ -15,6 +15,9 @@ export interface ContextMenuItem {
 }
 
 const ACTIONS: Record<DocumentContextTargetType, string[]> = {
+  document: ['add-section', 'insert-image', 'document-design'],
+  'cover-logo': ['upload-logo', 'edit-brand-name', 'remove-logo'],
+  'cover-text': ['edit-cover-text', 'clear-cover-text'],
   text: ['cut', 'copy', 'paste', 'select-all', 'insert-signature'],
   section: ['add-clause', 'duplicate-section', 'move-section-up', 'move-section-down', 'toggle-page-break', 'edit-section-design', 'delete-section'],
   clause: ['copy-clause', 'add-clause-after', 'duplicate-clause', 'delete-clause'],
