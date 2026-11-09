@@ -195,5 +195,7 @@ test('cover logo width follows the persisted editor resize value in PDF output',
   };
   const small = coverLogoWidth(makeLogoDocument(50));
   const large = coverLogoWidth(makeLogoDocument(150));
+  const oversized = coverLogoWidth(makeLogoDocument(800));
   assert.ok(large > small * 2.9, `Expected 150% logo to be three times 50%; got ${small}pt and ${large}pt`);
+  assert.ok(oversized > large * 5.2, `Expected 800% logo to render above the former 200% ceiling; got ${large}pt and ${oversized}pt`);
 });
