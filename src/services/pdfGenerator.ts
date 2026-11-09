@@ -352,14 +352,29 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
     if (cover.showLogoPlaceholder) {
       const badgeY = pageHeight * 0.235;
-      const badgeSize = 18;
-      pdf.setDrawColor(...colorToRgb(cover.borderColor));
-      pdf.setLineWidth(0.45);
-      pdf.circle(centerX, badgeY, badgeSize / 2, 'S');
-      pdf.setFont(primaryFont, 'bold');
-      pdf.setFontSize(5.8);
-      pdf.setTextColor(...colorToRgb(cover.titleColor));
-      pdf.text('BRAND', centerX, badgeY + 1, { align: 'center' });
+      const logoWidth = 34;
+      const logoHeight = 18;
+      if (doc.brandLogoUrl) {
+        try {
+          const format = doc.brandLogoUrl.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+          pdf.addImage(doc.brandLogoUrl, format, centerX - logoWidth / 2, badgeY - logoHeight / 2, logoWidth, logoHeight, undefined, 'FAST');
+        } catch {
+          pdf.setFont(primaryFont, 'bold');
+          pdf.setFontSize(7);
+          pdf.setTextColor(...colorToRgb(cover.titleColor));
+          pdf.text(doc.brandName || 'BRAND LOGO', centerX, badgeY + 1, { align: 'center' });
+        }
+      } else if (doc.brandName) {
+        pdf.setFont(primaryFont, 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(...colorToRgb(cover.titleColor));
+        pdf.text(doc.brandName, centerX, badgeY + 1, { align: 'center' });
+      } else {
+        pdf.setFont(primaryFont, 'bold');
+        pdf.setFontSize(6);
+        pdf.setTextColor(...colorToRgb(cover.titleColor));
+        pdf.text('ADD LOGO IN BRAND MANAGER', centerX, badgeY + 1, { align: 'center' });
+      }
     }
 
     if (cover.showOrnamentalRule) {
