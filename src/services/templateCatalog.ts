@@ -405,7 +405,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
   ];
   const sections = [
     buildSection(
-      template, 0,
+      0,
       template.sectionTitles[0],
       template.description + '\n\nDrafting fields: [EFFECTIVE DATE] • [PROJECT / PROPERTY / ACCOUNT IDENTIFIER] • [AUTHORIZED TERRITORY OR LOCATION].',
       [
@@ -414,7 +414,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       ]
     ),
     buildSection(
-      template, 1,
+      1,
       template.sectionTitles[1],
       'This section allocates the operational duties associated with ' + template.focus + '. All deliverables and material dependencies should be entered in the schedule before work begins.',
       [
@@ -423,7 +423,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       ]
     ),
     buildSection(
-      template, 2,
+      2,
       template.sectionTitles[2],
       blueprint.moneyLead,
       [
@@ -432,7 +432,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       ]
     ),
     buildSection(
-      template, 3,
+      3,
       template.sectionTitles[3],
       blueprint.rightsLead + ' The rights schedule shall specify any retained rights, permitted uses, restrictions, required notices and record-retention period.',
       [
@@ -441,7 +441,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       ]
     ),
     buildSection(
-      template, 4,
+      4,
       template.sectionTitles[4],
       blueprint.riskLead,
       [
@@ -450,7 +450,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       ]
     ),
     buildSection(
-      template, 5,
+      5,
       template.sectionTitles[5],
       'All schedules, exhibits, technical requirements, property details, deliverable inventories and approved changes should be attached and identified by version. Notices shall be sent using the contact details completed below.',
       [
