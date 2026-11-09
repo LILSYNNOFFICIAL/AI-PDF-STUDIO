@@ -1056,7 +1056,10 @@ export default function App() {
           onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
           onQuickAIAction={handleQuickAIAction}
           onMoveSection={handleMoveSection}
-          onOpenDesign={() => setIsDesignModalOpen(true)}
+          onOpenDesign={(sectionId) => {
+            setActiveSectionId(sectionId);
+            setIsDesignModalOpen(true);
+          }}
           onInsertSignatureAtSelection={(target) => {
             setSignatureInsertionTarget(target);
             setInsertObjectTab('signature');
