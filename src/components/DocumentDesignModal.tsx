@@ -609,8 +609,92 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
             </div>
           )}
 
+          {tab === 'cover' && (
+            <div className="grid gap-5 xl:grid-cols-2">
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Cover page</h3>
+                <label className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] text-slate-200">
+                  <input type="checkbox" checked={design.coverPage.enabled} onChange={event => updateCover({ enabled: event.target.checked })} className="accent-blue-500" />
+                  Use a dedicated, professionally designed cover page
+                </label>
+                <label className="block text-[11px] text-slate-300">Cover style
+                  <select value={design.coverPage.style} onChange={event => updateCover({ style: event.target.value as DocumentDesign['coverPage']['style'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100">
+                    <option value="midnight-executive">Midnight Executive</option>
+                    <option value="art-deco">Art Deco</option>
+                    <option value="dark-luxury">Dark Luxury</option>
+                    <option value="editorial">Editorial</option>
+                    <option value="minimal">Minimal</option>
+                  </select>
+                </label>
+                <label className="block text-[11px] text-slate-300">Eyebrow / upper label
+                  <input value={design.coverPage.eyebrow} onChange={event => updateCover({ eyebrow: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="AGREEMENT • PRIVATE & CONFIDENTIAL" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Brand line / subtitle
+                  <input value={design.coverPage.brandLine} onChange={event => updateCover({ brandLine: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="COMPANY • DIVISION • DOCUMENT SERIES" />
+                </label>
+              </section>
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Cover palette & frame</h3>
+                <ColorFillControl label="Cover background" value={design.coverPage.background} fallback="#0b0d12" onChange={background => updateCover({ background })} />
+                <ColorControl label="Cover title" value={design.coverPage.titleColor} onChange={titleColor => updateCover({ titleColor })} />
+                <ColorControl label="Cover details" value={design.coverPage.detailColor} onChange={detailColor => updateCover({ detailColor })} />
+                <ColorControl label="Cover frame / accent" value={design.coverPage.borderColor} onChange={borderColor => updateCover({ borderColor })} />
+              </section>
+              <section className="col-span-full grid gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:grid-cols-3">
+                <h3 className="col-span-full text-xs font-semibold uppercase tracking-wide text-slate-300">Decorative elements</h3>
+                {([
+                  ['showFrame', 'Decorative frame'],
+                  ['showLogoPlaceholder', 'Brand / logo placeholder'],
+                  ['showOrnamentalRule', 'Ornamental divider']
+                ] as Array<[keyof DocumentDesign['coverPage'], string]>).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-[11px] text-slate-300">
+                    <input type="checkbox" checked={Boolean(design.coverPage[key])} onChange={event => updateCover({ [key]: event.target.checked } as Partial<DocumentDesign['coverPage'])} className="accent-blue-500" />
+                    {label}
+                  </label>
+                ))}
+              </section>
+              <section className="col-span-full rounded-xl border border-slate-700 p-4" style={{ background: fillToCss(design.coverPage.background) }}>
+                <div className="mx-auto flex min-h-[230px] max-w-2xl flex-col items-center justify-between border px-8 py-8 text-center" style={{ borderColor: design.coverPage.showFrame ? design.coverPage.borderColor : 'transparent', color: design.coverPage.titleColor }}>
+                  <span className="text-[10px] font-semibold tracking-[0.3em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.eyebrow.toUpperCase() || 'DOCUMENT'}</span>
+                  {design.coverPage.showLogoPlaceholder && <div className="flex h-10 w-10 items-center justify-center rounded-full border text-[7px] font-bold" style={{ borderColor: design.coverPage.borderColor }}>BRAND</div>}
+                  <div>
+                    <h3 className="text-2xl font-semibold" style={{ fontFamily: design.typography.headingFontFamily }}>{document.title}</h3>
+                    {design.coverPage.brandLine && <p className="mt-3 text-[10px] tracking-[0.18em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.brandLine}</p>}
+                  </div>
+                  <span className="h-px w-20" style={{ background: design.coverPage.borderColor }} />
+                  <span className="text-[10px]" style={{ color: design.coverPage.detailColor }}>{document.author}</span>
+                </div>
+              </section>
+            </div>
+          )}
+
           {tab === 'page' && (
             <div className="grid gap-6 md:grid-cols-2">
+              <section className="col-span-full rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-300">Paper size & print layout</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-[11px] text-slate-300">Page size
+                    <select value={pageConfigDraft.pageSize} onChange={event => updatePageConfigDraft({ pageSize: event.target.value as PageConfig['pageSize'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100"><option value="LETTER">US Letter</option><option value="LEGAL">US Legal</option><option value="A4">A4</option></select>
+                  </label>
+                  <label className="block text-[11px] text-slate-300">Orientation
+                    <select value={pageConfigDraft.orientation} onChange={event => updatePageConfigDraft({ orientation: event.target.value as PageConfig['orientation'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+                  </label>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-4">
+                  {(['top', 'bottom', 'left', 'right'] as const).map(side => (
+                    <label key={side} className="block text-[11px] capitalize text-slate-300">{side} margin (mm)
+                      <input type="number" min="0" max="60" step="0.5" value={pageConfigDraft.margins[side]} onChange={event => updatePageConfigDraft({ margins: { [side]: Number(event.target.value) } as PageConfig['margins'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={pageConfigDraft.showPageNumbers} onChange={event => updatePageConfigDraft({ showPageNumbers: event.target.checked })} className="accent-blue-500" /> Page numbers</label>
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={pageConfigDraft.firstPageDifferent} onChange={event => updatePageConfigDraft({ firstPageDifferent: event.target.checked })} className="accent-blue-500" /> Different first page furniture</label>
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300">Number format
+                    <select value={pageConfigDraft.pageNumberFormat} onChange={event => updatePageConfigDraft({ pageNumberFormat: event.target.value as PageConfig['pageNumberFormat'] })} className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-slate-100"><option value="PAGE_X_OF_Y">Page X of Y</option><option value="PAGE_X">Page X</option><option value="DASH_X_DASH">- X -</option></select>
+                  </label>
+                </div>
+              </section>
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Page Background</h3>
                 <ColorFillControl
@@ -647,6 +731,48 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 ] as Array<[keyof DocumentDesign['colors'], string]>).map(([key, label]) => (
                   <ColorControl key={key} label={label} value={design.colors[key]} onChange={value => updateColor(key, value)} />
                 ))}
+              </section>
+            </div>
+          )}
+
+          {tab === 'layout' && (
+            <div className="grid gap-5 md:grid-cols-2">
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Document rhythm</h3>
+                <label className="block text-[11px] text-slate-300">Section heading style
+                  <select value={design.layoutDefaults.sectionHeadingStyle} onChange={event => updateLayout({ sectionHeadingStyle: event.target.value as DocumentDesign['layoutDefaults']['sectionHeadingStyle'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100">
+                    <option value="editorial-rule">Editorial rule</option>
+                    <option value="numbered-card">Numbered card</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="banner">Full-width banner</option>
+                  </select>
+                </label>
+                <label className="block text-[11px] text-slate-300">Space between sections (px)
+                  <input type="number" min="0" max="100" value={design.layoutDefaults.sectionSpacing} onChange={event => updateLayout({ sectionSpacing: Number(event.target.value) })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Section padding (px)
+                  <input type="number" min="0" max="60" value={design.layoutDefaults.sectionPadding} onChange={event => updateLayout({ sectionPadding: Number(event.target.value) })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Paragraph first-line indent (px)
+                  <input type="number" min="0" max="30" value={design.layoutDefaults.paragraphIndent} onChange={event => updateLayout({ paragraphIndent: Number(event.target.value) })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                </label>
+              </section>
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Page furniture</h3>
+                <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={design.layoutDefaults.headerRule} onChange={event => updateLayout({ headerRule: event.target.checked })} className="accent-blue-500" /> Show running header rule</label>
+                <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={design.layoutDefaults.footerRule} onChange={event => updateLayout({ footerRule: event.target.checked })} className="accent-blue-500" /> Show running footer rule</label>
+                <p className="text-[10px] leading-relaxed text-slate-500">These settings apply to the live editor and PDF renderer. Section and page spacing use the same saved design values.</p>
+              </section>
+              <section className="col-span-full rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Heading style preview</h3>
+                <div className={'mt-3 flex items-center gap-3 ' + (design.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded px-3 py-3' : design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded border p-2' : 'pb-2')} style={{
+                  background: design.layoutDefaults.sectionHeadingStyle === 'banner' ? design.colors.primary : 'transparent',
+                  borderBottom: design.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '1px solid ' + design.colors.border : 'none',
+                  borderColor: design.colors.border
+                }}>
+                  <span className="rounded px-2 py-1 font-mono text-xs font-bold" style={{ color: design.colors.accent, background: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.sectionSurface : 'transparent' }}>1.0</span>
+                  <span className="text-lg font-semibold" style={{ color: design.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>Professional Section Heading</span>
+                </div>
               </section>
             </div>
           )}
