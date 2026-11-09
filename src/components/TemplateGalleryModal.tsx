@@ -188,42 +188,45 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                     const previewTheme = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === selectedThemeId) || selectedTheme;
                     const isSelected = selectedTemplate?.id === template.id;
                     const isFavorite = favoriteIds.includes(template.id);
-                    return (
-                      <button
-                        key={template.id}
-                        onClick={() => setSelectedTemplateId(template.id)}
-                        aria-pressed={isSelected}
-                        className={'group relative overflow-hidden rounded-xl border p-3 text-left transition-all ' + (isSelected ? 'border-amber-400/70 bg-amber-400/[0.06] shadow-lg shadow-amber-950/20' : 'border-slate-800 bg-[#101722] hover:border-slate-600 hover:bg-[#141d2a]')}
-                      >
-                        <div className="relative mb-3 flex h-[118px] items-center justify-center overflow-hidden rounded-lg border p-2" style={{ background: fillToCss(previewTheme.coverPage.background), borderColor: previewTheme.coverPage.borderColor }}>
-                          <div className="flex h-full w-full max-w-[180px] flex-col items-center justify-center border px-3 text-center" style={{ borderColor: previewTheme.coverPage.showFrame ? previewTheme.coverPage.borderColor : 'transparent' }}>
-                            <span className="text-[6px] font-semibold tracking-[0.2em]" style={{ color: previewTheme.coverPage.detailColor }}>{previewTheme.coverPage.eyebrow}</span>
-                            <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight" style={{ color: previewTheme.coverPage.titleColor, fontFamily: previewTheme.typography.headingFontFamily }}>{template.title}</span>
-                            {previewTheme.coverPage.showOrnamentalRule && <span className="mt-2 h-px w-8" style={{ background: previewTheme.coverPage.borderColor }} />}
-                            <div className="mt-auto flex gap-1 pb-1">
-                              {[previewTheme.colors.primary, previewTheme.colors.secondary, previewTheme.colors.accent, previewTheme.colors.border].map((color, index) => <span key={index} className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />)}
+                      return (
+                        <article
+                          key={template.id}
+                          className={'group relative overflow-hidden rounded-xl border p-3 text-left transition-all ' + (isSelected ? 'border-amber-400/70 bg-amber-400/[0.06] shadow-lg shadow-amber-950/20' : 'border-slate-800 bg-[#101722] hover:border-slate-600 hover:bg-[#141d2a]')}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTemplateId(template.id)}
+                            aria-pressed={isSelected}
+                            className="w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                          >
+                            <div className="relative mb-3 flex h-[118px] items-center justify-center overflow-hidden rounded-lg border p-2" style={{ background: fillToCss(previewTheme.coverPage.background), borderColor: previewTheme.coverPage.borderColor }}>
+                              <div className="flex h-full w-full max-w-[180px] flex-col items-center justify-center border px-3 text-center" style={{ borderColor: previewTheme.coverPage.showFrame ? previewTheme.coverPage.borderColor : 'transparent' }}>
+                                <span className="text-[6px] font-semibold tracking-[0.2em]" style={{ color: previewTheme.coverPage.detailColor }}>{previewTheme.coverPage.eyebrow}</span>
+                                <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight" style={{ color: previewTheme.coverPage.titleColor, fontFamily: previewTheme.typography.headingFontFamily }}>{template.title}</span>
+                                {previewTheme.coverPage.showOrnamentalRule && <span className="mt-2 h-px w-8" style={{ background: previewTheme.coverPage.borderColor }} />}
+                                <div className="mt-auto flex gap-1 pb-1">
+                                  {[previewTheme.colors.primary, previewTheme.colors.secondary, previewTheme.colors.accent, previewTheme.colors.border].map((color, index) => <span key={index} className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />)}
+                                </div>
+                              </div>
+                              <span className="absolute bottom-2 right-2 rounded bg-black/50 px-1.5 py-1 text-[7px] uppercase tracking-wider text-white/70">{previewTheme.name}</span>
                             </div>
-                          </div>
-                          <span className="absolute bottom-2 right-2 rounded bg-black/50 px-1.5 py-1 text-[7px] uppercase tracking-wider text-white/70">{previewTheme.name}</span>
-                        </div>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <span className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-300/80">{template.category}</span>
-                            <span className="block text-xs font-semibold leading-snug text-slate-100">{template.title}</span>
-                          </div>
+                            <div className="min-w-0 pr-8">
+                              <span className="mb-1 block text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-300/80">{template.category}</span>
+                              <span className="block text-xs font-semibold leading-snug text-slate-100">{template.title}</span>
+                            </div>
+                            <p className="mt-2 line-clamp-2 text-[10px] leading-relaxed text-slate-500">{template.description}</p>
+                            {isSelected && <span className="mt-3 inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-amber-200">Selected <ArrowRight className="h-3 w-3" /></span>}
+                          </button>
                           <button
                             type="button"
                             aria-label={(isFavorite ? 'Remove ' : 'Add ') + template.title + (isFavorite ? ' from favorites' : ' to favorites')}
-                            onClick={event => { event.stopPropagation(); toggleFavorite(template.id); }}
-                            className={'rounded-lg p-1.5 transition-colors ' + (isFavorite ? 'text-rose-300 hover:bg-rose-500/10' : 'text-slate-600 hover:bg-slate-700 hover:text-rose-300')}
+                            onClick={() => toggleFavorite(template.id)}
+                            className={'absolute right-3 top-3 rounded-lg border border-slate-700/60 bg-slate-950/80 p-1.5 transition-colors ' + (isFavorite ? 'text-rose-300 hover:bg-rose-500/10' : 'text-slate-500 hover:bg-slate-700 hover:text-rose-300')}
                           >
                             <Heart className="h-3.5 w-3.5" fill={isFavorite ? 'currentColor' : 'none'} />
                           </button>
-                        </div>
-                        <p className="mt-2 line-clamp-2 text-[10px] leading-relaxed text-slate-500">{template.description}</p>
-                        {isSelected && <span className="mt-3 inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-amber-200">Selected <ArrowRight className="h-3 w-3" /></span>}
-                      </button>
-                    );
+                        </article>
+                      );
                   })}
                 </div>
               ) : (
