@@ -377,6 +377,171 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     </div>
   ));
 
+  const openContextMenu = (event: React.MouseEvent, target: LocalContextTarget) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({ x: event.clientX, y: event.clientY, target });
+  };
+
+  const updateTextSelection = (target: Extract<LocalContextTarget, { type: 'text' }>, replacement: string) => {
+    const section = document.sections.find(item => item.id === target.sectionId);
+    if (!section) return;
+    const content = section.content || '';
+    const start = Math.max(0, Math.min(content.length, target.start));
+    const end = Math.max(start, Math.min(content.length, target.end));
+    const nextContent = content.slice(0, start) + replacement + content.slice(end);
+    const delta = replacement.length - (end - start);
+    const shift = (position: number) => position >= end && end > start
+      ? position + delta
+      : position > start && position < end ? start + replacement.length : position;
+    onUpdateSection({
+      ...section,
+      content: nextContent,
+      signatureBlocks: (section.signatureBlocks || []).map(block => ({ ...block, position: shift(block.position) })),
+      ...(typeof section.imageMarkerPosition === 'number' ? { imageMarkerPosition: shift(section.imageMarkerPosition) } : {})
+    });
+    window.requestAnimationFrame(() => {
+      target.element.focus();
+      const caret = Math.max(0, Math.min(target.element.value.length, target.localStart + replacement.length));
+      target.element.setSelectionRange(caret, caret);
+    });
+  };
+
+  const copyText = async (value: string) => {
+    if (!value) return;
+    try {
+      await window.navigator.clipboard.writeText(value);
+    } catch {
+      const temporary = window.document.createElement('textarea');
+      temporary.value = value;
+      temporary.style.position = 'fixed';
+      temporary.style.opacity = '0';
+      window.document.body.appendChild(temporary);
+      temporary.select();
+      const copied = window.document.execCommand('copy');
+      temporary.remove();
+      if (!copied) window.alert('Clipboard access was blocked by the browser.');
+    }
+  };
+
+  const buildContextMenuItems = (target: LocalContextTarget): ContextMenuItem[] => {
+    const section = 'sectionId' in target ? document.sections.find(item => item.id === target.sectionId) : undefined;
+    const item = (id: string, label: string, onSelect: () => void, options: Partial<ContextMenuItem> = {}): ContextMenuItem => ({ id, label, onSelect, ...options });
+    if (target.type === 'text') {
+      const selected = target.end > target.start;
+      return [
+        item('cut', 'Cut', () => { void copyText(target.selectedText); updateTextSelection(target, ''); }, { shortcut: 'Ctrl+X', disabled: !selected }),
+        item('copy', 'Copy', () => { void copyText(target.selectedText); }, { shortcut: 'Ctrl+C', disabled: !selected }),
+        item('paste', 'Paste', async () => {
+          try { updateTextSelection(target, await window.navigator.clipboard.readText()); }
+          catch { window.alert('Clipboard read access is not available. Use Ctrl+V instead.'); }
+        }, { shortcut: 'Ctrl+V', disabled: !window.navigator.clipboard?.readText }),
+        item('select-all', 'Select all text', () => { target.element.focus(); target.element.select(); }, { shortcut: 'Ctrl+A' }),
+        item('insert-signature', 'Insert signature block', () => onInsertSignatureAtSelection?.({
+          sectionId: target.sectionId, start: target.start, end: target.end, selectedText: target.selectedText
+        }))
+      ];
+    }
+    if (!section) return [];
+
+    if (target.type === 'section') {
+      return [
+        item('add-clause', 'Add clause', () => handleAddClauseToSection(section)),
+        item('duplicate-section', 'Duplicate section', () => onDuplicateSection(section.id)),
+        item('move-section-up', 'Move section up', () => onMoveSection?.(section.id, 'up'), { disabled: !onMoveSection || document.sections[0]?.id === section.id }),
+        item('move-section-down', 'Move section down', () => onMoveSection?.(section.id, 'down'), { disabled: !onMoveSection || document.sections[document.sections.length - 1]?.id === section.id }),
+        item('toggle-page-break', section.forcePageBreakBefore ? 'Remove page break' : 'Insert page break', () => handleTogglePageBreak(section)),
+        item('edit-section-design', 'Customize document design', () => onOpenDesign?.(section.id), { disabled: !onOpenDesign }),
+        item('delete-section', 'Delete section', () => onDeleteSection(section.id), { destructive: true })
+      ];
+    }
+    if (target.type === 'clause') {
+      const clauseIndex = section.clauses.findIndex(clause => clause.id === target.clauseId);
+      const clause = section.clauses[clauseIndex];
+      if (!clause) return [];
+      return [
+        item('copy-clause', 'Copy clause text', () => { void copyText([clause.heading, clause.content].filter(Boolean).join('\n')); }),
+        item('add-clause-after', 'Add clause after', () => {
+          const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1';
+          const next = [...section.clauses];
+          next.splice(clauseIndex + 1, 0, { id: 'cl_' + Date.now(), clauseNumber: prefix + '.' + (clauseIndex + 2), heading: 'New Provision', content: 'Enter the provision text here.', orderIndex: clauseIndex + 2 });
+          onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
+        }),
+        item('duplicate-clause', 'Duplicate clause', () => {
+          const next = [...section.clauses];
+          next.splice(clauseIndex + 1, 0, { ...clause, id: 'cl_' + Date.now(), clauseNumber: clause.clauseNumber + 'A' });
+          onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
+        }),
+        item('delete-clause', 'Delete clause', () => handleDeleteClause(section, clause.id), { destructive: true })
+      ];
+    }
+    if (target.type === 'image') {
+      const image = (section.images || []).find(entry => entry.id === target.imageId);
+      if (!image) return [];
+      const update = (patch: Partial<ImageBlock>) => onUpdateSection({ ...section, images: (section.images || []).map(entry => entry.id === image.id ? { ...entry, ...patch } : entry) });
+      return [
+        item('align-left', 'Align left', () => update({ alignment: 'left' })),
+        item('align-center', 'Align center', () => update({ alignment: 'center' })),
+        item('align-right', 'Align right', () => update({ alignment: 'right' })),
+        item('increase-image-size', 'Increase image size', () => update({ widthPercent: Math.min(100, (image.widthPercent || 80) + 10) }), { disabled: (image.widthPercent || 80) >= 100 }),
+        item('decrease-image-size', 'Decrease image size', () => update({ widthPercent: Math.max(20, (image.widthPercent || 80) - 10) }), { disabled: (image.widthPercent || 80) <= 20 }),
+        item('edit-caption', 'Edit caption', () => { const value = window.prompt('Image caption', image.caption || ''); if (value !== null) update({ caption: value }); }),
+        item('edit-alt-text', 'Edit alternative text', () => { const value = window.prompt('Alternative text', image.altText || ''); if (value !== null) update({ altText: value }); }),
+        item('delete-image', 'Delete image', () => onUpdateSection({ ...section, images: (section.images || []).filter(entry => entry.id !== image.id) }), { destructive: true })
+      ];
+    }
+    if (target.type === 'table') {
+      const tableIndex = (section.tables || []).findIndex(table => table.id === target.tableId);
+      if (!section.tables?.[tableIndex]) return [];
+      return [
+        item('add-table-row', 'Add row', () => handleAddRow(section, tableIndex)),
+        item('add-table-column', 'Add column', () => handleAddColumn(section, tableIndex)),
+        item('delete-table', 'Delete table', () => handleDeleteTable(section, tableIndex), { destructive: true })
+      ];
+    }
+    if (target.type === 'signature') {
+      const block = (section.signatureBlocks || []).find(entry => entry.id === target.signatureId);
+      if (!block) return [];
+      return [
+        item('edit-signature', 'Edit signature fields', () => {
+          const input = window.document.getElementById('signature-block-' + block.id)?.querySelector('input') as HTMLInputElement | null;
+          input?.focus();
+        }),
+        item('duplicate-signature', 'Duplicate signature block', () => {
+          const duplicate = { ...block, id: 'signature_' + Date.now(), fields: block.fields.map(field => ({ ...field })) };
+          onUpdateSection({ ...section, signatureBlocks: [...(section.signatureBlocks || []), duplicate].sort((left, right) => left.position - right.position) });
+        }),
+        item('toggle-signature-method', 'Change signature method', () => {
+          const method = block.signatureMode === 'line' ? 'typed' : block.signatureMode === 'typed' ? 'drawn' : 'line';
+          onUpdateSection({ ...section, signatureBlocks: (section.signatureBlocks || []).map(entry => entry.id === block.id ? { ...entry, signatureMode: method } : entry) });
+        }),
+        item('delete-signature', 'Delete signature block', () => onUpdateSection({ ...section, signatureBlocks: (section.signatureBlocks || []).filter(entry => entry.id !== block.id) }), { destructive: true })
+      ];
+    }
+    return [];
+  };
+
+  const buildPartySignatureItems = (partyId: string, partyIndex: number): ContextMenuItem[] => {
+    const party = document.signatures?.parties[partyIndex];
+    if (!party || party.id !== partyId || !document.signatures) return [];
+    return [
+      { id: 'edit-signature', label: 'Edit signatory fields', onSelect: () => {
+        const input = window.document.getElementById('signature-party-' + party.id)?.querySelector('input') as HTMLInputElement | null;
+        input?.focus();
+      } },
+      { id: 'duplicate-signature', label: 'Duplicate signatory block', onSelect: () => onUpdateSignatures({ ...document.signatures!, parties: [...document.signatures!.parties, { ...party, id: 'party_' + Date.now() }] }) },
+      { id: 'toggle-signature-method', label: party.signed ? 'Mark as unsigned' : 'Mark as signed', onSelect: () => onUpdateSignatures({ ...document.signatures!, parties: document.signatures!.parties.map(entry => entry.id === party.id ? { ...entry, signed: !entry.signed } : entry) }) },
+      { id: 'delete-signature', label: 'Delete signatory block', destructive: true, onSelect: () => onUpdateSignatures({ ...document.signatures!, parties: document.signatures!.parties.filter(entry => entry.id !== party.id) }) }
+    ];
+  };
+
+  const contextMenuItems = contextMenu
+    ? contextMenu.target.type === 'party-signature'
+      ? buildPartySignatureItems(contextMenu.target.partyId, contextMenu.target.partyIndex)
+      : buildContextMenuItems(contextMenu.target)
+    : [];
+
+
 
   return (
     <div className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-4 sm:p-8 relative">
