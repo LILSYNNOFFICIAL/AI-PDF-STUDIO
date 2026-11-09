@@ -553,7 +553,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           {true && (
             <div
               className="pb-2 mb-8 flex items-center justify-between text-[11px] font-sans tracking-wider uppercase"
-              style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` }}
+              style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: documentDesign.layoutDefaults.headerRule ? `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` : "none" }}
             >
               <input aria-label="Running page header" value={document.pageConfig.headerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, headerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
               <span>CONFIDENTIAL</span>
@@ -688,17 +688,34 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   </div>
 
                   {/* Section Heading */}
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <input type="text" aria-label="Section number" value={section.sectionNumber} onChange={event => onUpdateSection({ ...section, sectionNumber: event.target.value })} className="w-16 shrink-0 bg-transparent font-mono text-xs font-bold outline-none" style={{ color: sectionStyle.headingColor }} />
-                    <input 
-                      type="text" 
-                      value={section.title}
-                      onChange={(e) => onUpdateSection({ ...section, title: e.target.value })}
-                      aria-label="Section Title"
-                      style={{ fontSize: `${documentDesign.typography.heading2Size || document.styles.heading2Size || 13}pt`, color: sectionStyle.headingColor, fontFamily: documentDesign.typography.headingFontFamily }}
-                      className="font-bold flex-1 bg-transparent hover:bg-slate-100/50 focus:bg-white rounded px-1.5 py-0.5 border border-transparent focus:border-blue-400 focus:outline-none"
-                    />
-                  </div>
+                   <div
+                     className={'mb-3 flex items-baseline gap-2 ' + (documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded-md px-3 py-2' : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded-md px-2 py-2' : '')}
+                     style={{
+                       background: documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? documentDesign.colors.primary : 'transparent',
+                       borderBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? `1px solid ${documentDesign.colors.border}` : 'none',
+                       paddingBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '8px' : undefined
+                     }}
+                   >
+                     <input
+                       type="text"
+                       aria-label="Section number"
+                       value={section.sectionNumber}
+                       onChange={event => onUpdateSection({ ...section, sectionNumber: event.target.value })}
+                       className={'w-16 shrink-0 bg-transparent font-mono text-xs font-bold outline-none ' + (documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded px-2 py-1 text-center' : '')}
+                       style={{
+                         color: documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? documentDesign.colors.accent : sectionStyle.headingColor,
+                         background: documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? documentDesign.colors.sectionSurface : 'transparent'
+                       }}
+                     />
+                     <input
+                       type="text"
+                       value={section.title}
+                       onChange={(e) => onUpdateSection({ ...section, title: e.target.value })}
+                       aria-label="Section Title"
+                       style={{ fontSize: `${documentDesign.typography.heading2Size || document.styles.heading2Size || 13}pt`, color: documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : sectionStyle.headingColor, fontFamily: documentDesign.typography.headingFontFamily }}
+                       className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1.5 py-0.5 font-bold hover:bg-slate-100/50 focus:border-blue-400 focus:bg-white focus:outline-none"
+                     />
+                   </div>
 
                   {/* Text areas and inline objects share offsets so inserted signature blocks stay anchored to their text. */}
                   <div className="mb-3">
