@@ -39,6 +39,7 @@ interface MobileWorkspaceProps {
   onNewDocument: () => void;
   onNewBlankDocument: () => void;
   onOpenTemplate: (name: string) => void;
+  onOpenTemplateGallery: () => void;
   onExportJson: () => void;
   onImportJson: () => void;
   onExportMarkdown: () => void;
@@ -182,6 +183,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
             <div className="mobile-tools-grid">
               {tool('Source of Truth / Render', <FileText size={20}/>, props.onOpenSourceTruth)}
               {tool('Document design', <Palette size={20}/>, props.onOpenDesign)}
+              {tool('Template gallery', <FileText size={20}/>, props.onOpenTemplateGallery)}
               {tool('New document', <FilePlus2 size={20}/>, props.onNewDocument)}
               {tool('Blank document', <FileText size={20}/>, props.onNewBlankDocument)}
               {tool('Find & replace', <Search size={20}/>, props.onFindReplace)}
@@ -202,7 +204,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
               {tool('Copy document', <FileText size={20}/>, props.onCopyDocumentText)}
             </div>
             <div className="mobile-template-row">
-              <label htmlFor="mobile-template">Start from a template</label>
+              <label htmlFor="mobile-template">Legacy starter templates</label>
               <select id="mobile-template" defaultValue="" onChange={e => {
                 if (e.target.value) props.onOpenTemplate(e.target.value);
                 e.target.value = '';
