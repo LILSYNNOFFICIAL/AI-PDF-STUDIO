@@ -346,7 +346,7 @@ export function getTemplateById(id: string): DocumentTemplateDefinition | undefi
 }
 
 export function searchTemplates(query: string, category?: string): DocumentTemplateDefinition[] {
-  const searchTerms = query.trim().toLowerCase().split(/\\s+/).filter(Boolean);
+  const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return DOCUMENT_TEMPLATE_CATALOG.filter(template => {
     if (category && template.category !== category) return false;
     if (!searchTerms.length) return true;
