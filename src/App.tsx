@@ -1104,6 +1104,7 @@ export default function App() {
         onNewDocument={handleNewDocument}
         onNewBlankDocument={handleNewBlankDocument}
         onOpenTemplate={handleOpenTemplate}
+        onOpenTemplateGallery={() => setIsTemplateGalleryOpen(true)}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onExportMarkdown={handleExportMarkdown}
