@@ -46,8 +46,8 @@ test('PDF places an inline signature panel between the surrounding section text'
   const doc = buildDocumentFromPrompt('Signature block PDF placement').updatedDoc;
   const before = 'INLINE-SIGNATURE-BEFORE';
   const after = 'INLINE-SIGNATURE-AFTER';
-  const signatureText = 'INLINE-SIGNATURE-JARRED';
-  const content = before + '\\n' + after;
+  const signatureText = 'Jarred Gainer';
+  const content = before + '\n' + after;
   doc.sections = [{
     ...doc.sections[0],
     content,
