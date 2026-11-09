@@ -320,6 +320,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         {/* INSERT MENU */}
         <div className="relative">
           <button
+            onMouseDown={event => event.preventDefault()}
             onClick={() => handleMenuClick('insert')}
             onMouseEnter={() => handleMenuHover('insert')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
