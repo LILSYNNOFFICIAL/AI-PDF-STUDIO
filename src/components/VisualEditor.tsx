@@ -391,6 +391,85 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
         className="transition-transform duration-150 ease-out"
       >
+        {documentDesign.coverPage.enabled && (
+          <section
+            role="region"
+            aria-label="Document Cover Page"
+            className="relative mb-8 flex min-h-[1050px] w-[820px] flex-col items-center justify-between overflow-hidden px-16 py-24 text-center shadow-2xl"
+            style={{
+              boxSizing: 'border-box',
+              background: fillToCss(documentDesign.coverPage.background),
+              color: documentDesign.coverPage.titleColor,
+              fontFamily: documentDesign.typography.headingFontFamily,
+              border: documentDesign.coverPage.showFrame ? `1px solid ${documentDesign.coverPage.borderColor}` : '1px solid transparent'
+            }}
+          >
+            {documentDesign.coverPage.showFrame && (
+              <>
+                <div className="pointer-events-none absolute inset-4 border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.9 }} />
+                <div className="pointer-events-none absolute inset-[22px] border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.45 }} />
+                {documentDesign.coverPage.style === 'art-deco' && (
+                  <div className="pointer-events-none absolute inset-9 border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.28 }} />
+                )}
+              </>
+            )}
+            <div className="relative z-10 flex w-full flex-col items-center">
+              <div className="text-[11px] font-semibold tracking-[0.35em]" style={{ color: documentDesign.coverPage.detailColor }}>
+                {documentDesign.coverPage.eyebrow.toUpperCase()}
+              </div>
+              {documentDesign.coverPage.showLogoPlaceholder && (
+                <div className="mt-9 flex h-16 w-16 items-center justify-center rounded-full border text-[9px] font-bold tracking-[0.25em]" style={{ borderColor: documentDesign.coverPage.borderColor, color: documentDesign.coverPage.titleColor }}>
+                  BRAND
+                </div>
+              )}
+              {documentDesign.coverPage.showOrnamentalRule && (
+                <div className="mt-12 flex w-44 items-center justify-center gap-3">
+                  <span className="h-px flex-1" style={{ background: documentDesign.coverPage.borderColor }} />
+                  <span className="h-2 w-2 rotate-45 border" style={{ borderColor: documentDesign.coverPage.borderColor }} />
+                  <span className="h-px flex-1" style={{ background: documentDesign.coverPage.borderColor }} />
+                </div>
+              )}
+            </div>
+            <div className="relative z-10 mx-auto my-16 w-full max-w-[630px]">
+              <h1
+                contentEditable
+                suppressContentEditableWarning
+                aria-label="Cover document title"
+                onBlur={event => onUpdateDocument({ ...document, title: event.currentTarget.textContent || '', updatedAt: new Date().toISOString() })}
+                className="outline-none"
+                style={{
+                  color: documentDesign.coverPage.titleColor,
+                  fontFamily: documentDesign.typography.headingFontFamily,
+                  fontSize: `${Math.max(30, documentDesign.typography.heading1Size + 6)}pt`,
+                  lineHeight: 1.12,
+                  fontWeight: 600,
+                  letterSpacing: documentDesign.coverPage.style === 'art-deco' ? '0.055em' : '0.01em'
+                }}
+              >
+                {document.title}
+              </h1>
+              {documentDesign.coverPage.brandLine.trim() && (
+                <p className="mx-auto mt-8 max-w-[540px] text-[11px] font-semibold tracking-[0.24em]" style={{ color: documentDesign.coverPage.detailColor }}>
+                  {documentDesign.coverPage.brandLine}
+                </p>
+              )}
+              <div className="mx-auto mt-8 h-px w-24" style={{ background: documentDesign.coverPage.borderColor }} />
+            </div>
+            <div className="relative z-10 flex w-full flex-col items-center gap-2 pb-3 font-sans">
+              <span className="text-[10px] font-semibold tracking-[0.3em]" style={{ color: documentDesign.coverPage.detailColor }}>PREPARED BY</span>
+              <input
+                aria-label="Cover document author"
+                value={document.author}
+                onChange={event => onUpdateDocument({ ...document, author: event.target.value })}
+                className="w-full max-w-[420px] bg-transparent text-center text-lg font-medium outline-none"
+                style={{ color: documentDesign.coverPage.titleColor }}
+              />
+              <span className="text-xs tracking-widest" style={{ color: documentDesign.coverPage.detailColor }}>
+                {new Date(document.updatedAt).toLocaleDateString()}
+              </span>
+            </div>
+          </section>
+        )}
         <main 
           role="main"
           aria-label="Document Canvas"
@@ -400,7 +479,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             paddingBottom: `${document.pageConfig.margins.bottom * 1.5}px`,
             paddingLeft: `${document.pageConfig.margins.left * 1.5}px`,
             paddingRight: `${document.pageConfig.margins.right * 1.5}px`,
-            background: fillToCss(documentDesign.page.firstPageBackground || documentDesign.page.background),
+            background: fillToCss(documentDesign.coverPage.enabled
+              ? documentDesign.page.background
+              : documentDesign.page.firstPageBackground || documentDesign.page.background),
             color: documentDesign.colors.bodyText,
             fontFamily: documentDesign.typography.bodyFontFamily,
             fontSize: `${documentDesign.typography.bodyFontSize}pt`,
@@ -486,7 +567,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             </div>
           )}
 
-          {/* Document Title Header */}
+          {/* Document Title Header. A dedicated cover replaces this repeated title block in the body. */}
+          {!documentDesign.coverPage.enabled && (
           <div className="text-center pb-8 mb-8" style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
             <h1
               contentEditable
@@ -518,9 +600,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               <input aria-label="Document author" value={document.author} onChange={event => onUpdateDocument({ ...document, author: event.target.value })} className="w-28 bg-transparent text-center outline-none" />
             </div>
           </div>
+          )}
 
           {/* Sections List */}
-          <div className="space-y-8">
+          <div className="flex flex-col" style={{ gap: documentDesign.layoutDefaults.sectionSpacing }}>
             {document.sections.map((section) => {
               const isActive = activeSectionId === section.id;
               const isAppendix = section.isAppendix || section.sectionNumber.includes('APPENDIX');
