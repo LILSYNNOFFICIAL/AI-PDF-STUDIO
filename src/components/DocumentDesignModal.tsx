@@ -34,7 +34,7 @@ interface DocumentDesignModalProps {
   onResetAllOverrides: () => void;
 }
 
-type TabId = 'presets' | 'page' | 'typography' | 'section' | 'table' | 'saved';
+type TabId = 'presets' | 'page' | 'typography' | 'section' | 'table' | 'signatures' | 'saved';
 
 function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -440,6 +440,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
     { id: 'typography', label: 'Typography' },
     { id: 'section', label: 'Sections' },
     { id: 'table', label: 'Tables' },
+    { id: 'signatures', label: 'Signatures' },
     { id: 'saved', label: 'My Themes' }
   ];
 
@@ -667,6 +668,84 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <button onClick={() => selectedSection && selectedTable && onApplyTableDesign(selectedSection.id, selectedTable.id, tableDraft)} disabled={!selectedSection || !selectedTable} className="rounded bg-blue-600 px-3 py-2 text-xs font-semibold hover:bg-blue-500 disabled:opacity-40">Apply to this table</button>
                 <button onClick={() => selectedSection && selectedTable && onResetTableDesign(selectedSection.id, selectedTable.id)} disabled={!selectedSection || !selectedTable} className="rounded border border-slate-700 px-3 py-2 text-xs hover:bg-slate-800 disabled:opacity-40">Reset table override</button>
               </div>
+            </div>
+          )}
+
+          {tab === 'signatures' && (
+            <div className="grid gap-5 md:grid-cols-2">
+              <section className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Signature Block Appearance</h3>
+                <ColorFillControl
+                  label="Block background"
+                  value={design.signatureDefaults.background}
+                  fallback="#f8fafc"
+                  onChange={background => setDesign(current => ({
+                    ...current,
+                    signatureDefaults: { ...current.signatureDefaults, background }
+                  }))}
+                />
+                <ColorControl
+                  label="Field text"
+                  value={design.signatureDefaults.textColor}
+                  onChange={textColor => setDesign(current => ({
+                    ...current,
+                    signatureDefaults: { ...current.signatureDefaults, textColor }
+                  }))}
+                />
+                <ColorControl
+                  label="Field labels"
+                  value={design.signatureDefaults.labelColor}
+                  onChange={labelColor => setDesign(current => ({
+                    ...current,
+                    signatureDefaults: { ...current.signatureDefaults, labelColor }
+                  }))}
+                />
+              </section>
+              <section className="space-y-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Border & Spacing</h3>
+                <ColorControl
+                  label="Border color"
+                  value={design.signatureDefaults.border.color}
+                  onChange={color => setDesign(current => ({
+                    ...current,
+                    signatureDefaults: { ...current.signatureDefaults, border: { ...current.signatureDefaults.border, color } }
+                  }))}
+                />
+                <label className="block text-[11px] text-slate-300">Border style
+                  <select
+                    value={design.signatureDefaults.border.style}
+                    onChange={event => setDesign(current => ({
+                      ...current,
+                      signatureDefaults: { ...current.signatureDefaults, border: { ...current.signatureDefaults.border, style: event.target.value as any } }
+                    }))}
+                    className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100"
+                  >
+                    <option value="none">None</option><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option><option value="double">Double</option>
+                  </select>
+                </label>
+                <label className="block text-[11px] text-slate-300">Border width (pt)
+                  <input type="number" min="0" max="10" step="0.25" value={design.signatureDefaults.border.width} onChange={event => setDesign(current => ({
+                    ...current,
+                    signatureDefaults: { ...current.signatureDefaults, border: { ...current.signatureDefaults.border, width: Number(event.target.value) } }
+                  }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Inner padding (px)
+                  <input type="number" min="0" max="60" value={design.signatureDefaults.padding} onChange={event => setDesign(current => ({
+                    ...current,
+                    signatureDefaults: { ...current.signatureDefaults, padding: Number(event.target.value) }
+                  }))} className="mt-1 block w-full rounded border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100" />
+                </label>
+              </section>
+              <section className="col-span-full rounded-lg border p-4" style={{ background: fillToCss(design.signatureDefaults.background), borderColor: design.signatureDefaults.border.color, borderWidth: design.signatureDefaults.border.width, borderStyle: design.signatureDefaults.border.style === 'none' ? 'none' : design.signatureDefaults.border.style, padding: design.signatureDefaults.padding }}>
+                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: design.signatureDefaults.labelColor }}>Signature block preview</div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 text-xs" style={{ color: design.signatureDefaults.textColor }}>
+                  <div><span className="block text-[10px] uppercase" style={{ color: design.signatureDefaults.labelColor }}>Legal name</span>Jarred Gainer</div>
+                  <div><span className="block text-[10px] uppercase" style={{ color: design.signatureDefaults.labelColor }}>Artist name</span>LIL SYNN</div>
+                  <div><span className="block text-[10px] uppercase" style={{ color: design.signatureDefaults.labelColor }}>Label</span>SYNTIENT RECORDS</div>
+                  <div><span className="block text-[10px] uppercase" style={{ color: design.signatureDefaults.labelColor }}>Date</span>______________________</div>
+                  <div className="sm:col-span-2"><span className="block text-[10px] uppercase" style={{ color: design.signatureDefaults.labelColor }}>Signature</span><div className="mt-5 border-b" style={{ borderColor: design.signatureDefaults.textColor }} /></div>
+                </div>
+              </section>
             </div>
           )}
 
