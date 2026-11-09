@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { DocumentContextMenu } from './DocumentContextMenu';
 import { getContextMenuActionIds, type ContextMenuItem, type DocumentContextTargetType } from '../services/contextMenu';
 import { 
@@ -72,8 +72,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     | { type: 'header-image'; imageId: string }
     | { type: 'table'; sectionId: string; tableId: string }
     | { type: 'signature'; sectionId: string; signatureId: string }
-    | { type: 'party-signature'; partyId: string; partyIndex: number };
+    | { type: 'party-signature'; partyId: string; partyIndex: number }
+    | { type: 'document' }
+    | { type: 'cover-logo' }
+    | { type: 'cover-text'; field: 'eyebrow' | 'brandLine' };
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: LocalContextTarget } | null>(null);
+  const coverLogoInputRef = useRef<HTMLInputElement>(null);
+  const canvasImageInputRef = useRef<HTMLInputElement>(null);
   const documentDesign = resolveDocumentDesign(document);
 
   const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
@@ -135,6 +140,31 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       });
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Unable to add images.');
+    }
+  };
+
+  const handleCoverLogoUpload = async (files: FileList | null) => {
+    try {
+      const images = await readImageFiles(files);
+      if (!images.length) return;
+      onUpdateDocument({ ...document, brandLogoUrl: images[0].url, updatedAt: new Date().toISOString() });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to add the cover logo.');
+    }
+  };
+
+  const handleCanvasImageUpload = async (files: FileList | null) => {
+    try {
+      const images = await readImageFiles(files);
+      if (!images.length) return;
+      const target = document.sections.find(section => section.id === activeSectionId) || document.sections[0];
+      if (!target) {
+        window.alert('Add a document section before inserting an image.');
+        return;
+      }
+      onUpdateSection({ ...target, images: [...(target.images || []), ...images] });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Unable to insert image.');
     }
   };
 
@@ -432,6 +462,28 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       if (!allowedActions.has(id)) throw new Error('Action ' + id + ' is not available for ' + target.type + ' objects.');
       return { id, label, onSelect, ...options };
     };
+    if (target.type === 'document') {
+      return [
+        item('add-section', 'Add document section', () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: 'Click to edit this section.', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() })),
+        item('insert-image', 'Insert image into document', () => canvasImageInputRef.current?.click()),
+        item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || ''))
+      ];
+    }
+    if (target.type === 'cover-logo') {
+      return [
+        item('upload-logo', document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo', () => coverLogoInputRef.current?.click()),
+        item('edit-brand-name', 'Edit brand name', () => window.document.getElementById('cover-brand-name')?.focus()),
+        item('remove-logo', 'Remove cover logo', () => onUpdateDocument({ ...document, brandLogoUrl: undefined, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !document.brandLogoUrl })
+      ];
+    }
+    if (target.type === 'cover-text') {
+      const elementId = target.field === 'eyebrow' ? 'cover-eyebrow' : 'cover-brand-line';
+      const currentValue = documentDesign.coverPage[target.field];
+      return [
+        item('edit-cover-text', 'Edit cover text', () => window.document.getElementById(elementId)?.focus()),
+        item('clear-cover-text', 'Clear cover text', () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, [target.field]: '' } }, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !currentValue })
+      ];
+    }
     if (target.type === 'text') {
       const selected = target.end > target.start;
       return [
@@ -605,6 +657,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
         className="transition-transform duration-150 ease-out"
       >
+        <input ref={coverLogoInputRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={event => { void handleCoverLogoUpload(event.target.files); event.currentTarget.value = ''; }} />
+        <input ref={canvasImageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={event => { void handleCanvasImageUpload(event.target.files); event.currentTarget.value = ''; }} />
         {documentDesign.coverPage.enabled && (
           <section
             role="region"
@@ -628,18 +682,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               </>
             )}
             <div className="relative z-10 flex w-full flex-col items-center">
-              <div className="text-[11px] font-semibold tracking-[0.35em]" style={{ color: documentDesign.coverPage.detailColor }}>
-                {documentDesign.coverPage.eyebrow.toUpperCase()}
-              </div>
+              <input
+                id="cover-eyebrow"
+                aria-label="Cover eyebrow text"
+                value={documentDesign.coverPage.eyebrow}
+                onChange={event => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, eyebrow: event.target.value } }, updatedAt: new Date().toISOString() })}
+                onContextMenu={event => openContextMenu(event, { type: 'cover-text', field: 'eyebrow' })}
+                className="w-full bg-transparent text-center text-[11px] font-semibold tracking-[0.35em] outline-none"
+                style={{ color: documentDesign.coverPage.detailColor }}
+              />
               {documentDesign.coverPage.showLogoPlaceholder && (
-                <div className="mt-9 flex h-16 min-w-16 max-w-48 items-center justify-center rounded-lg border px-3 py-2" style={{ borderColor: documentDesign.coverPage.borderColor }}>
-                  {document.brandLogoUrl ? (
-                    <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-12 max-w-40 object-contain" />
-                  ) : (
-                    <span className="text-[10px] font-semibold tracking-[0.18em]" style={{ color: documentDesign.coverPage.titleColor }}>
-                      {document.brandName || 'ADD LOGO IN BRAND MANAGER'}
-                    </span>
-                  )}
+                <div onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} className="mt-9 flex min-w-16 max-w-56 flex-col items-center gap-2">
+                  <button type="button" aria-label={document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo'} title="Click to add or replace a logo. Right-click for logo actions." onClick={() => coverLogoInputRef.current?.click()} className="flex h-20 min-w-20 max-w-56 items-center justify-center rounded-lg border border-dashed px-3 py-2 transition-colors hover:bg-white/10" style={{ borderColor: documentDesign.coverPage.borderColor }}>
+                    {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-16 max-w-48 object-contain" /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
+                  </button>
+                  <input id="cover-brand-name" aria-label="Cover brand name" value={document.brandName || ''} onChange={event => onUpdateDocument({ ...document, brandName: event.target.value, updatedAt: new Date().toISOString() })} onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} placeholder="Type brand name" className="w-full bg-transparent text-center text-[10px] font-semibold tracking-[0.12em] outline-none placeholder:opacity-60" style={{ color: documentDesign.coverPage.titleColor }} />
                 </div>
               )}
               {documentDesign.coverPage.showOrnamentalRule && (
@@ -668,11 +725,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               >
                 {document.title}
               </h1>
-              {documentDesign.coverPage.brandLine.trim() && (
-                <p className="mx-auto mt-8 max-w-[540px] text-[11px] font-semibold tracking-[0.24em]" style={{ color: documentDesign.coverPage.detailColor }}>
-                  {documentDesign.coverPage.brandLine}
-                </p>
-              )}
+              <input
+                id="cover-brand-line"
+                aria-label="Cover brand line"
+                value={documentDesign.coverPage.brandLine}
+                onChange={event => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, brandLine: event.target.value } }, updatedAt: new Date().toISOString() })}
+                onContextMenu={event => openContextMenu(event, { type: 'cover-text', field: 'brandLine' })}
+                placeholder="Add a subtitle or brand line"
+                className="mx-auto mt-8 w-full max-w-[540px] bg-transparent text-center text-[11px] font-semibold tracking-[0.24em] outline-none placeholder:opacity-60"
+                style={{ color: documentDesign.coverPage.detailColor }}
+              />
               <div className="mx-auto mt-8 h-px w-24" style={{ background: documentDesign.coverPage.borderColor }} />
             </div>
             <div className="relative z-10 flex w-full flex-col items-center gap-2 pb-3 font-sans">
@@ -693,7 +755,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         <main 
           role="main"
           aria-label="Document Canvas"
-          className={`w-[820px] min-h-[1050px] text-slate-900 shadow-2xl rounded-sm p-12 sm:p-16 border border-slate-200 relative mb-12 ${currentFontClass}`}
+          onContextMenu={event => { if (event.target === event.currentTarget) openContextMenu(event, { type: 'document' }); }}
+          className={`w-[820px` min-h-[1050px] text-slate-900 shadow-2xl rounded-sm p-12 sm:p-16 border border-slate-200 relative mb-12 ${currentFontClass}`}
           style={{
             paddingTop: `${document.pageConfig.margins.top * 1.5}px`,
             paddingBottom: `${document.pageConfig.margins.bottom * 1.5}px`,
