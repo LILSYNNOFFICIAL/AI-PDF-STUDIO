@@ -1055,6 +1055,16 @@ export default function App() {
           }}
           onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
           onQuickAIAction={handleQuickAIAction}
+          onMoveSection={handleMoveSection}
+          onOpenDesign={(sectionId) => {
+            setActiveSectionId(sectionId);
+            setIsDesignModalOpen(true);
+          }}
+          onInsertSignatureAtSelection={(target) => {
+            setSignatureInsertionTarget(target);
+            setInsertObjectTab('signature');
+            setIsInsertObjectOpen(true);
+          }}
         />
 
         {/* Right: AI Chat Document Control Orchestrator (collapsible) */}
