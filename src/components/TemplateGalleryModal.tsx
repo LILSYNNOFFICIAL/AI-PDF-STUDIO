@@ -22,6 +22,14 @@ interface TemplateGalleryModalProps {
 type GalleryView = 'all' | 'favorites' | 'recent';
 type CategoryFilter = 'All Categories' | TemplateCategory;
 
+function getSafeStorage(): Storage | null {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
 export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
   isOpen,
   onClose,
@@ -41,7 +49,10 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
       setPreferencesLoaded(false);
       return;
     }
-    const saved = loadTemplateGalleryPreferences(window.localStorage);
+    const storage = getSafeStorage();
+    const saved = storage
+      ? loadTemplateGalleryPreferences(storage)
+      : { favorites: [], recents: [] };
     setFavoriteIds(saved.favorites);
     setRecentIds(saved.recents);
     setSelectedTemplateId(saved.recents[0] || 'recording-artist-agreement');
@@ -50,7 +61,8 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
 
   useEffect(() => {
     if (!isOpen || !preferencesLoaded) return;
-    saveTemplateGalleryPreferences(window.localStorage, { favorites: favoriteIds, recents: recentIds });
+    const storage = getSafeStorage();
+    if (storage) saveTemplateGalleryPreferences(storage, { favorites: favoriteIds, recents: recentIds });
   }, [isOpen, preferencesLoaded, favoriteIds, recentIds]);
 
   const availableTemplates = useMemo(() => {
@@ -85,7 +97,8 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     if (!selectedTemplate) return;
     const next = recordTemplateRecent({ favorites: favoriteIds, recents: recentIds }, selectedTemplate.id);
     setRecentIds(next.recents);
-    saveTemplateGalleryPreferences(window.localStorage, next);
+    const storage = getSafeStorage();
+    if (storage) saveTemplateGalleryPreferences(storage, next);
     onCreateTemplate(selectedTemplate.id, selectedThemeId);
   };
 
