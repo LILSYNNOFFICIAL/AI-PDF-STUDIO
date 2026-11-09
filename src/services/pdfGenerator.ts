@@ -156,22 +156,31 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     drawColorFill(fill, 0, 0, pageWidth, pageHeight, 12);
   };
 
-  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3) => {
+  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3, verticalAlign: 'top' | 'center' = 'center') => {
+    if (!Number.isFinite(maxHeight) || maxHeight <= 0) return 0;
     const validImages = images.filter(image => typeof image.url === 'string' && image.url.startsWith('data:image/'));
     if (!validImages.length) return 0;
     const slotWidth = (contentWidth - gap * (validImages.length - 1)) / validImages.length;
+    if (slotWidth <= 0) return 0;
     let rowHeight = 0;
     validImages.forEach((image, index) => {
       try {
         const properties = pdf.getImageProperties(image.url);
-        const ratio = properties.width / Math.max(1, properties.height);
-        const requestedWidth = slotWidth * Math.max(10, Math.min(100, image.widthPercent ?? 100)) / 100;
+        const imageWidth = Number(properties.width);
+        const imageHeight = Number(properties.height);
+        if (!Number.isFinite(imageWidth) || !Number.isFinite(imageHeight) || imageWidth <= 0 || imageHeight <= 0) {
+          throw new Error('Image dimensions must be finite positive numbers.');
+        }
+        const ratio = imageWidth / imageHeight;
+        const savedWidth = Number(image.widthPercent ?? 80);
+        const widthPercent = Number.isFinite(savedWidth) ? Math.max(10, Math.min(100, savedWidth)) : 80;
+        const requestedWidth = slotWidth * widthPercent / 100;
         const width = Math.min(requestedWidth, maxHeight * ratio);
-        const height = Math.min(maxHeight, width / Math.max(0.01, ratio));
+        const height = width / ratio;
         const slotX = margins.left + index * (slotWidth + gap);
         const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
         const x = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth - width : slotX + (slotWidth - width) / 2;
-        const y = cursorY + (maxHeight - height) / 2;
+        const y = cursorY + (verticalAlign === 'center' ? (maxHeight - height) / 2 : 0);
         const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
         pdf.addImage(image.url, format, x, y, width, height);
         rowHeight = Math.max(rowHeight, height);
@@ -185,9 +194,39 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   const drawPageHeaderImages = () => {
     const images = doc.pageHeaderImages || [];
     if (!doc.imageHeaderRequested || !images.length) return;
-    const maxHeight = Math.min(22, Math.max(10, margins.top - 2));
-    const drawnHeight = drawImageBlocks(images, maxHeight);
-    if (drawnHeight > 0) cursorY += maxHeight + 4;
+    const gap = 3;
+    const slotWidth = (contentWidth - gap * (images.length - 1)) / images.length;
+    setTextStyle(primaryFont, 'italic', 8.5, colorToRgb(design.colors.mutedText));
+    const captionLines = images.map(image => image.caption?.trim()
+      ? pdf.splitTextToSize(image.caption.trim(), Math.max(8, slotWidth)) as string[]
+      : []);
+    const maxCaptionLines = Math.max(0, ...captionLines.map(lines => lines.length));
+    const captionHeight = maxCaptionLines * 4 + (maxCaptionLines ? 4 : 0);
+    // Reserve room for captions, the document title, metadata, divider and first section heading.
+    // Tall images are scaled proportionally to the remaining page area instead of overflowing.
+    const headerContentReserve = 42 + captionHeight;
+    const maxHeight = bottomLimit - cursorY - headerContentReserve;
+    if (maxHeight <= 0) return;
+    const drawnHeight = drawImageBlocks(images, maxHeight, gap, 'top');
+    if (drawnHeight <= 0) return;
+
+    if (maxCaptionLines > 0) {
+      const captionTop = cursorY + drawnHeight + 2;
+      setTextStyle(primaryFont, 'italic', 8.5, colorToRgb(design.colors.mutedText));
+      captionLines.forEach((lines, index) => {
+        if (!lines.length) return;
+        const image = images[index];
+        const slotX = margins.left + index * (slotWidth + gap);
+        const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
+        const textX = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth : slotX + slotWidth / 2;
+        lines.forEach((line, lineIndex) => {
+          pdf.text(line, textX, captionTop + 3.2 + lineIndex * 4, { align: alignment });
+        });
+      });
+      cursorY = captionTop + maxCaptionLines * 4 + 2;
+    } else {
+      cursorY += drawnHeight + 4;
+    }
   };
 
   const addPage = () => {
@@ -197,7 +236,6 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   };
 
   drawPageBackground(1);
-  drawPageHeaderImages();
 
   const ensureSpace = (height: number) => {
     if (cursorY + height > bottomLimit) addPage();
@@ -273,6 +311,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
     cursorY += options.after ?? 2;
   };
+
+  // Render the one-time @ insertion after the wrapped-text helper is initialized so captions share its typography.
+  drawPageHeaderImages();
 
   const drawTable = (table: TableBlock, section: Section) => {
     const tableStyle = resolveTableDesign(doc, section, table);

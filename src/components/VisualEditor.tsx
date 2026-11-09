@@ -105,10 +105,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     try {
       const images = await readImageFiles(files);
       if (!images.length) return;
+      // Multiple images are laid out in equal editor/PDF slots, so fill each slot by default.
+      const headerImages = images.length > 1
+        ? images.map(image => ({ ...image, widthPercent: 100 }))
+        : images;
       onUpdateDocument({
         ...document,
         imageHeaderRequested: true,
-        pageHeaderImages: [...(document.pageHeaderImages || []), ...images],
+        pageHeaderImages: [...(document.pageHeaderImages || []), ...headerImages],
         updatedAt: new Date().toISOString()
       });
     } catch (error) {
@@ -413,11 +417,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handlePageHeaderImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
               </div>
-              <div className="flex w-full flex-wrap items-center justify-center gap-3 overflow-visible">
+              <div
+                className="grid w-full gap-3 overflow-visible"
+                style={{ gridTemplateColumns: `repeat(${Math.max(1, (document.pageHeaderImages || []).length)}, minmax(0, 1fr))` }}
+              >
                 {(document.pageHeaderImages || []).map(image => (
-                  <div key={image.id} className="relative z-20 min-w-0 overflow-visible" style={{ width: `${image.widthPercent ?? 80}%`, maxWidth: '100%' }}>
-                    <div className="relative z-30 w-full overflow-visible">
-                      <img draggable={false} src={image.url} alt={image.altText || 'Page header image'} className="block max-h-96 w-full select-none rounded object-contain shadow-sm" />
+                  <div key={image.id} className="relative z-20 flex min-w-0 flex-col items-center overflow-visible">
+                    <div
+                      className="relative z-30 max-w-full overflow-visible"
+                      style={{
+                        width: `${image.widthPercent ?? 80}%`,
+                        marginLeft: image.alignment === 'left' ? 0 : 'auto',
+                        marginRight: image.alignment === 'right' ? 0 : 'auto'
+                      }}
+                    >
+                      <img draggable={false} src={image.url} alt={image.altText || 'Page header image'} className="block h-auto w-full select-none rounded object-contain shadow-sm" />
                       {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
                         <button
                           key={corner}
@@ -431,6 +445,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       ))}
                     </div>
                     <input aria-label="Header image caption" value={image.caption || ''} placeholder="Caption" onChange={event => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id ? { ...item, caption: event.target.value } : item) })} className="mt-2 w-full bg-transparent text-center text-[10px] outline-none" />
+                    <select
+                      aria-label="Header image alignment"
+                      value={image.alignment === 'left' || image.alignment === 'right' ? image.alignment : 'center'}
+                      onChange={event => onUpdateDocument({
+                        ...document,
+                        pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id
+                          ? { ...item, alignment: event.target.value as ImageBlock['alignment'] }
+                          : item)
+                      })}
+                      className="mt-1 rounded border px-2 py-1 text-[10px]"
+                    >
+                      <option value="left">Align left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Align right</option>
+                    </select>
                     <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
                   </div>
                 ))}
