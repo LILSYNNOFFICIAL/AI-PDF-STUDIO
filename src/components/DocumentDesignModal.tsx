@@ -18,6 +18,7 @@ import {
   deleteTheme,
   contrastRatio,
   normalizeDocumentDesign,
+  fillToCss,
   type SavedDocumentTheme
 } from '../services/documentDesign';
 
