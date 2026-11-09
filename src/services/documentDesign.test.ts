@@ -371,3 +371,47 @@ test('applying any visual preset preserves all agreement content and structure',
     sourceText: updated.sourceText
   }), before);
 });
+
+
+test('document design themes export and import as a validated JSON round trip', async () => {
+  const api = await import('./documentDesign') as unknown as {
+    serializeDocumentTheme: (design: typeof DOCUMENT_DESIGN_PRESETS[number]) => string;
+    parseDocumentTheme: (source: string) => typeof DOCUMENT_DESIGN_PRESETS[number];
+  };
+  assert.equal(typeof api.serializeDocumentTheme, 'function');
+  assert.equal(typeof api.parseDocumentTheme, 'function');
+  const source = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'lil-synn')!;
+  const serialized = api.serializeDocumentTheme(source);
+  const parsed = api.parseDocumentTheme(serialized);
+  assert.deepEqual(parsed, source);
+  assert.throws(() => api.parseDocumentTheme('{invalid json'), /valid JSON/i);
+  const invalid = JSON.parse(serialized);
+  invalid.coverPage.titleColor = 'not-a-color';
+  assert.throws(() => api.parseDocumentTheme(JSON.stringify(invalid)), /hexadecimal color/i);
+});
+
+test('saved theme duplication creates an independent named copy without changing the original', async () => {
+  const api = await import('./documentDesign') as unknown as {
+    duplicateSavedTheme: (storage: any, sourceId: string, newName: string) => SavedTheme[];
+  };
+  assert.equal(typeof api.duplicateSavedTheme, 'function');
+  const storage = new MemoryStorage();
+  saveTheme(storage as any, {
+    id: 'theme-source',
+    name: 'Source Theme',
+    design: DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'lil-synn')!,
+    updatedAt: '2026-11-08T00:00:00.000Z'
+  } as any);
+  const duplicated = api.duplicateSavedTheme(storage as any, 'theme-source', 'Professional LIL SYNN');
+  assert.equal(duplicated.length, 2);
+  const copy = duplicated.find(item => item.name === 'Professional LIL SYNN');
+  const original = duplicated.find(item => item.id === 'theme-source');
+  assert.ok(copy);
+  assert.ok(original);
+  assert.notEqual(copy.id, original.id);
+  assert.deepEqual(copy.design, original.design);
+  copy.design.name = 'Modified copy';
+  assert.equal(listSavedThemes(storage as any).find(item => item.id === 'theme-source')?.design.name, 'LIL SYNN');
+});
+
+type SavedTheme = ReturnType<typeof listSavedThemes>[number];
