@@ -300,7 +300,7 @@ test('cover page embeds the selected brand logo instead of printing a static BRA
     coverPage: { ...doc.design!.coverPage, enabled: true, showLogoPlaceholder: true }
   };
   doc.brandName = 'SYNTIENT RECORDS';
-  doc.brandLogoUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';
+  doc.brandLogoUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DAwMDAwMDAwMDAAAANHQEDasKb6QAAAABJRU5ErkJggg==';
   const pdf = generatePdfDocument(doc);
   const output = outputText(pdf);
 
