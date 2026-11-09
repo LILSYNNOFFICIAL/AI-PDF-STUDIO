@@ -763,7 +763,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
     for (const table of section.tables || []) drawTable(table, section);
     if (typeof section.imageMarkerPosition !== 'number' && section.images?.length) drawSectionImages();
-    cursorY += 3;
+    cursorY += design.layoutDefaults.sectionSpacing * 0.264583;
   }
 
   // Signatures
@@ -847,9 +847,16 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       pdf.setFontSize(8);
       pdf.setTextColor(...colorToRgb(design.pageFurniture.headerTextColor));
       pdf.text(doc.pageConfig.headerText, margins.left, 12);
+      if (design.layoutDefaults.headerRule) {
+        pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
+        pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);
+        pdf.line(margins.left, 14, pageWidth - margins.right, 14);
+      }
+    }
+    if (design.layoutDefaults.footerRule) {
       pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
       pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);
-      pdf.line(margins.left, 14, pageWidth - margins.right, 14);
+      pdf.line(margins.left, pageHeight - 14, pageWidth - margins.right, pageHeight - 14);
     }
     pdf.setFont(primaryFont, 'normal');
     pdf.setFontSize(8);
