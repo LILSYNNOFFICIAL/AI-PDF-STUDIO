@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DocumentContextMenu } from './DocumentContextMenu';
+import { EditorCommandPalette, type EditorCommand } from './EditorCommandPalette';
 import { getContextMenuActionIds, type ContextMenuItem, type DocumentContextTargetType } from '../services/contextMenu';
 import { 
   Sparkles, 
@@ -17,7 +18,8 @@ import {
   PieChart,
   Copy,
   FilePlus,
-  ArrowDownCircle
+  ArrowDownCircle,
+  Search
 } from 'lucide-react';
 import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock, InlineSignatureBlock } from '../types/document';
 import { calculateImageResizeWidth } from '../services/imageResize';
@@ -58,6 +60,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onInsertSignatureAtSelection
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedTableCell, setSelectedTableCell] = useState<{
     sectionId: string;
     tableId: string;
@@ -79,6 +82,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: LocalContextTarget } | null>(null);
   const coverLogoInputRef = useRef<HTMLInputElement>(null);
   const canvasImageInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const handleCommandShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleCommandShortcut);
+    return () => window.removeEventListener('keydown', handleCommandShortcut);
+  }, []);
+
   const documentDesign = resolveDocumentDesign(document);
 
   const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
@@ -696,6 +710,25 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     ];
   };
 
+  const activeSection = document.sections.find(section => section.id === activeSectionId) || document.sections[0];
+  const commandActions: EditorCommand[] = [
+    { id: 'add-section', label: 'Add document section', keywords: ['new', 'insert', 'page'], description: 'Create a new editable section', onSelect: () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: '', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() }) },
+    { id: 'insert-image', label: 'Insert image', keywords: ['picture', 'photo', 'artwork'], description: 'Add an image to the active section', onSelect: () => canvasImageInputRef.current?.click() },
+    { id: 'add-clause', label: 'Add clause to active section', keywords: ['provision', 'legal', 'paragraph'], onSelect: () => { if (activeSection) handleAddClauseToSection(activeSection); } },
+    { id: 'duplicate-section', label: 'Duplicate active section', keywords: ['copy', 'clone'], onSelect: () => { if (activeSection) onDuplicateSection(activeSection.id); } },
+    { id: 'move-section-up', label: 'Move active section up', keywords: ['reorder', 'position'], onSelect: () => { if (activeSection) onMoveSection?.(activeSection.id, 'up'); } },
+    { id: 'move-section-down', label: 'Move active section down', keywords: ['reorder', 'position'], onSelect: () => { if (activeSection) onMoveSection?.(activeSection.id, 'down'); } },
+    { id: 'toggle-page-break', label: 'Toggle page break before active section', keywords: ['pagination', 'new page'], onSelect: () => { if (activeSection) handleTogglePageBreak(activeSection); } },
+    { id: 'document-design', label: 'Customize document design', keywords: ['theme', 'style', 'layout'], onSelect: () => onOpenDesign?.(activeSection?.id || '') },
+    { id: 'toggle-page-numbers', label: document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', keywords: ['pagination', 'footer'], onSelect: () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() }) },
+    { id: 'toggle-cover', label: documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', keywords: ['front page', 'title page'], onSelect: () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() }) },
+    { id: 'page-orientation', label: 'Change page orientation', keywords: ['portrait', 'landscape', 'page setup'], onSelect: () => { const value = window.prompt('Page orientation: portrait or landscape', document.pageConfig.orientation); if (value === 'portrait' || value === 'landscape') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, orientation: value }, updatedAt: new Date().toISOString() }); } },
+    { id: 'page-size', label: 'Change page size', keywords: ['A4', 'letter', 'legal', 'paper'], onSelect: () => { const value = window.prompt('Page size: A4, LETTER, or LEGAL', document.pageConfig.pageSize); if (value === 'A4' || value === 'LETTER' || value === 'LEGAL') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, pageSize: value }, updatedAt: new Date().toISOString() }); } },
+    { id: 'page-background', label: 'Change page background color', keywords: ['fill', 'color', 'canvas'], onSelect: () => { const value = window.prompt('Page background color (hex)', documentDesign.colors.pageSurface); if (value && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) onUpdateDocument({ ...document, design: { ...documentDesign, page: { ...documentDesign.page, background: { type: 'solid', color: value } } }, updatedAt: new Date().toISOString() }); } },
+    { id: 'zoom-in', label: 'Zoom in', keywords: ['magnify', 'view'], onSelect: () => setZoomLevel(value => Math.min(150, value + 10)) },
+    { id: 'zoom-out', label: 'Zoom out', keywords: ['shrink', 'view'], onSelect: () => setZoomLevel(value => Math.max(70, value - 10)) }
+  ];
+
   const contextMenuItems = contextMenu
     ? contextMenu.target.type === 'party-signature'
       ? buildPartySignatureItems(contextMenu.target.partyId, contextMenu.target.partyIndex)
@@ -706,6 +739,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   return (
     <div className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-4 sm:p-8 relative">
+      <button type="button" onClick={() => setCommandPaletteOpen(true)} title="Search commands (Ctrl+K)" className="fixed right-6 top-6 z-20 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 text-xs text-slate-300 shadow-xl transition-colors hover:border-blue-500 hover:text-white">
+        <Search className="h-3.5 w-3.5" /> Commands <kbd className="rounded border border-slate-700 px-1 py-0.5 text-[9px] text-slate-500">Ctrl K</kbd>
+      </button>
+
       {/* Floating Viewport & Zoom Bar */}
       <div className="fixed bottom-6 left-80 z-20 bg-slate-900/90 backdrop-blur-md border border-slate-800 text-slate-300 rounded-lg px-3 py-1.5 shadow-xl flex items-center gap-2 text-xs">
         <button 
@@ -1675,6 +1712,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           </div>
         </main>
       </div>
+      <EditorCommandPalette open={commandPaletteOpen} commands={commandActions} onClose={() => setCommandPaletteOpen(false)} />
       {contextMenu && contextMenuItems.length > 0 && (
         <DocumentContextMenu
           x={contextMenu.x}
