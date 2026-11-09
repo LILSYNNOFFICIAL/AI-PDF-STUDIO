@@ -250,11 +250,10 @@ test('premium enabled cover page renders as a separate first page before agreeme
   doc.pageConfig.footerText = 'RUNNING FOOTER ON CONTENT PAGES';
   const themed = applyDocumentPreset(doc, 'midnight-executive');
   const pdf = generatePdfDocument(themed);
+  assert.equal(pdf.getNumberOfPages(), 2, 'Expected one cover page and one content page');
   const pages = (pdf as any).internal.pages as string[][];
   const coverPage = pages[1].join('');
   const contentPage = pages[2].join('');
-
-  assert.equal(pdf.getNumberOfPages(), 2, 'Expected one cover page and one content page');
   assert.ok(coverPage.includes('MIDNIGHT EXECUTIVE COVER TITLE'));
   assert.ok(coverPage.includes('AGREEMENT'));
   assert.ok(coverPage.includes('COVER AUTHOR'));
