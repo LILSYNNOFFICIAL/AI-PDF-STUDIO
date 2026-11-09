@@ -136,6 +136,13 @@ test('wide images keep their requested width on landscape pages when height allo
   assert.ok(Math.abs(pointsToMillimeters(placement.widthPoints) - contentWidth * 0.8) < 0.2);
 });
 
+test('leading @ image captions are included in the PDF when the header image is the only image', () => {
+  const image = makeImage('captioned-header', squarePixel, 70);
+  image.caption = 'HEADER-ONLY-CAPTION-MARKER';
+  const pdf = generatePdfDocument(makeHeaderDocument([image]));
+  assert.ok(pdf.output().includes('HEADER-ONLY-CAPTION-MARKER'));
+});
+
 test('resized header dimensions survive the document JSON save and reopen round trip', () => {
   const original = makeHeaderDocument([makeImage('saved-image', squarePixel, 80)]);
   const reopened = JSON.parse(JSON.stringify(original)) as DocumentModel;
