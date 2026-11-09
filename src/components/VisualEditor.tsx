@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { DocumentContextMenu } from './DocumentContextMenu';
+import { getContextMenuActionIds, type ContextMenuItem, type DocumentContextTargetType } from '../services/contextMenu';
 import { 
   Sparkles, 
   Plus, 
@@ -37,6 +39,9 @@ interface VisualEditorProps {
   onUpdateSignatures: (signatures: any) => void;
   onUpdateDocument: (updatedDocument: DocumentModel) => void;
   onQuickAIAction: (actionType: string, targetContext: { sectionId?: string; text?: string }) => void;
+  onMoveSection?: (sectionId: string, direction: 'up' | 'down') => void;
+  onOpenDesign?: (sectionId: string) => void;
+  onInsertSignatureAtSelection?: (target: { sectionId: string; start: number; end: number; selectedText: string }) => void;
 }
 
 export const VisualEditor: React.FC<VisualEditorProps> = ({
@@ -47,7 +52,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onDuplicateSection,
   onUpdateSignatures,
   onUpdateDocument,
-  onQuickAIAction
+  onQuickAIAction,
+  onMoveSection,
+  onOpenDesign,
+  onInsertSignatureAtSelection
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
   const [selectedTableCell, setSelectedTableCell] = useState<{
@@ -56,6 +64,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     rowIndex: number;
     columnIndex: number;
   } | null>(null);
+  type LocalContextTarget =
+    | { type: 'text'; sectionId: string; start: number; end: number; selectedText: string; localStart: number; localEnd: number; element: HTMLTextAreaElement }
+    | { type: 'section'; sectionId: string }
+    | { type: 'clause'; sectionId: string; clauseId: string }
+    | { type: 'image'; sectionId: string; imageId: string }
+    | { type: 'table'; sectionId: string; tableId: string }
+    | { type: 'signature'; sectionId: string; signatureId: string }
+    | { type: 'party-signature'; partyId: string; partyIndex: number };
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: LocalContextTarget } | null>(null);
   const documentDesign = resolveDocumentDesign(document);
 
   const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
