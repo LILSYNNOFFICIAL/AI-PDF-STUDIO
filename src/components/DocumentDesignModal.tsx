@@ -541,6 +541,55 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
               <p className="mt-1 text-[10px] text-amber-300/70">These are advisory checks. Your selected colors will not be changed automatically.</p>
             </div>
           )}
+          <section aria-label="Live document design preview" className="mb-5 grid gap-3 xl:grid-cols-2">
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Live cover preview</span>
+                <span className="text-[10px] text-slate-500">{design.coverPage.enabled ? 'Cover enabled' : 'Cover disabled'}</span>
+              </div>
+              <div className="flex min-h-[178px] items-center justify-center rounded-lg p-3" style={{ background: fillToCss(design.coverPage.background) }}>
+                <div className="flex min-h-[150px] w-full max-w-[210px] flex-col items-center justify-center border px-3 py-4 text-center" style={{ borderColor: design.coverPage.showFrame ? design.coverPage.borderColor : 'transparent' }}>
+                  {design.coverPage.enabled ? (
+                    <>
+                      <span className="text-[7px] font-semibold tracking-[0.2em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.eyebrow.toUpperCase()}</span>
+                      <span className="mt-3 line-clamp-3 text-[15px] font-semibold leading-tight" style={{ color: design.coverPage.titleColor, fontFamily: design.typography.headingFontFamily }}>{document.title}</span>
+                      {design.coverPage.brandLine.trim() && <span className="mt-3 line-clamp-2 text-[6px] font-semibold tracking-[0.12em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.brandLine}</span>}
+                      <span className="mt-3 h-px w-8" style={{ background: design.coverPage.borderColor }} />
+                    </>
+                  ) : (
+                    <span className="text-[10px] font-medium" style={{ color: design.coverPage.titleColor }}>No separate cover page</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Interior page preview</span>
+                <span className="text-[10px] text-slate-500">{pageConfigDraft.pageSize} • {pageConfigDraft.orientation}</span>
+              </div>
+              <div className="rounded-lg border p-4" style={{ background: fillToCss(design.page.background), borderColor: design.colors.border }}>
+                <div className="mb-3 flex items-center justify-between border-b pb-2 text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.pageFurniture.headerTextColor, borderColor: design.layoutDefaults.headerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
+                  <span>{pageConfigDraft.headerText || 'DOCUMENT HEADER'}</span><span>CONFIDENTIAL</span>
+                </div>
+                <div className="mb-2 text-[14px] font-semibold" style={{ color: design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>1.0 {document.sections[0]?.title || 'SECTION HEADING'}</div>
+                <div className="mb-2 h-px w-full" style={{ background: design.colors.border }} />
+                <div className="space-y-1.5">
+                  <div className="h-1.5 w-full rounded" style={{ background: design.colors.bodyText, opacity: 0.65 }} />
+                  <div className="h-1.5 w-[94%] rounded" style={{ background: design.colors.bodyText, opacity: 0.55 }} />
+                  <div className="h-1.5 w-[82%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
+                </div>
+                <div className="mt-4 rounded border p-2" style={{ background: fillToCss(design.sectionDefaults.background), borderColor: design.colors.border }}>
+                  <span className="text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.colors.accent }}>Design detail</span>
+                  <div className="mt-2 h-1 w-[90%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
+                  <div className="mt-1.5 h-1 w-[65%] rounded" style={{ background: design.colors.bodyText, opacity: 0.35 }} />
+                </div>
+                <div className="mt-3 flex justify-between border-t pt-2 text-[7px]" style={{ color: design.pageFurniture.footerTextColor, borderColor: design.layoutDefaults.footerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
+                  <span>{pageConfigDraft.footerText || 'DOCUMENT FOOTER'}</span><span>Page 1</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {tab === 'presets' && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {DOCUMENT_DESIGN_PRESETS.map(preset => (
