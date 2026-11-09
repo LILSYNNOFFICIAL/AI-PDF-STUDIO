@@ -183,6 +183,7 @@ test('cover logo width follows the persisted editor resize value in PDF output',
   const makeLogoDocument = (widthPercent: number) => {
     const doc = normalizeDocumentDesign(buildDocumentFromPrompt('Cover logo sizing').updatedDoc);
     doc.design!.coverPage.enabled = true;
+    doc.design!.coverPage.showLogoPlaceholder = true;
     doc.brandLogoUrl = squarePixel;
     (doc as DocumentModel & { brandLogoWidthPercent?: number }).brandLogoWidthPercent = widthPercent;
     return doc;
