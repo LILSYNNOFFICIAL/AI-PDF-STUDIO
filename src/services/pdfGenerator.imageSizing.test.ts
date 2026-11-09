@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildDocumentFromPrompt } from '../orchestrator/orchestrator';
 import { generatePdfDocument } from './pdfGenerator';
+import { normalizeDocumentDesign } from './documentDesign';
 import type { DocumentModel, ImageBlock } from '../types/document';
 
 const squarePixel = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQq/jwHwAExAKGMOAiWwAAAABJRU5ErkJggg==';
@@ -180,7 +181,8 @@ test('resized header dimensions survive the document JSON save and reopen round 
 
 test('cover logo width follows the persisted editor resize value in PDF output', () => {
   const makeLogoDocument = (widthPercent: number) => {
-    const doc = buildDocumentFromPrompt('Cover logo sizing').updatedDoc;
+    const doc = normalizeDocumentDesign(buildDocumentFromPrompt('Cover logo sizing').updatedDoc);
+    doc.design!.coverPage.enabled = true;
     doc.brandLogoUrl = squarePixel;
     (doc as DocumentModel & { brandLogoWidthPercent?: number }).brandLogoWidthPercent = widthPercent;
     return doc;
