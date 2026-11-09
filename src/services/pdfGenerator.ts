@@ -352,8 +352,10 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
     if (cover.showLogoPlaceholder) {
       const badgeY = pageHeight * 0.235;
-      const logoWidth = 34;
-      const logoHeight = 18;
+      const savedLogoScale = Number(doc.brandLogoWidthPercent ?? 100);
+      const logoScale = Number.isFinite(savedLogoScale) ? Math.max(25, Math.min(200, savedLogoScale)) / 100 : 1;
+      const logoWidth = 34 * logoScale;
+      const logoHeight = 18 * logoScale;
       if (doc.brandLogoUrl) {
         try {
           const format = doc.brandLogoUrl.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
