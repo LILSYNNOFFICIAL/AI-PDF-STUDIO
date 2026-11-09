@@ -226,3 +226,46 @@ test('page-header and section images are embedded in multi-page PDF output', () 
   assert.match(firstPageContent, /\/I\d+ Do/, 'The leading @ image should appear on the first page');
   assert.doesNotMatch(secondPageContent, /\/I\d+ Do/, 'The leading @ image must not repeat on later pages');
 });
+
+
+test('premium enabled cover page renders as a separate first page before agreement content', async () => {
+  const { applyDocumentPreset, normalizeDocumentDesign } = await import('./documentDesign');
+  const doc = normalizeDocumentDesign(buildDocumentFromPrompt('Cover page rendering').updatedDoc);
+  doc.title = 'MIDNIGHT EXECUTIVE COVER TITLE';
+  doc.author = 'COVER AUTHOR';
+  doc.sections = [{
+    ...doc.sections[0],
+    content: 'BODY MUST BEGIN AFTER COVER PAGE'
+  }];
+  doc.pageConfig.headerText = 'RUNNING HEADER ON CONTENT PAGES';
+  doc.pageConfig.footerText = 'RUNNING FOOTER ON CONTENT PAGES';
+  const themed = applyDocumentPreset(doc, 'midnight-executive');
+  const pdf = generatePdfDocument(themed);
+  const pages = (pdf as any).internal.pages as string[][];
+  const coverPage = pages[1].join('');
+  const contentPage = pages[2].join('');
+
+  assert.equal(pdf.getNumberOfPages(), 2, 'Expected one cover page and one content page');
+  assert.ok(coverPage.includes('MIDNIGHT EXECUTIVE COVER TITLE'));
+  assert.ok(coverPage.includes('AGREEMENT'));
+  assert.ok(coverPage.includes('COVER AUTHOR'));
+  assert.ok(!coverPage.includes('BODY MUST BEGIN AFTER COVER PAGE'));
+  assert.ok(!coverPage.includes('RUNNING HEADER ON CONTENT PAGES'));
+  assert.ok(!coverPage.includes('RUNNING FOOTER ON CONTENT PAGES'));
+  assert.ok(contentPage.includes('BODY MUST BEGIN AFTER COVER PAGE'));
+  assert.ok(contentPage.includes('RUNNING HEADER ON CONTENT PAGES'));
+  assert.ok(contentPage.includes('RUNNING FOOTER ON CONTENT PAGES'));
+});
+
+test('disabled cover page keeps title and body content together on the first page', () => {
+  const doc = buildDocumentFromPrompt('Cover page disabled').updatedDoc;
+  doc.title = 'NO COVER TITLE';
+  doc.sections = [{ ...doc.sections[0], content: 'NO COVER BODY' }];
+  const pdf = generatePdfDocument(doc);
+  const pages = (pdf as any).internal.pages as string[][];
+  const firstPage = pages[1].join('');
+
+  assert.equal(pdf.getNumberOfPages(), 1);
+  assert.ok(firstPage.includes('NO COVER TITLE'));
+  assert.ok(firstPage.includes('NO COVER BODY'));
+});
