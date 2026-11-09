@@ -50,6 +50,7 @@ interface MenuBarProps {
   onNewDocument: () => void;
   onNewBlankDocument: () => void;
   onOpenTemplate: (templateName: string) => void;
+  onOpenTemplateGallery: () => void;
   onExportPdf: () => void;
   onPrint: () => void;
   onExportJson: () => void;
@@ -97,6 +98,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onNewDocument,
   onNewBlankDocument,
   onOpenTemplate,
+  onOpenTemplateGallery,
   onExportPdf,
   onPrint,
   onExportJson,
@@ -173,6 +175,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
       className="h-8 bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none z-40 shrink-0 font-sans"
     >
       <div className="flex items-center space-x-1">
+        <button
+          onMouseDown={event => event.preventDefault()}
+          onClick={() => executeAction(onOpenTemplateGallery)}
+          className="flex items-center gap-1.5 rounded px-2.5 py-1 font-semibold text-amber-200 transition-colors hover:bg-amber-400/10 hover:text-amber-100"
+          title="Browse the professional document template gallery"
+        >
+          <FileText className="h-3.5 w-3.5" /> Templates
+        </button>
         {/* FILE MENU */}
         <div className="relative">
           <button
