@@ -514,7 +514,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('upload-logo', document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo', () => coverLogoInputRef.current?.click()),
         item('edit-brand-name', 'Edit brand name', () => window.document.getElementById('cover-brand-name')?.focus()),
-        item('remove-logo', 'Remove cover logo', () => onUpdateDocument({ ...document, brandLogoUrl: undefined, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !document.brandLogoUrl })
+        item('increase-logo-size', 'Increase logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.min(200, (document.brandLogoWidthPercent ?? 100) + 10), updatedAt: new Date().toISOString() }), { disabled: (document.brandLogoWidthPercent ?? 100) >= 200 || !document.brandLogoUrl }),
+        item('decrease-logo-size', 'Decrease logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.max(25, (document.brandLogoWidthPercent ?? 100) - 10), updatedAt: new Date().toISOString() }), { disabled: (document.brandLogoWidthPercent ?? 100) <= 25 || !document.brandLogoUrl }),
+        item('set-logo-size', 'Set exact logo size…', () => {
+          const current = document.brandLogoWidthPercent ?? 100;
+          const value = window.prompt('Logo size (25 to 200 percent)', String(current));
+          if (value === null) return;
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed) || parsed < 25 || parsed > 200) { window.alert('Enter a number from 25 to 200.'); return; }
+          onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(parsed), updatedAt: new Date().toISOString() });
+        }, { disabled: !document.brandLogoUrl }),
+        item('reset-logo-size', 'Reset logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: 100, updatedAt: new Date().toISOString() }), { disabled: !document.brandLogoUrl || (document.brandLogoWidthPercent ?? 100) === 100 }),
+        item('remove-logo', 'Remove cover logo', () => onUpdateDocument({ ...document, brandLogoUrl: undefined, brandLogoWidthPercent: undefined, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !document.brandLogoUrl })
       ];
     }
     if (target.type === 'cover-text') {
@@ -554,6 +565,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         item('align-right', 'Align right', () => update({ alignment: 'right' })),
         item('increase-image-size', 'Increase image size', () => update({ widthPercent: Math.min(100, (image.widthPercent || 80) + 10) }), { disabled: (image.widthPercent || 80) >= 100 }),
         item('decrease-image-size', 'Decrease image size', () => update({ widthPercent: Math.max(20, (image.widthPercent || 80) - 10) }), { disabled: (image.widthPercent || 80) <= 20 }),
+        item('set-image-size', 'Set exact image width…', () => {
+          const value = window.prompt('Image width (10 to 100 percent)', String(image.widthPercent ?? 80));
+          if (value === null) return;
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed) || parsed < 10 || parsed > 100) { window.alert('Enter a number from 10 to 100.'); return; }
+          update({ widthPercent: Math.round(parsed) });
+        }),
+        item('reset-image-size', 'Reset image width', () => update({ widthPercent: 80 }), { disabled: (image.widthPercent ?? 80) === 80 }),
+        item('duplicate-image', 'Duplicate image', () => onUpdateDocument({
+          ...document,
+          pageHeaderImages: [...(document.pageHeaderImages || []), { ...image, id: 'image_' + Date.now() }],
+          updatedAt: new Date().toISOString()
+        })),
         item('edit-caption', 'Edit caption', () => { const value = window.prompt('Image caption', image.caption || ''); if (value !== null) update({ caption: value }); }),
         item('edit-alt-text', 'Edit alternative text', () => { const value = window.prompt('Alternative text', image.altText || ''); if (value !== null) update({ altText: value }); }),
         item('delete-image', 'Delete image', () => onUpdateDocument({
@@ -610,6 +634,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         item('align-right', 'Align right', () => update({ alignment: 'right' })),
         item('increase-image-size', 'Increase image size', () => update({ widthPercent: Math.min(100, (image.widthPercent || 80) + 10) }), { disabled: (image.widthPercent || 80) >= 100 }),
         item('decrease-image-size', 'Decrease image size', () => update({ widthPercent: Math.max(20, (image.widthPercent || 80) - 10) }), { disabled: (image.widthPercent || 80) <= 20 }),
+        item('set-image-size', 'Set exact image width…', () => {
+          const value = window.prompt('Image width (10 to 100 percent)', String(image.widthPercent ?? 80));
+          if (value === null) return;
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed) || parsed < 10 || parsed > 100) { window.alert('Enter a number from 10 to 100.'); return; }
+          update({ widthPercent: Math.round(parsed) });
+        }),
+        item('reset-image-size', 'Reset image width', () => update({ widthPercent: 80 }), { disabled: (image.widthPercent ?? 80) === 80 }),
+        item('duplicate-image', 'Duplicate image', () => onUpdateSection({
+          ...section,
+          images: [...(section.images || []), { ...image, id: 'image_' + Date.now() }]
+        })),
         item('edit-caption', 'Edit caption', () => { const value = window.prompt('Image caption', image.caption || ''); if (value !== null) update({ caption: value }); }),
         item('edit-alt-text', 'Edit alternative text', () => { const value = window.prompt('Alternative text', image.altText || ''); if (value !== null) update({ altText: value }); }),
         item('delete-image', 'Delete image', () => onUpdateSection({ ...section, images: (section.images || []).filter(entry => entry.id !== image.id) }), { destructive: true })
