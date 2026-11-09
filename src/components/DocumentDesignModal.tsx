@@ -648,7 +648,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                   ['showOrnamentalRule', 'Ornamental divider']
                 ] as Array<[keyof DocumentDesign['coverPage'], string]>).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-[11px] text-slate-300">
-                    <input type="checkbox" checked={Boolean(design.coverPage[key])} onChange={event => updateCover({ [key]: event.target.checked } as Partial<DocumentDesign['coverPage'])} className="accent-blue-500" />
+                    <input type="checkbox" checked={Boolean(design.coverPage[key])} onChange={event => updateCover({ [key]: event.target.checked } as Partial<DocumentDesign['coverPage']>)} className="accent-blue-500" />
                     {label}
                   </label>
                 ))}
