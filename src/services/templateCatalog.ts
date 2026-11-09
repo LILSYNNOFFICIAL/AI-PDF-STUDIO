@@ -21,6 +21,7 @@ export interface DocumentTemplateDefinition {
   documentType: DocumentType;
   focus: string;
   deliverable: string;
+  sectionTitles: string[];
 }
 
 type TemplateSeed = [
@@ -170,6 +171,7 @@ const TEMPLATE_SEEDS: TemplateSeed[] = [
 
 const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
   documentType: DocumentType;
+  sectionTitles: string[];
   partyA: string;
   partyB: string;
   performanceHeading: string;
@@ -181,6 +183,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
   riskLead: string;
 }> = {
   'Music & Entertainment': {
+    sectionTitles: ["Engagement, Masters & Scope","Recording Services & Deliverables","Compensation, Royalties & Accounting","Master, Composition & Credits","Release, Clearances & Termination","Notices, Schedules & Execution"],
     documentType: 'music_agreement',
     partyA: 'ARTIST / RIGHTS HOLDER',
     partyB: 'PRODUCER / LICENSEE / SERVICE PROVIDER',
@@ -193,6 +196,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'Before public release or exploitation, the responsible party shall document all required permissions, contributor consents, credits, registrations and platform metadata. Clearance responsibility and takedown procedures must be completed in the applicable schedule.'
   },
   'Business & Commercial': {
+    sectionTitles: ["Commercial Engagement & Scope","Services, Deliverables & Acceptance","Fees, Expenses & Invoicing","Work Product & Confidentiality","Commercial Risk & Exit","Notices, Schedules & Execution"],
     documentType: 'business_proposal',
     partyA: 'CUSTOMER / PRINCIPAL',
     partyB: 'PROVIDER / COMMERCIAL PARTNER',
@@ -205,6 +209,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'Changes to scope, personnel, delivery dates or assumptions must be documented in an approved change order. The parties shall define cure periods, suspension rights, liability allocation and transition assistance.'
   },
   'Real Estate & Rentals': {
+    sectionTitles: ["Property, Premises & Occupancy","Permitted Use, Access & Condition","Rent, Deposits & Charges","Property Rights & Maintenance","Default, Notices & Surrender","Notices, Schedules & Execution"],
     documentType: 'legal_agreement',
     partyA: 'OWNER / LANDLORD / TRANSFEROR',
     partyB: 'TENANT / OCCUPANT / TRANSFEREE',
@@ -217,6 +222,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall define permitted notices, inspection rights, repair remedies, casualty procedures, default and cure rules, holdover or extension terms, and the condition required at surrender or closing.'
   },
   'Creative & Freelance': {
+    sectionTitles: ["Creative Brief & Project Scope","Concepts, Revisions & Delivery","Creative Fees & Milestones","Copyright, License & Source Files","Approval, Cancellation & Handover","Notices, Schedules & Execution"],
     documentType: 'business_proposal',
     partyA: 'CLIENT / COMMISSIONING PARTY',
     partyB: 'CREATOR / FREELANCER',
@@ -229,6 +235,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall define review windows, consolidated feedback, client dependencies, pause/cancellation fees, delivery formats, archival periods and post-project support.'
   },
   'Employment & HR': {
+    sectionTitles: ["Role, Appointment & Scope","Responsibilities & Workplace Standards","Compensation & Benefits","Confidentiality & Work Product","Performance, Separation & Transition","Notices, Schedules & Execution"],
     documentType: 'legal_agreement',
     partyA: 'EMPLOYER / ORGANIZATION',
     partyB: 'EMPLOYEE / CANDIDATE',
@@ -241,6 +248,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall describe review procedures, notice and cure where applicable, leave and accommodation processes, separation payments if any, required notices and post-separation transition.'
   },
   'Corporate & Legal': {
+    sectionTitles: ["Transaction, Entity & Scope","Governance, Authority & Closing","Capital, Consideration & Distributions","Corporate Records & Reserved Matters","Representations, Compliance & Exit","Notices, Schedules & Execution"],
     documentType: 'legal_agreement',
     partyA: 'COMPANY / ISSUER / TRANSFEROR',
     partyB: 'MEMBER / SHAREHOLDER / COUNTERPARTY',
@@ -253,6 +261,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall allocate responsibility for due diligence, regulatory filings, corporate approvals, conditions precedent, indemnity procedures, default remedies and post-closing actions.'
   },
   'Finance & Investment': {
+    sectionTitles: ["Facility, Investment & Scope","Funding, Use of Proceeds & Covenants","Principal, Interest & Repayment","Collateral & Financial Records","Default, Remedies & Recovery","Notices, Schedules & Execution"],
     documentType: 'financial_report',
     partyA: 'LENDER / INVESTOR',
     partyB: 'BORROWER / ISSUER',
@@ -265,6 +274,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall enumerate payment and non-payment defaults, notice and cure periods, acceleration, collateral enforcement, restructuring, dispute procedures and release conditions.'
   },
   'Technology & Data': {
+    sectionTitles: ["Platform, System & Scope","Technical Delivery & Service Levels","Subscription, Usage & Fees","Software, Data & Security","Incidents, Continuity & Exit","Notices, Schedules & Execution"],
     documentType: 'technical_spec',
     partyA: 'CUSTOMER / DATA CONTROLLER',
     partyB: 'PROVIDER / PROCESSOR',
@@ -277,6 +287,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall specify incident severity, notification times, recovery targets, planned maintenance, vulnerability response, service suspension, exit assistance and secure data return or deletion.'
   },
   'Marketing & Partnerships': {
+    sectionTitles: ["Campaign, Brand & Scope","Content, Approvals & Activation","Fees, Commissions & Reporting","Brand Assets, Content & Disclosures","Compliance, Changes & Withdrawal","Notices, Schedules & Execution"],
     documentType: 'business_proposal',
     partyA: 'BRAND / SPONSOR / CLIENT',
     partyB: 'CREATOR / AGENCY / PARTNER',
@@ -289,6 +300,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
     riskLead: 'The parties shall set approval windows, content correction procedures, cancellation fees, prohibited practices, takedown requests and contingency plans for delayed or discontinued campaigns.'
   },
   'Personal & General': {
+    sectionTitles: ["Subject Matter & Arrangement","Delivery, Responsibilities & Acceptance","Consideration & Payment","Ownership, Condition & Records","Notice, Completion & Remedies","Notices, Schedules & Execution"],
     documentType: 'general',
     partyA: 'FIRST PARTY / TRANSFEROR',
     partyB: 'SECOND PARTY / RECIPIENT',
@@ -318,7 +330,8 @@ export const DOCUMENT_TEMPLATE_CATALOG: DocumentTemplateDefinition[] = TEMPLATE_
     tags: tagString.split(TAGS_SEPARATOR).map(tag => tag.trim()).filter(Boolean),
     documentType: CATEGORY_BLUEPRINTS[category].documentType,
     focus,
-    deliverable
+    deliverable,
+    sectionTitles: [...CATEGORY_BLUEPRINTS[category].sectionTitles]
   };
 });
 
@@ -328,21 +341,21 @@ export const TEMPLATE_CATEGORY_COUNTS: Record<TemplateCategory, number> = TEMPLA
 }, {} as Record<TemplateCategory, number>);
 
 export function getTemplateById(id: string): DocumentTemplateDefinition | undefined {
-  return DOCUMENT_TEMPLATE_CATALOG.find(template => template.id === id);
+  const template = DOCUMENT_TEMPLATE_CATALOG.find(item => item.id === id);
+  return template ? { ...template, tags: [...template.tags], sectionTitles: [...template.sectionTitles] } : undefined;
 }
 
 export function searchTemplates(query: string, category?: string): DocumentTemplateDefinition[] {
-  const normalizedQuery = query.trim().toLowerCase();
+  const searchTerms = query.trim().toLowerCase().split(/\\s+/).filter(Boolean);
   return DOCUMENT_TEMPLATE_CATALOG.filter(template => {
     if (category && template.category !== category) return false;
-    if (!normalizedQuery) return true;
+    if (!searchTerms.length) return true;
     const searchable = [template.title, template.description, template.category, ...template.tags].join(' ').toLowerCase();
-    return searchable.includes(normalizedQuery);
-  });
+    return searchTerms.every(term => searchable.includes(term));
+  }).map(template => ({ ...template, tags: [...template.tags], sectionTitles: [...template.sectionTitles] }));
 }
 
 function buildSection(
-  template: DocumentTemplateDefinition,
   sectionIndex: number,
   title: string,
   content: string,
@@ -393,7 +406,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
   const sections = [
     buildSection(
       template, 0,
-      'Engagement, Subject Matter & Scope',
+      template.sectionTitles[0],
       template.description + '\n\nDrafting fields: [EFFECTIVE DATE] • [PROJECT / PROPERTY / ACCOUNT IDENTIFIER] • [AUTHORIZED TERRITORY OR LOCATION].',
       [
         ['Purpose of Arrangement', 'The parties enter this ' + template.title + ' to address ' + template.focus + '. The full legal names, capacities and notice details of each party must be completed before execution.'],
@@ -402,7 +415,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
     ),
     buildSection(
       template, 1,
-      blueprint.performanceHeading,
+      template.sectionTitles[1],
       'This section allocates the operational duties associated with ' + template.focus + '. All deliverables and material dependencies should be entered in the schedule before work begins.',
       [
         ['Performance Standard', template.deliverable + '. Each party shall provide the cooperation, access, approvals and information reasonably required for the agreed work or transaction.'],
@@ -411,7 +424,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
     ),
     buildSection(
       template, 2,
-      blueprint.moneyHeading,
+      template.sectionTitles[2],
       blueprint.moneyLead,
       [
         ['Amount & Payment Schedule', '[CURRENCY] [TOTAL AMOUNT OR RATE] • [DEPOSIT / ADVANCE] • [MILESTONE OR INSTALLMENT DATES] • [PAYMENT METHOD].'],
@@ -420,7 +433,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
     ),
     buildSection(
       template, 3,
-      blueprint.rightsHeading,
+      template.sectionTitles[3],
       blueprint.rightsLead + ' The rights schedule shall specify any retained rights, permitted uses, restrictions, required notices and record-retention period.',
       [
         ['Allocation & Permitted Use', 'The parties shall identify the owner of each asset, work product, data set or property interest and the precise rights granted, retained, transferred or excluded.'],
@@ -429,7 +442,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
     ),
     buildSection(
       template, 4,
-      blueprint.riskHeading,
+      template.sectionTitles[4],
       blueprint.riskLead,
       [
         ['Term, Renewal & Completion', '[START DATE] • [INITIAL TERM] • [RENEWAL METHOD AND NOTICE WINDOW] • [COMPLETION OR MATURITY DATE]. The parties shall state any conditions required for renewal or final completion.'],
@@ -438,7 +451,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
     ),
     buildSection(
       template, 5,
-      'Notices, Schedules & Execution',
+      template.sectionTitles[5],
       'All schedules, exhibits, technical requirements, property details, deliverable inventories and approved changes should be attached and identified by version. Notices shall be sent using the contact details completed below.',
       [
         ['Governing Terms & Review', '[GOVERNING LAW] • [VENUE / DISPUTE PROCESS] • [REQUIRED APPROVALS]. The parties should confirm all mandatory consumer, employment, tenancy, privacy, licensing and sector-specific requirements that apply to this transaction.'],
@@ -489,5 +502,56 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       pageNumberFormat: 'PAGE_X_OF_Y',
       firstPageDifferent: true
     }
+  };
+}
+
+export interface TemplateGalleryPreferences {
+  favorites: string[];
+  recents: string[];
+}
+
+export const TEMPLATE_GALLERY_STORAGE_KEY = 'ai-pdf-studio.template-gallery.v1';
+
+export function loadTemplateGalleryPreferences(storage: Pick<Storage, 'getItem'>): TemplateGalleryPreferences {
+  try {
+    const raw = storage.getItem(TEMPLATE_GALLERY_STORAGE_KEY);
+    if (!raw) return { favorites: [], recents: [] };
+    const parsed = JSON.parse(raw) as Partial<TemplateGalleryPreferences>;
+    const validIds = new Set(DOCUMENT_TEMPLATE_CATALOG.map(template => template.id));
+    const uniqueValid = (values: unknown, limit = 100) => Array.isArray(values)
+      ? [...new Set(values.filter((value): value is string => typeof value === 'string' && validIds.has(value)))].slice(0, limit)
+      : [];
+    return { favorites: uniqueValid(parsed.favorites), recents: uniqueValid(parsed.recents, 12) };
+  } catch {
+    return { favorites: [], recents: [] };
+  }
+}
+
+export function saveTemplateGalleryPreferences(
+  storage: Pick<Storage, 'setItem'>,
+  preferences: TemplateGalleryPreferences
+): boolean {
+  try {
+    const validIds = new Set(DOCUMENT_TEMPLATE_CATALOG.map(template => template.id));
+    const normalize = (values: string[], limit: number) =>
+      [...new Set(values.filter(id => validIds.has(id)))].slice(0, limit);
+    storage.setItem(TEMPLATE_GALLERY_STORAGE_KEY, JSON.stringify({
+      favorites: normalize(preferences.favorites, 100),
+      recents: normalize(preferences.recents, 12)
+    }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function recordTemplateRecent(preferences: TemplateGalleryPreferences, templateId: string): TemplateGalleryPreferences {
+  if (!getTemplateById(templateId)) return {
+    favorites: [...preferences.favorites],
+    recents: [...preferences.recents]
+  };
+  return {
+    favorites: [...preferences.favorites],
+    recents: [templateId, ...preferences.recents.filter(id => id !== templateId)].slice(0, 12)
   };
 }
