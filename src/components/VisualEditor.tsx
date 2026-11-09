@@ -105,10 +105,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     try {
       const images = await readImageFiles(files);
       if (!images.length) return;
+      // Multiple images are laid out in equal editor/PDF slots, so fill each slot by default.
+      const headerImages = images.length > 1
+        ? images.map(image => ({ ...image, widthPercent: 100 }))
+        : images;
       onUpdateDocument({
         ...document,
         imageHeaderRequested: true,
-        pageHeaderImages: [...(document.pageHeaderImages || []), ...images],
+        pageHeaderImages: [...(document.pageHeaderImages || []), ...headerImages],
         updatedAt: new Date().toISOString()
       });
     } catch (error) {
