@@ -156,22 +156,31 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     drawColorFill(fill, 0, 0, pageWidth, pageHeight, 12);
   };
 
-  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number | null, gap = 3) => {
+  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3) => {
+    if (!Number.isFinite(maxHeight) || maxHeight <= 0) return 0;
     const validImages = images.filter(image => typeof image.url === 'string' && image.url.startsWith('data:image/'));
     if (!validImages.length) return 0;
     const slotWidth = (contentWidth - gap * (validImages.length - 1)) / validImages.length;
+    if (slotWidth <= 0) return 0;
     let rowHeight = 0;
     validImages.forEach((image, index) => {
       try {
         const properties = pdf.getImageProperties(image.url);
-        const ratio = properties.width / Math.max(1, properties.height);
-        const requestedWidth = slotWidth * Math.max(10, Math.min(100, image.widthPercent ?? 100)) / 100;
-        const width = Math.min(requestedWidth, maxHeight === null ? slotWidth : maxHeight * ratio);
-        const height = maxHeight === null ? width / Math.max(0.01, ratio) : Math.min(maxHeight, width / Math.max(0.01, ratio));
+        const imageWidth = Number(properties.width);
+        const imageHeight = Number(properties.height);
+        if (!Number.isFinite(imageWidth) || !Number.isFinite(imageHeight) || imageWidth <= 0 || imageHeight <= 0) {
+          throw new Error('Image dimensions must be finite positive numbers.');
+        }
+        const ratio = imageWidth / imageHeight;
+        const savedWidth = Number(image.widthPercent ?? 80);
+        const widthPercent = Number.isFinite(savedWidth) ? Math.max(10, Math.min(100, savedWidth)) : 80;
+        const requestedWidth = slotWidth * widthPercent / 100;
+        const width = Math.min(requestedWidth, maxHeight * ratio);
+        const height = width / ratio;
         const slotX = margins.left + index * (slotWidth + gap);
         const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
         const x = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth - width : slotX + (slotWidth - width) / 2;
-        const y = maxHeight === null ? cursorY : cursorY + (maxHeight - height) / 2;
+        const y = cursorY + (maxHeight - height) / 2;
         const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
         pdf.addImage(image.url, format, x, y, width, height);
         rowHeight = Math.max(rowHeight, height);
@@ -185,7 +194,12 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   const drawPageHeaderImages = () => {
     const images = doc.pageHeaderImages || [];
     if (!doc.imageHeaderRequested || !images.length) return;
-    const drawnHeight = drawImageBlocks(images, null);
+    // Reserve room for the document title, metadata, divider and first section heading.
+    // Tall images are scaled proportionally to the remaining page area instead of overflowing.
+    const headerContentReserve = 42;
+    const maxHeight = bottomLimit - cursorY - headerContentReserve;
+    if (maxHeight <= 0) return;
+    const drawnHeight = drawImageBlocks(images, maxHeight);
     if (drawnHeight > 0) cursorY += drawnHeight + 4;
   };
 
