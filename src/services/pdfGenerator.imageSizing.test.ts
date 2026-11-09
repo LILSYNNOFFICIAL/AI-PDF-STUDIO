@@ -186,12 +186,9 @@ test('cover logo width follows the persisted editor resize value in PDF output',
     return doc;
   };
   const coverLogoWidth = (doc: DocumentModel) => {
-    const pdf = generatePdfDocument(doc);
-    const firstPage = ((pdf as any).internal.pages as string[][])[1].join('');
-    const expression = /([-0-9.]+)\\s+0\\s+0\\s+([-0-9.]+)\\s+([-0-9.]+)\\s+([-0-9.]+)\\s+cm\\s*\\/I\\d+\\s+Do/g;
-    const placements = [...firstPage.matchAll(expression)];
-    assert.ok(placements.length > 0, 'Expected the cover logo image to be embedded on page one');
-    return Math.abs(Number(placements[0][1]));
+    const placement = imagePlacements(doc)[0];
+    assert.ok(placement, 'Expected the cover logo image to be embedded on page one');
+    return placement.widthPoints;
   };
   const small = coverLogoWidth(makeLogoDocument(50));
   const large = coverLogoWidth(makeLogoDocument(150));
