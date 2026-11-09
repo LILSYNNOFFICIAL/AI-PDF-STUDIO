@@ -395,6 +395,62 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
     }));
   };
 
+  const updateCover = (patch: Partial<DocumentDesign['coverPage']>) => {
+    setDesign(current => ({ ...current, coverPage: { ...current.coverPage, ...patch } }));
+  };
+
+  const updateLayout = (patch: Partial<DocumentDesign['layoutDefaults']>) => {
+    setDesign(current => ({ ...current, layoutDefaults: { ...current.layoutDefaults, ...patch } }));
+  };
+
+  const updatePageConfigDraft = (patch: Partial<PageConfig>) => {
+    setPageConfigDraft(current => ({
+      ...current,
+      ...patch,
+      margins: { ...current.margins, ...(patch.margins || {}) }
+    }));
+  };
+
+  const duplicateThemeCopy = (theme: SavedDocumentTheme) => {
+    const suggestedName = theme.name + ' Copy';
+    const name = window.prompt('Name the duplicated theme', suggestedName);
+    if (!name?.trim()) return;
+    try {
+      setSavedThemes(duplicateSavedTheme(window.localStorage, theme.id, name.trim()));
+      setStorageMessage('Theme duplicated.');
+    } catch (error) {
+      setStorageMessage(error instanceof Error ? error.message : 'The theme could not be duplicated.');
+    }
+  };
+
+  const exportThemeJson = () => {
+    try {
+      const blob = new Blob([serializeDocumentTheme(design)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = (design.name || 'document-theme').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.json';
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setStorageMessage('Theme JSON exported.');
+    } catch (error) {
+      setStorageMessage(error instanceof Error ? error.message : 'The theme could not be exported.');
+    }
+  };
+
+  const importThemeJson = async (file?: File) => {
+    if (!file) return;
+    try {
+      const parsed = parseDocumentTheme(await file.text());
+      setDesign(parsed);
+      setThemeName(parsed.name + ' Imported');
+      setTab('cover');
+      setStorageMessage('Theme imported into the local preview. Apply document design to use it.');
+    } catch (error) {
+      setStorageMessage(error instanceof Error ? error.message : 'The selected file is not a valid design theme.');
+    }
+  };
+
   const applySavedTheme = (theme: SavedDocumentTheme) => {
     setDesign(deepCloneDesign(theme.design));
     setTab('page');
