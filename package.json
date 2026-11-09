@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/orchestrator/orchestrator.test.ts src/orchestrator/aiDocumentEditor.test.ts src/services/pdfGenerator.test.ts src/services/apiCors.test.ts src/services/textDocumentImporter.test.ts src/services/documentDesign.test.ts src/services/imageResize.test.ts src/services/pdfGenerator.imageSizing.test.ts src/services/signatureBlocks.test.ts src/services/templateCatalog.test.ts",
+    "test": "tsx --test src/orchestrator/orchestrator.test.ts src/orchestrator/aiDocumentEditor.test.ts src/services/pdfGenerator.test.ts src/services/apiCors.test.ts src/services/textDocumentImporter.test.ts src/services/documentDesign.test.ts src/services/imageResize.test.ts src/services/pdfGenerator.imageSizing.test.ts src/services/signatureBlocks.test.ts src/services/templateCatalog.test.ts src/services/contextMenu.test.ts",
     "verify:pages": "node scripts/verify-pages-build.mjs"
   },
   "dependencies": {
