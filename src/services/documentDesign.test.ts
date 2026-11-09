@@ -26,8 +26,8 @@ class MemoryStorage {
   removeItem(key: string): void { this.data.delete(key); }
 }
 
-test('all nine built-in presets contain valid semantic tokens', () => {
-  assert.equal(DOCUMENT_DESIGN_PRESETS.length, 9);
+test('all eighteen built-in themes contain valid semantic tokens', () => {
+  assert.equal(DOCUMENT_DESIGN_PRESETS.length, 18);
   for (const preset of DOCUMENT_DESIGN_PRESETS) {
     validateDocumentDesign(preset);
     assert.ok(preset.colors.primary);
@@ -330,8 +330,8 @@ test('legacy document design normalization supplies cover and layout defaults', 
     enabled: false,
     style: 'midnight-executive',
     background: { type: 'solid', color: '#0b0d12', opacity: 1 },
-    titleColor: '#172033',
-    detailColor: '#64748b',
+    titleColor: '#f8fafc',
+    detailColor: '#94a3b8',
     borderColor: '#b08a45',
     eyebrow: 'AGREEMENT',
     brandLine: '',
