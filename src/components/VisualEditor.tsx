@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DocumentContextMenu } from './DocumentContextMenu';
+import { EditorCommandPalette, type EditorCommand } from './EditorCommandPalette';
 import { getContextMenuActionIds, type ContextMenuItem, type DocumentContextTargetType } from '../services/contextMenu';
 import { 
   Sparkles, 
@@ -17,7 +18,8 @@ import {
   PieChart,
   Copy,
   FilePlus,
-  ArrowDownCircle
+  ArrowDownCircle,
+  Search
 } from 'lucide-react';
 import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock, InlineSignatureBlock } from '../types/document';
 import { calculateImageResizeWidth } from '../services/imageResize';
@@ -58,6 +60,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   onInsertSignatureAtSelection
 }) => {
   const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedTableCell, setSelectedTableCell] = useState<{
     sectionId: string;
     tableId: string;
@@ -79,6 +82,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; target: LocalContextTarget } | null>(null);
   const coverLogoInputRef = useRef<HTMLInputElement>(null);
   const canvasImageInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const handleCommandShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleCommandShortcut);
+    return () => window.removeEventListener('keydown', handleCommandShortcut);
+  }, []);
+
   const documentDesign = resolveDocumentDesign(document);
 
   const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
@@ -141,6 +155,47 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Unable to add images.');
     }
+  };
+
+  const startCoverLogoResize = (event: React.PointerEvent<HTMLButtonElement>, handle: 'top' | 'right' | 'bottom' | 'left' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
+    event.preventDefault();
+    event.stopPropagation();
+    const wrapper = event.currentTarget.parentElement as HTMLDivElement | null;
+    if (!wrapper) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startPercent = Math.max(25, Math.min(200, document.brandLogoWidthPercent ?? 100));
+    let nextPercent = startPercent;
+    const previousUserSelect = window.document.body.style.userSelect;
+    window.document.body.style.userSelect = 'none';
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.document.body.style.userSelect = previousUserSelect;
+    };
+    const onMove = (moveEvent: PointerEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      const horizontal = handle.includes('left') ? -dx : handle.includes('right') ? dx : 0;
+      const vertical = handle.includes('top') ? -dy : handle.includes('bottom') ? dy : 0;
+      const delta = horizontal || vertical;
+      nextPercent = Math.max(25, Math.min(200, startPercent + (delta / 133) * 100));
+      wrapper.style.width = Math.round(133 * nextPercent / 100) + 'px';
+      wrapper.style.height = Math.round(70 * nextPercent / 100) + 'px';
+    };
+    const onUp = () => {
+      cleanup();
+      onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(nextPercent), updatedAt: new Date().toISOString() });
+    };
+    const onCancel = () => {
+      wrapper.style.width = Math.round(133 * startPercent / 100) + 'px';
+      wrapper.style.height = Math.round(70 * startPercent / 100) + 'px';
+      cleanup();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointercancel', onCancel, { once: true });
   };
 
   const handleCoverLogoUpload = async (files: FileList | null) => {
@@ -466,14 +521,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('add-section', 'Add document section', () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: 'Click to edit this section.', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() })),
         item('insert-image', 'Insert image into document', () => canvasImageInputRef.current?.click()),
-        item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || ''))
+        item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || '')),
+        item('toggle-page-numbers', document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() })),
+        item('toggle-cover-page', documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() })),
+        item('change-page-size', 'Change page size…', () => { const value = window.prompt('Page size: A4, LETTER, or LEGAL', document.pageConfig.pageSize); if (value === 'A4' || value === 'LETTER' || value === 'LEGAL') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, pageSize: value }, updatedAt: new Date().toISOString() }); }),
+        item('change-page-orientation', 'Change page orientation…', () => { const value = window.prompt('Orientation: portrait or landscape', document.pageConfig.orientation); if (value === 'portrait' || value === 'landscape') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, orientation: value }, updatedAt: new Date().toISOString() }); }),
+        item('change-page-background', 'Change page background…', () => { const value = window.prompt('Background color (hex)', documentDesign.colors.pageSurface); if (value && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) onUpdateDocument({ ...document, design: { ...documentDesign, page: { ...documentDesign.page, background: { type: 'solid', color: value } } }, updatedAt: new Date().toISOString() }); })
       ];
     }
     if (target.type === 'cover-logo') {
       return [
         item('upload-logo', document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo', () => coverLogoInputRef.current?.click()),
         item('edit-brand-name', 'Edit brand name', () => window.document.getElementById('cover-brand-name')?.focus()),
-        item('remove-logo', 'Remove cover logo', () => onUpdateDocument({ ...document, brandLogoUrl: undefined, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !document.brandLogoUrl })
+        item('increase-logo-size', 'Increase logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.min(200, (document.brandLogoWidthPercent ?? 100) + 10), updatedAt: new Date().toISOString() }), { disabled: (document.brandLogoWidthPercent ?? 100) >= 200 || !document.brandLogoUrl }),
+        item('decrease-logo-size', 'Decrease logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.max(25, (document.brandLogoWidthPercent ?? 100) - 10), updatedAt: new Date().toISOString() }), { disabled: (document.brandLogoWidthPercent ?? 100) <= 25 || !document.brandLogoUrl }),
+        item('set-logo-size', 'Set exact logo size…', () => {
+          const current = document.brandLogoWidthPercent ?? 100;
+          const value = window.prompt('Logo size (25 to 200 percent)', String(current));
+          if (value === null) return;
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed) || parsed < 25 || parsed > 200) { window.alert('Enter a number from 25 to 200.'); return; }
+          onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(parsed), updatedAt: new Date().toISOString() });
+        }, { disabled: !document.brandLogoUrl }),
+        item('reset-logo-size', 'Reset logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: 100, updatedAt: new Date().toISOString() }), { disabled: !document.brandLogoUrl || (document.brandLogoWidthPercent ?? 100) === 100 }),
+        item('remove-logo', 'Remove cover logo', () => onUpdateDocument({ ...document, brandLogoUrl: undefined, brandLogoWidthPercent: undefined, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !document.brandLogoUrl })
       ];
     }
     if (target.type === 'cover-text') {
@@ -496,7 +567,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         item('select-all', 'Select all text', () => { target.element.focus(); target.element.select(); }, { shortcut: 'Ctrl+A' }),
         item('insert-signature', 'Insert signature block', () => onInsertSignatureAtSelection?.({
           sectionId: target.sectionId, start: target.start, end: target.end, selectedText: target.selectedText
-        }))
+        })),
+        item('ai-rewrite', 'AI: Rewrite selection', () => onQuickAIAction('rewrite', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-expand', 'AI: Expand selection', () => onQuickAIAction('expand', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-shorten', 'AI: Shorten selection', () => onQuickAIAction('shorten', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-professional', 'AI: Make more professional', () => onQuickAIAction('professional', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-grammar', 'AI: Fix grammar', () => onQuickAIAction('grammar', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-summarize', 'AI: Summarize selection', () => onQuickAIAction('summarize', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected })
       ];
     }
     if (target.type === 'header-image') {
@@ -513,6 +590,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         item('align-right', 'Align right', () => update({ alignment: 'right' })),
         item('increase-image-size', 'Increase image size', () => update({ widthPercent: Math.min(100, (image.widthPercent || 80) + 10) }), { disabled: (image.widthPercent || 80) >= 100 }),
         item('decrease-image-size', 'Decrease image size', () => update({ widthPercent: Math.max(20, (image.widthPercent || 80) - 10) }), { disabled: (image.widthPercent || 80) <= 20 }),
+        item('set-image-size', 'Set exact image width…', () => {
+          const value = window.prompt('Image width (10 to 100 percent)', String(image.widthPercent ?? 80));
+          if (value === null) return;
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed) || parsed < 10 || parsed > 100) { window.alert('Enter a number from 10 to 100.'); return; }
+          update({ widthPercent: Math.round(parsed) });
+        }),
+        item('reset-image-size', 'Reset image width', () => update({ widthPercent: 80 }), { disabled: (image.widthPercent ?? 80) === 80 }),
+        item('duplicate-image', 'Duplicate image', () => onUpdateDocument({
+          ...document,
+          pageHeaderImages: [...(document.pageHeaderImages || []), { ...image, id: 'image_' + Date.now() }],
+          updatedAt: new Date().toISOString()
+        })),
         item('edit-caption', 'Edit caption', () => { const value = window.prompt('Image caption', image.caption || ''); if (value !== null) update({ caption: value }); }),
         item('edit-alt-text', 'Edit alternative text', () => { const value = window.prompt('Alternative text', image.altText || ''); if (value !== null) update({ altText: value }); }),
         item('delete-image', 'Delete image', () => onUpdateDocument({
@@ -525,12 +615,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (!section) return [];
 
     if (target.type === 'section') {
+      const insertSection = (index: number) => {
+        const next = [...document.sections];
+        next.splice(index, 0, { id: 'sec_' + Date.now(), sectionNumber: (index + 1) + '.0', title: 'New Section', content: '', clauses: [], orderIndex: index + 1 });
+        onUpdateDocument({ ...document, sections: next.map((entry, orderIndex) => ({ ...entry, orderIndex: orderIndex + 1 })), updatedAt: new Date().toISOString() });
+      };
       return [
-        item('add-clause', 'Add clause', () => {
-          const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1';
-          const next = [...section.clauses, { id: 'cl_' + Date.now(), clauseNumber: prefix + '.' + (section.clauses.length + 1), heading: 'New Provision', content: 'Enter the provision text here.', orderIndex: section.clauses.length + 1 }];
-          onUpdateSection({ ...section, clauses: next });
-        }),
+        item('add-clause', 'Add clause', () => handleAddClauseToSection(section)),
+        item('add-section-before', 'Insert section before', () => insertSection(document.sections.findIndex(entry => entry.id === section.id))),
+        item('add-section-after', 'Insert section after', () => insertSection(document.sections.findIndex(entry => entry.id === section.id) + 1)),
+        item('rename-section', 'Rename section…', () => { const value = window.prompt('Section title', section.title); if (value !== null) onUpdateSection({ ...section, title: value }); }),
+        item('convert-to-appendix', section.isAppendix ? 'Remove appendix designation' : 'Convert to appendix', () => onUpdateSection({ ...section, isAppendix: !section.isAppendix, appendixCode: section.isAppendix ? undefined : 'APPENDIX ' + String.fromCharCode(65 + document.sections.filter(entry => entry.isAppendix).length) })),
         item('duplicate-section', 'Duplicate section', () => onDuplicateSection(section.id)),
         item('move-section-up', 'Move section up', () => onMoveSection?.(section.id, 'up'), { disabled: !onMoveSection || document.sections[0]?.id === section.id }),
         item('move-section-down', 'Move section down', () => onMoveSection?.(section.id, 'down'), { disabled: !onMoveSection || document.sections[document.sections.length - 1]?.id === section.id }),
@@ -543,8 +638,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const clauseIndex = section.clauses.findIndex(clause => clause.id === target.clauseId);
       const clause = section.clauses[clauseIndex];
       if (!clause) return [];
+      const reorderClause = (direction: -1 | 1) => {
+        const next = [...section.clauses];
+        const destination = clauseIndex + direction;
+        if (destination < 0 || destination >= next.length) return;
+        [next[clauseIndex], next[destination]] = [next[destination], next[clauseIndex]];
+        onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
+      };
       return [
         item('copy-clause', 'Copy clause text', () => { void copyText([clause.heading, clause.content].filter(Boolean).join('\n')); }),
+        item('edit-clause', 'Edit clause heading…', () => { const value = window.prompt('Clause heading', clause.heading || ''); if (value !== null) onUpdateSection({ ...section, clauses: section.clauses.map(entry => entry.id === clause.id ? { ...entry, heading: value } : entry) }); }),
         item('add-clause-after', 'Add clause after', () => {
           const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1';
           const next = [...section.clauses];
@@ -556,6 +659,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           next.splice(clauseIndex + 1, 0, { ...clause, id: 'cl_' + Date.now(), clauseNumber: clause.clauseNumber + 'A' });
           onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
         }),
+        item('move-clause-up', 'Move clause up', () => reorderClause(-1), { disabled: clauseIndex <= 0 }),
+        item('move-clause-down', 'Move clause down', () => reorderClause(1), { disabled: clauseIndex >= section.clauses.length - 1 }),
+        item('renumber-clauses', 'Renumber clauses', () => { const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1'; onUpdateSection({ ...section, clauses: section.clauses.map((entry, index) => ({ ...entry, clauseNumber: prefix + '.' + (index + 1), orderIndex: index + 1 })) }); }),
         item('delete-clause', 'Delete clause', () => onUpdateSection({ ...section, clauses: section.clauses.filter(entry => entry.id !== clause.id).map((entry, index) => ({ ...entry, orderIndex: index + 1 })) }), { destructive: true })
       ];
     }
@@ -569,6 +675,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         item('align-right', 'Align right', () => update({ alignment: 'right' })),
         item('increase-image-size', 'Increase image size', () => update({ widthPercent: Math.min(100, (image.widthPercent || 80) + 10) }), { disabled: (image.widthPercent || 80) >= 100 }),
         item('decrease-image-size', 'Decrease image size', () => update({ widthPercent: Math.max(20, (image.widthPercent || 80) - 10) }), { disabled: (image.widthPercent || 80) <= 20 }),
+        item('set-image-size', 'Set exact image width…', () => {
+          const value = window.prompt('Image width (10 to 100 percent)', String(image.widthPercent ?? 80));
+          if (value === null) return;
+          const parsed = Number(value);
+          if (!Number.isFinite(parsed) || parsed < 10 || parsed > 100) { window.alert('Enter a number from 10 to 100.'); return; }
+          update({ widthPercent: Math.round(parsed) });
+        }),
+        item('reset-image-size', 'Reset image width', () => update({ widthPercent: 80 }), { disabled: (image.widthPercent ?? 80) === 80 }),
+        item('duplicate-image', 'Duplicate image', () => onUpdateSection({
+          ...section,
+          images: [...(section.images || []), { ...image, id: 'image_' + Date.now() }]
+        })),
         item('edit-caption', 'Edit caption', () => { const value = window.prompt('Image caption', image.caption || ''); if (value !== null) update({ caption: value }); }),
         item('edit-alt-text', 'Edit alternative text', () => { const value = window.prompt('Alternative text', image.altText || ''); if (value !== null) update({ altText: value }); }),
         item('delete-image', 'Delete image', () => onUpdateSection({ ...section, images: (section.images || []).filter(entry => entry.id !== image.id) }), { destructive: true })
@@ -577,9 +695,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (target.type === 'table') {
       const tableIndex = (section.tables || []).findIndex(table => table.id === target.tableId);
       if (!section.tables?.[tableIndex]) return [];
+      const table = section.tables[tableIndex];
+      const selected = selectedTableCell?.sectionId === section.id && selectedTableCell.tableId === target.tableId ? selectedTableCell : null;
+      const deleteSelectedRow = () => {
+        if (!selected || selected.rowIndex < 0) return;
+        const rows = table.rows.filter((_, index) => index !== selected.rowIndex);
+        onUpdateSection({ ...section, tables: (section.tables || []).map(entry => entry.id === table.id ? { ...entry, rows } : entry) });
+        setSelectedTableCell(null);
+      };
+      const deleteSelectedColumn = () => {
+        if (!selected || selected.columnIndex < 0 || table.headers.length <= 1) return;
+        const headers = table.headers.filter((_, index) => index !== selected.columnIndex);
+        const rows = table.rows.map(row => row.filter((_, index) => index !== selected.columnIndex));
+        onUpdateSection({ ...section, tables: (section.tables || []).map(entry => entry.id === table.id ? { ...entry, headers, rows } : entry) });
+        setSelectedTableCell(null);
+      };
       return [
         item('add-table-row', 'Add row', () => handleAddRow(section, tableIndex)),
         item('add-table-column', 'Add column', () => handleAddColumn(section, tableIndex)),
+        item('delete-table-row', 'Delete selected row', deleteSelectedRow, { destructive: true, disabled: !selected || selected.rowIndex < 0 || table.rows.length <= 1 }),
+        item('delete-table-column', 'Delete selected column', deleteSelectedColumn, { destructive: true, disabled: !selected || table.headers.length <= 1 }),
+        item('duplicate-table', 'Duplicate table', () => {
+          const duplicate = { ...table, id: 'table_' + Date.now(), headers: table.headers.map(cell => ({ ...cell, id: 'th_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) })), rows: table.rows.map(row => row.map(cell => ({ ...cell, id: 'cell_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) }))) };
+          onUpdateSection({ ...section, tables: [...(section.tables || []), duplicate] });
+        }),
         item('delete-table', 'Delete table', () => onUpdateSection({ ...section, tables: (section.tables || []).filter(entry => entry.id !== target.tableId) }), { destructive: true })
       ];
     }
@@ -619,6 +758,25 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     ];
   };
 
+  const activeSection = document.sections.find(section => section.id === activeSectionId) || document.sections[0];
+  const commandActions: EditorCommand[] = [
+    { id: 'add-section', label: 'Add document section', keywords: ['new', 'insert', 'page'], description: 'Create a new editable section', onSelect: () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: '', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() }) },
+    { id: 'insert-image', label: 'Insert image', keywords: ['picture', 'photo', 'artwork'], description: 'Add an image to the active section', onSelect: () => canvasImageInputRef.current?.click() },
+    { id: 'add-clause', label: 'Add clause to active section', keywords: ['provision', 'legal', 'paragraph'], onSelect: () => { if (activeSection) handleAddClauseToSection(activeSection); } },
+    { id: 'duplicate-section', label: 'Duplicate active section', keywords: ['copy', 'clone'], onSelect: () => { if (activeSection) onDuplicateSection(activeSection.id); } },
+    { id: 'move-section-up', label: 'Move active section up', keywords: ['reorder', 'position'], onSelect: () => { if (activeSection) onMoveSection?.(activeSection.id, 'up'); } },
+    { id: 'move-section-down', label: 'Move active section down', keywords: ['reorder', 'position'], onSelect: () => { if (activeSection) onMoveSection?.(activeSection.id, 'down'); } },
+    { id: 'toggle-page-break', label: 'Toggle page break before active section', keywords: ['pagination', 'new page'], onSelect: () => { if (activeSection) handleTogglePageBreak(activeSection); } },
+    { id: 'document-design', label: 'Customize document design', keywords: ['theme', 'style', 'layout'], onSelect: () => onOpenDesign?.(activeSection?.id || '') },
+    { id: 'toggle-page-numbers', label: document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', keywords: ['pagination', 'footer'], onSelect: () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() }) },
+    { id: 'toggle-cover', label: documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', keywords: ['front page', 'title page'], onSelect: () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() }) },
+    { id: 'page-orientation', label: 'Change page orientation', keywords: ['portrait', 'landscape', 'page setup'], onSelect: () => { const value = window.prompt('Page orientation: portrait or landscape', document.pageConfig.orientation); if (value === 'portrait' || value === 'landscape') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, orientation: value }, updatedAt: new Date().toISOString() }); } },
+    { id: 'page-size', label: 'Change page size', keywords: ['A4', 'letter', 'legal', 'paper'], onSelect: () => { const value = window.prompt('Page size: A4, LETTER, or LEGAL', document.pageConfig.pageSize); if (value === 'A4' || value === 'LETTER' || value === 'LEGAL') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, pageSize: value }, updatedAt: new Date().toISOString() }); } },
+    { id: 'page-background', label: 'Change page background color', keywords: ['fill', 'color', 'canvas'], onSelect: () => { const value = window.prompt('Page background color (hex)', documentDesign.colors.pageSurface); if (value && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) onUpdateDocument({ ...document, design: { ...documentDesign, page: { ...documentDesign.page, background: { type: 'solid', color: value } } }, updatedAt: new Date().toISOString() }); } },
+    { id: 'zoom-in', label: 'Zoom in', keywords: ['magnify', 'view'], onSelect: () => setZoomLevel(value => Math.min(150, value + 10)) },
+    { id: 'zoom-out', label: 'Zoom out', keywords: ['shrink', 'view'], onSelect: () => setZoomLevel(value => Math.max(70, value - 10)) }
+  ];
+
   const contextMenuItems = contextMenu
     ? contextMenu.target.type === 'party-signature'
       ? buildPartySignatureItems(contextMenu.target.partyId, contextMenu.target.partyIndex)
@@ -629,6 +787,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   return (
     <div className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-4 sm:p-8 relative">
+      <button type="button" onClick={() => setCommandPaletteOpen(true)} title="Search commands (Ctrl+K)" className="fixed right-6 top-6 z-20 flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900/95 px-3 py-2 text-xs text-slate-300 shadow-xl transition-colors hover:border-blue-500 hover:text-white">
+        <Search className="h-3.5 w-3.5" /> Commands <kbd className="rounded border border-slate-700 px-1 py-0.5 text-[9px] text-slate-500">Ctrl K</kbd>
+      </button>
+
       {/* Floating Viewport & Zoom Bar */}
       <div className="fixed bottom-6 left-80 z-20 bg-slate-900/90 backdrop-blur-md border border-slate-800 text-slate-300 rounded-lg px-3 py-1.5 shadow-xl flex items-center gap-2 text-xs">
         <button 
@@ -692,10 +854,37 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 style={{ color: documentDesign.coverPage.detailColor }}
               />
               {documentDesign.coverPage.showLogoPlaceholder && (
-                <div onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} className="mt-9 flex min-w-16 max-w-56 flex-col items-center gap-2">
-                  <button type="button" aria-label={document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo'} title="Click to add or replace a logo. Right-click for logo actions." onClick={() => coverLogoInputRef.current?.click()} className="flex h-20 min-w-20 max-w-56 items-center justify-center rounded-lg border border-dashed px-3 py-2 transition-colors hover:bg-white/10" style={{ borderColor: documentDesign.coverPage.borderColor }}>
-                    {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-16 max-w-48 object-contain" /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
-                  </button>
+                <div onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} className="mt-9 flex flex-col items-center gap-2">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={document.brandLogoUrl ? 'Select cover logo' : 'Add cover logo'}
+                    title="Click to add or replace a logo. Drag any resize handle to change its size. Right-click for logo actions."
+                    onClick={() => coverLogoInputRef.current?.click()}
+                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); coverLogoInputRef.current?.click(); } }}
+                    className="relative flex items-center justify-center rounded-lg border border-dashed transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    style={{ borderColor: documentDesign.coverPage.borderColor, width: Math.round(133 * (document.brandLogoWidthPercent ?? 100) / 100), height: Math.round(70 * (document.brandLogoWidthPercent ?? 100) / 100), minWidth: 33, maxWidth: 600, cursor: 'pointer' }}
+                  >
+                    {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-full max-w-full object-contain" draggable={false} /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
+                    {document.brandLogoUrl && (['top-left','top','top-right','right','bottom-right','bottom','bottom-left','left'] as const).map(handle => (
+                      <button
+                        key={handle}
+                        type="button"
+                        aria-label={`Resize cover logo ${handle}`}
+                        onPointerDown={event => startCoverLogoResize(event, handle)}
+                        onClick={event => { event.preventDefault(); event.stopPropagation(); }}
+                        className="absolute z-30 h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-600 shadow-[0_0_0_1px_rgba(15,23,42,0.85)] hover:scale-125 focus:scale-125 focus:outline-none"
+                        style={{
+                          touchAction: 'none',
+                          cursor: handle.includes('left') || handle.includes('right') ? 'ew-resize' : handle.includes('top') || handle.includes('bottom') ? 'ns-resize' : 'nwse-resize',
+                          ...(handle.includes('top') ? { top: -7 } : handle.includes('bottom') ? { bottom: -7 } : {}),
+                          ...(handle.includes('left') ? { left: -7 } : handle.includes('right') ? { right: -7 } : {}),
+                          ...(handle === 'top' || handle === 'bottom' ? { left: 'calc(50% - 7px)' } : {}),
+                          ...(handle === 'left' || handle === 'right' ? { top: 'calc(50% - 7px)' } : {})
+                        }}
+                      />
+                    ))}
+                  </div>
                   <input id="cover-brand-name" aria-label="Cover brand name" value={document.brandName || ''} onChange={event => onUpdateDocument({ ...document, brandName: event.target.value, updatedAt: new Date().toISOString() })} onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} placeholder="Type brand name" className="w-full bg-transparent text-center text-[10px] font-semibold tracking-[0.12em] outline-none placeholder:opacity-60" style={{ color: documentDesign.coverPage.titleColor }} />
                 </div>
               )}
@@ -1571,6 +1760,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           </div>
         </main>
       </div>
+      <EditorCommandPalette open={commandPaletteOpen} commands={commandActions} onClose={() => setCommandPaletteOpen(false)} />
       {contextMenu && contextMenuItems.length > 0 && (
         <DocumentContextMenu
           x={contextMenu.x}

@@ -356,6 +356,8 @@ export interface DocumentModel {
   /** Applied brand identity used by cover-page previews and PDF rendering. */
   brandName?: string;
   brandLogoUrl?: string;
+  /** Cover logo scale percentage. 100 preserves the default rendered size. */
+  brandLogoWidthPercent?: number;
   styles: StyleConfig;
   design?: DocumentDesign;
   pageConfig: PageConfig;
