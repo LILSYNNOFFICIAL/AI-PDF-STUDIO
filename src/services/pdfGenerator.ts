@@ -269,6 +269,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       padding?: number;
       minHeight?: number;
       verticalAlign?: 'top' | 'middle' | 'bottom';
+      firstLineIndent?: number;
     } = {}
   ) => {
     const size = options.size ?? design.typography.bodyFontSize ?? 10.5;
@@ -302,7 +303,8 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       cursorY += verticalOffset;
       for (let offset = 0; offset < segmentCount; offset++) {
         const line = lines[lineIndex + offset];
-        const textX = align === 'center' ? x + width / 2 : align === 'right' ? x + width : x;
+        const indent = offset === 0 ? options.firstLineIndent || 0 : 0;
+        const textX = align === 'center' ? x + width / 2 : align === 'right' ? x + width : x + indent;
         pdf.text(line, textX, cursorY, { align });
         cursorY += lineHeight;
       }
@@ -579,10 +581,21 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     if (section.forcePageBreakBefore) addPage();
     else ensureSpace(12);
 
+    const headingStyle = design.layoutDefaults.sectionHeadingStyle;
+    const headingBackground = headingStyle === 'banner'
+      ? { type: 'solid' as const, color: design.colors.primary, opacity: 1 }
+      : headingStyle === 'numbered-card'
+        ? { type: 'solid' as const, color: design.colors.sectionSurface, opacity: 1 }
+        : sectionStyle.background;
+    const headingBorder: BorderConfig | undefined = headingStyle === 'editorial-rule'
+      ? { style: 'solid', color: design.colors.border, width: 0.5, sides: ['bottom'] }
+      : headingStyle === 'numbered-card'
+        ? { style: 'solid', color: design.colors.border, width: 0.5 }
+        : undefined;
     drawWrappedText(applyHeadingCase(`${section.sectionNumber} ${section.title}`), sectionX, sectionWidth, {
       font: headingFont, style: 'bold', size: design.typography.heading2Size || doc.styles.heading2Size || 13,
-      color: colorToRgb(sectionStyle.headingColor), lineHeight: 6, after: 2,
-      background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+      color: colorToRgb(headingStyle === 'banner' ? '#ffffff' : sectionStyle.headingColor), lineHeight: 6, after: 2,
+      background: headingBackground, border: headingBorder, padding: sectionPadding,
       align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
       verticalAlign: design.typography.verticalAlignment || 'top'
     });
@@ -595,6 +608,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
         after: design.typography.paragraphSpacing * 0.264583,
         background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+        firstLineIndent: design.layoutDefaults.paragraphIndent * 0.264583,
         align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
         verticalAlign: design.typography.verticalAlignment || 'top'
       });
