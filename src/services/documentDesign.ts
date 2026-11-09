@@ -72,6 +72,27 @@ const BASE_DESIGN: DocumentDesign = {
     border: { style: 'solid', color: '#dbe3ee', width: 0.5 },
     padding: 12
   },
+  coverPage: {
+    enabled: false,
+    style: 'midnight-executive',
+    background: solid('#0b0d12'),
+    titleColor: '#f8fafc',
+    detailColor: '#94a3b8',
+    borderColor: '#b08a45',
+    eyebrow: 'AGREEMENT',
+    brandLine: '',
+    showFrame: true,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  },
+  layoutDefaults: {
+    sectionHeadingStyle: 'editorial-rule',
+    sectionSpacing: 22,
+    headerRule: true,
+    footerRule: true,
+    paragraphIndent: 0,
+    sectionPadding: 12
+  },
   pageFurniture: {
     headerTextColor: '#64748b',
     footerTextColor: '#64748b',
@@ -101,6 +122,24 @@ function makePreset(
   result.tableDefaults.bodyTextColor = result.colors.tableBodyText;
   result.tableDefaults.alternateRowBackground = solid(result.colors.tableAlternateRowSurface);
   result.tableDefaults.gridlineColor = result.colors.border;
+  result.coverPage = {
+    ...result.coverPage,
+    enabled: true,
+    style: presetId === 'art-deco' ? 'art-deco'
+      : presetId === 'dark-luxury' ? 'dark-luxury'
+        : presetId === 'minimal-contemporary' || presetId === 'modern-legal' ? 'minimal'
+          : presetId === 'bold-editorial' || presetId === 'editorial-luxe' ? 'editorial'
+            : 'midnight-executive',
+    background: solid('#0b0d12'),
+    titleColor: '#f8fafc',
+    detailColor: '#cbd5e1',
+    borderColor: result.colors.accent,
+    eyebrow: 'AGREEMENT',
+    brandLine: '',
+    showFrame: true,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  };
   result.pageFurniture.headerTextColor = result.colors.mutedText;
   result.pageFurniture.footerTextColor = result.colors.mutedText;
   result.pageFurniture.dividerColor = result.colors.border;
@@ -171,6 +210,129 @@ lilSynnPreset.pageFurniture.headerTextColor = '#ff4fa3';
 lilSynnPreset.pageFurniture.footerTextColor = '#c5c5c5';
 lilSynnPreset.pageFurniture.dividerColor = '#d99a32';
 lilSynnPreset.pageFurniture.dividerWidth = 0.8;
+lilSynnPreset.coverPage = {
+  enabled: true,
+  style: 'art-deco',
+  background: solid('#050505'),
+  titleColor: '#ff4fa3',
+  detailColor: '#c5c5c5',
+  borderColor: '#d99a32',
+  eyebrow: 'LIL SYNN • SYNTIENT RECORDS',
+  brandLine: 'MUSIC • CREATIVE • INTELLECTUAL PROPERTY',
+  showFrame: true,
+  showLogoPlaceholder: true,
+  showOrnamentalRule: true
+};
+lilSynnPreset.layoutDefaults = {
+  sectionHeadingStyle: 'editorial-rule',
+  sectionSpacing: 28,
+  headerRule: true,
+  footerRule: true,
+  paragraphIndent: 0,
+  sectionPadding: 16
+};
+lilSynnPreset.signatureDefaults = {
+  background: solid('#080808'),
+  textColor: '#f5f5f5',
+  labelColor: '#c5c5c5',
+  border: { style: 'solid', color: '#d99a32', width: 0.8 },
+  padding: 14
+};
+
+DOCUMENT_DESIGN_PRESETS.push(
+  makePreset('midnight-executive', 'Midnight Executive',
+    { primary: '#1c2634', secondary: '#5c6877', accent: '#b08a45', bodyText: '#303b49', mutedText: '#687586', headingText: '#172232', pageSurface: '#fffdf8', sectionSurface: '#f7f5ef', border: '#d9cfbd', tableHeaderSurface: '#ece6da', tableHeaderText: '#172232', tableBodyText: '#303b49', tableAlternateRowSurface: '#f8f6f0' },
+    { bodyFontFamily: 'Inter', headingFontFamily: 'Garamond', bodyFontSize: 10.7, heading1Size: 27, heading2Size: 15, heading3Size: 12, headingCase: 'none' },
+    solid('#fffdf8'), solid('#ffffff'), solid('#ece6da')),
+  makePreset('art-deco', 'Art Deco',
+    { primary: '#1c1a17', secondary: '#756447', accent: '#c39b4b', bodyText: '#38332a', mutedText: '#7c715e', headingText: '#241f18', pageSurface: '#fbf8f1', sectionSurface: '#f7f1e4', border: '#d4bf8d', tableHeaderSurface: '#e8ddc2', tableHeaderText: '#241f18', tableBodyText: '#38332a', tableAlternateRowSurface: '#f8f4eb' },
+    { bodyFontFamily: 'Garamond', headingFontFamily: 'Garamond', bodyFontSize: 11.2, heading1Size: 28, heading2Size: 16, heading3Size: 12, headingCase: 'uppercase' },
+    solid('#fbf8f1'), solid('#fffdf8'), solid('#e8ddc2')),
+  makePreset('dark-luxury', 'Dark Luxury',
+    { primary: '#f4eee2', secondary: '#c6b58d', accent: '#d2ad63', bodyText: '#e8e1d5', mutedText: '#b5a88e', headingText: '#f4d998', pageSurface: '#151515', sectionSurface: '#1b1b1b', border: '#8d7449', tableHeaderSurface: '#29251d', tableHeaderText: '#f4d998', tableBodyText: '#e8e1d5', tableAlternateRowSurface: '#202020' },
+    { bodyFontFamily: 'Inter', headingFontFamily: 'Garamond', bodyFontSize: 10.7, heading1Size: 28, heading2Size: 15, heading3Size: 12 },
+    solid('#151515'), solid('#1b1b1b'), solid('#29251d')),
+  makePreset('bauhaus-modern', 'Bauhaus Modern',
+    { primary: '#1d2630', secondary: '#3f607a', accent: '#c44935', bodyText: '#303943', mutedText: '#69727b', headingText: '#171e27', pageSurface: '#f8f5ed', sectionSurface: '#ffffff', border: '#d8d2c7', tableHeaderSurface: '#e8e1d5', tableHeaderText: '#171e27', tableBodyText: '#303943', tableAlternateRowSurface: '#f4f0e7' },
+    { bodyFontFamily: 'Inter', headingFontFamily: 'Helvetica', bodyFontSize: 10.7, heading1Size: 26, heading2Size: 15, heading3Size: 12 },
+    solid('#f8f5ed'), solid('#ffffff'), solid('#e8e1d5')),
+  makePreset('glassmorphism', 'Glassmorphism',
+    { primary: '#192b43', secondary: '#56718d', accent: '#4f83b8', bodyText: '#304157', mutedText: '#71839a', headingText: '#192b43', pageSurface: '#f3f7fb', sectionSurface: '#f9fbfe', border: '#c9d8e8', tableHeaderSurface: '#e2ebf5', tableHeaderText: '#192b43', tableBodyText: '#304157', tableAlternateRowSurface: '#edf3f9' },
+    { bodyFontFamily: 'Inter', headingFontFamily: 'Inter', bodyFontSize: 10.5, heading1Size: 25, heading2Size: 15, heading3Size: 12 },
+    solid('#f3f7fb'), solid('#f9fbfe'), solid('#e2ebf5')),
+  makePreset('modern-legal', 'Modern Legal',
+    { primary: '#172941', secondary: '#52677e', accent: '#366b9b', bodyText: '#354354', mutedText: '#758395', headingText: '#172941', pageSurface: '#ffffff', sectionSurface: '#f5f8fb', border: '#d3dce6', tableHeaderSurface: '#e8eef5', tableHeaderText: '#172941', tableBodyText: '#354354', tableAlternateRowSurface: '#f7f9fc' },
+    { bodyFontFamily: 'Times New Roman', headingFontFamily: 'Inter', bodyFontSize: 11, heading1Size: 24, heading2Size: 14, heading3Size: 12, headingCase: 'none' },
+    solid('#ffffff'), solid('#f7f9fc'), solid('#e8eef5')),
+  makePreset('editorial-luxe', 'Editorial Luxe',
+    { primary: '#28201f', secondary: '#78635f', accent: '#a85d4b', bodyText: '#3a3331', mutedText: '#8a7b76', headingText: '#28201f', pageSurface: '#fcf9f6', sectionSurface: '#f7f0eb', border: '#e2d4cb', tableHeaderSurface: '#eee1d8', tableHeaderText: '#28201f', tableBodyText: '#3a3331', tableAlternateRowSurface: '#faf4ef' },
+    { bodyFontFamily: 'Georgia', headingFontFamily: 'Georgia', bodyFontSize: 11.1, heading1Size: 28, heading2Size: 16, heading3Size: 12, headingCase: 'none' },
+    solid('#fcf9f6'), solid('#f7f0eb'), solid('#eee1d8')),
+  makePreset('corporate-graphite', 'Corporate Graphite',
+    { primary: '#202a35', secondary: '#596879', accent: '#3974a6', bodyText: '#35414d', mutedText: '#788695', headingText: '#202a35', pageSurface: '#ffffff', sectionSurface: '#f3f6f8', border: '#d4dce3', tableHeaderSurface: '#e5ebf0', tableHeaderText: '#202a35', tableBodyText: '#35414d', tableAlternateRowSurface: '#f6f8fa' },
+    { bodyFontFamily: 'Inter', headingFontFamily: 'Inter', bodyFontSize: 10.5, heading1Size: 24, heading2Size: 14, heading3Size: 12 },
+    solid('#ffffff'), solid('#f3f6f8'), solid('#e5ebf0')),
+  makePreset('japandi-neutral', 'Japandi Neutral',
+    { primary: '#28342e', secondary: '#748176', accent: '#7d8c6b', bodyText: '#3e4840', mutedText: '#858d82', headingText: '#28342e', pageSurface: '#f8f7f2', sectionSurface: '#f0efe8', border: '#d9d9cd', tableHeaderSurface: '#e9e8df', tableHeaderText: '#28342e', tableBodyText: '#3e4840', tableAlternateRowSurface: '#f3f2eb' },
+    { bodyFontFamily: 'Garamond', headingFontFamily: 'Garamond', bodyFontSize: 11.2, heading1Size: 26, heading2Size: 15, heading3Size: 12, headingCase: 'none' },
+    solid('#f8f7f2'), solid('#f0efe8'), solid('#e9e8df'))
+);
+
+const midnightPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'midnight-executive')!;
+midnightPreset.coverPage = {
+  enabled: true, style: 'midnight-executive', background: solid('#0b0d12'),
+  titleColor: '#f8f4ea', detailColor: '#c7b58e', borderColor: '#b08a45',
+  eyebrow: 'AGREEMENT', brandLine: '', showFrame: true, showLogoPlaceholder: false, showOrnamentalRule: true
+};
+const artDecoPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'art-deco')!;
+artDecoPreset.coverPage = {
+  enabled: true, style: 'art-deco', background: solid('#111111'),
+  titleColor: '#e5c77d', detailColor: '#cdbb91', borderColor: '#c39b4b',
+  eyebrow: 'ART DECO EDITION', brandLine: '', showFrame: true, showLogoPlaceholder: true, showOrnamentalRule: true
+};
+const darkLuxuryPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'dark-luxury')!;
+darkLuxuryPreset.coverPage = {
+  enabled: true, style: 'dark-luxury', background: solid('#101010'),
+  titleColor: '#f4d998', detailColor: '#c6b58d', borderColor: '#d2ad63',
+  eyebrow: 'PRIVATE • CONFIDENTIAL', brandLine: '', showFrame: true, showLogoPlaceholder: false, showOrnamentalRule: true
+};
+const bauhausPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'bauhaus-modern')!;
+bauhausPreset.coverPage = {
+  enabled: true, style: 'editorial', background: solid('#f8f5ed'),
+  titleColor: '#171e27', detailColor: '#3f607a', borderColor: '#c44935',
+  eyebrow: 'PROFESSIONAL DOCUMENT', brandLine: '', showFrame: false, showLogoPlaceholder: false, showOrnamentalRule: true
+};
+const glassPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'glassmorphism')!;
+glassPreset.coverPage = {
+  enabled: true, style: 'midnight-executive',
+  background: { type: 'linear-gradient', angle: 135, stops: [{ color: '#182b46', position: 0 }, { color: '#304b67', position: 100 }] },
+  titleColor: '#f8fbff', detailColor: '#c9d8e8', borderColor: '#83a9cb',
+  eyebrow: 'CONTEMPORARY EDITION', brandLine: '', showFrame: true, showLogoPlaceholder: false, showOrnamentalRule: true
+};
+const modernLegalPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'modern-legal')!;
+modernLegalPreset.coverPage = {
+  enabled: true, style: 'minimal', background: solid('#172941'),
+  titleColor: '#ffffff', detailColor: '#c9d6e3', borderColor: '#7594b3',
+  eyebrow: 'LEGAL DOCUMENT', brandLine: '', showFrame: true, showLogoPlaceholder: true, showOrnamentalRule: false
+};
+const editorialPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'editorial-luxe')!;
+editorialPreset.coverPage = {
+  enabled: true, style: 'editorial', background: solid('#28201f'),
+  titleColor: '#fcf1e9', detailColor: '#d6beb3', borderColor: '#a85d4b',
+  eyebrow: 'EDITORIAL COLLECTION', brandLine: '', showFrame: false, showLogoPlaceholder: false, showOrnamentalRule: true
+};
+const corporatePreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'corporate-graphite')!;
+corporatePreset.coverPage = {
+  enabled: true, style: 'midnight-executive', background: solid('#202a35'),
+  titleColor: '#ffffff', detailColor: '#cbd5df', borderColor: '#7f9bb4',
+  eyebrow: 'CORPORATE • CONFIDENTIAL', brandLine: '', showFrame: true, showLogoPlaceholder: true, showOrnamentalRule: true
+};
+const japandiPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'japandi-neutral')!;
+japandiPreset.coverPage = {
+  enabled: true, style: 'minimal', background: solid('#28342e'),
+  titleColor: '#f8f7f2', detailColor: '#d1d4c5', borderColor: '#9aa58d',
+  eyebrow: 'STUDIO COLLECTION', brandLine: '', showFrame: false, showLogoPlaceholder: false, showOrnamentalRule: true
+};
 
 function isHexColor(value: unknown): value is string {
   return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
@@ -287,6 +449,27 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   validateColor(design.signatureDefaults?.labelColor, 'signatureDefaults.labelColor');
   validateBorder(design.signatureDefaults?.border, 'signatureDefaults.border');
   if (!Number.isFinite(design.signatureDefaults?.padding) || design.signatureDefaults.padding < 0 || design.signatureDefaults.padding > 60) throw new Error('signatureDefaults.padding must be between 0 and 60.');
+  const cover = design.coverPage;
+  if (!cover || typeof cover !== 'object') throw new Error('coverPage must be an object.');
+  if (typeof cover.enabled !== 'boolean') throw new Error('coverPage.enabled must be a boolean.');
+  if (!['midnight-executive', 'art-deco', 'dark-luxury', 'editorial', 'minimal'].includes(cover.style)) throw new Error('coverPage.style is unsupported.');
+  validateFill(cover.background, 'coverPage.background');
+  validateColor(cover.titleColor, 'coverPage.titleColor');
+  validateColor(cover.detailColor, 'coverPage.detailColor');
+  validateColor(cover.borderColor, 'coverPage.borderColor');
+  for (const key of ['eyebrow', 'brandLine'] as const) if (typeof cover[key] !== 'string') throw new Error('coverPage.' + key + ' must be a string.');
+  for (const key of ['showFrame', 'showLogoPlaceholder', 'showOrnamentalRule'] as const) if (typeof cover[key] !== 'boolean') throw new Error('coverPage.' + key + ' must be a boolean.');
+  const layout = design.layoutDefaults;
+  if (!layout || typeof layout !== 'object') throw new Error('layoutDefaults must be an object.');
+  if (!['editorial-rule', 'numbered-card', 'minimal', 'banner'].includes(layout.sectionHeadingStyle)) throw new Error('layoutDefaults.sectionHeadingStyle is unsupported.');
+  for (const [key, value, maximum] of [
+    ['sectionSpacing', layout.sectionSpacing, 100],
+    ['paragraphIndent', layout.paragraphIndent, 30],
+    ['sectionPadding', layout.sectionPadding, 60]
+  ] as Array<[string, number, number]>) {
+    if (!Number.isFinite(value) || value < 0 || value > maximum) throw new Error('layoutDefaults.' + key + ' must be between 0 and ' + maximum + '.');
+  }
+  if (typeof layout.headerRule !== 'boolean' || typeof layout.footerRule !== 'boolean') throw new Error('layoutDefaults headerRule and footerRule must be booleans.');
   const typography = design.typography;
   if (!typography || !FONT_FAMILIES.includes(typography.bodyFontFamily) || !FONT_FAMILIES.includes(typography.headingFontFamily)) throw new Error('Typography uses an unsupported font family.');
   for (const [key, value] of Object.entries({
