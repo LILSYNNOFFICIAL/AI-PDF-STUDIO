@@ -176,3 +176,24 @@ test('resized header dimensions survive the document JSON save and reopen round 
   assert.ok(originalPlacement && reopenedPlacement);
   assert.equal(reopenedPlacement.widthPoints, originalPlacement.widthPoints);
 });
+
+
+test('cover logo width follows the persisted editor resize value in PDF output', () => {
+  const makeLogoDocument = (widthPercent: number) => {
+    const doc = buildDocumentFromPrompt('Cover logo sizing').updatedDoc;
+    doc.brandLogoUrl = squarePixel;
+    (doc as DocumentModel & { brandLogoWidthPercent?: number }).brandLogoWidthPercent = widthPercent;
+    return doc;
+  };
+  const coverLogoWidth = (doc: DocumentModel) => {
+    const pdf = generatePdfDocument(doc);
+    const firstPage = ((pdf as any).internal.pages as string[][])[1].join('');
+    const expression = /([-0-9.]+)\\s+0\\s+0\\s+([-0-9.]+)\\s+([-0-9.]+)\\s+([-0-9.]+)\\s+cm\\s*\\/I\\d+\\s+Do/g;
+    const placements = [...firstPage.matchAll(expression)];
+    assert.ok(placements.length > 0, 'Expected the cover logo image to be embedded on page one');
+    return Math.abs(Number(placements[0][1]));
+  };
+  const small = coverLogoWidth(makeLogoDocument(50));
+  const large = coverLogoWidth(makeLogoDocument(150));
+  assert.ok(large > small * 2.9, `Expected 150% logo to be three times 50%; got ${small}pt and ${large}pt`);
+});
