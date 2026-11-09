@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { ColorFill, BorderConfig, DocumentModel, Section, TableBlock, TableCell } from '../types/document';
+import { ColorFill, BorderConfig, DocumentModel, Section, TableBlock, TableCell, InlineSignatureBlock } from '../types/document';
 import {
   resolveDocumentDesign,
   resolveSectionDesign,
@@ -491,17 +491,106 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         });
       }
     };
-    if (section.content) {
-      const marker = section.imageMarkerPosition;
-      if (typeof marker === 'number') {
-        drawSectionBody(section.content.slice(0, marker));
-        drawSectionImages();
-        drawSectionBody(section.content.slice(marker));
-      } else {
-        drawSectionBody(section.content);
+    const drawInlineSignatureBlock = (block: InlineSignatureBlock) => {
+      const appearance = design.signatureDefaults;
+      const padding = appearance.padding * 0.264583;
+      const innerWidth = Math.max(10, sectionWidth - padding * 2);
+      const rows = (block.fields || []).map(field => {
+        if (field.kind === 'signature') return { field, height: 13 };
+        const lines = pdf.splitTextToSize(field.value || ' ', innerWidth);
+        return { field, height: 5 + Math.max(1, lines.length) * 3.6 };
+      });
+      const titleHeight = block.title ? 6 : 0;
+      const blockHeight = Math.max(20, padding * 2 + titleHeight + rows.reduce((sum, row) => sum + row.height, 0) + 2);
+      ensureSpace(blockHeight + 3);
+      const blockX = sectionX;
+      const blockY = cursorY;
+      drawColorFill(appearance.background, blockX, blockY, sectionWidth, blockHeight);
+      if (appearance.border.style !== 'none' && appearance.border.width > 0) {
+        pdf.setDrawColor(...colorToRgb(appearance.border.color));
+        pdf.setLineWidth(appearance.border.width * 0.264583);
+        pdf.rect(blockX, blockY, sectionWidth, blockHeight, 'S');
       }
-    } else if (typeof section.imageMarkerPosition === 'number') {
-      drawSectionImages();
+
+      let fieldY = blockY + padding + 3;
+      if (block.title) {
+        pdf.setFont(primaryFont, 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(...colorToRgb(appearance.labelColor));
+        pdf.text(block.title.toUpperCase(), blockX + padding, fieldY);
+        fieldY += titleHeight;
+      }
+
+      for (const { field, height } of rows) {
+        pdf.setFont(primaryFont, 'bold');
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...colorToRgb(appearance.labelColor));
+        pdf.text(field.label.toUpperCase(), blockX + padding, fieldY);
+        const valueY = fieldY + 3.5;
+        if (field.kind === 'signature') {
+          if (block.signatureMode === 'drawn' && block.signatureImageDataUrl) {
+            try {
+              pdf.addImage(block.signatureImageDataUrl, 'PNG', blockX + padding, valueY - 3, Math.min(48, innerWidth * 0.55), 8, undefined, 'FAST');
+            } catch {
+              pdf.setFont(primaryFont, 'italic');
+              pdf.setFontSize(9);
+              pdf.setTextColor(...colorToRgb(appearance.textColor));
+              pdf.text('[Electronic signature]', blockX + padding, valueY + 2);
+            }
+          } else if (block.signatureMode === 'typed') {
+            pdf.setFont('times', 'italic');
+            pdf.setFontSize(11);
+            pdf.setTextColor(...colorToRgb(appearance.textColor));
+            const signatureText = block.signatureValue || field.value || '';
+            if (signatureText) pdf.text(signatureText.slice(0, 120), blockX + padding, valueY + 2);
+            pdf.setDrawColor(...colorToRgb(appearance.textColor));
+            pdf.setLineWidth(0.25);
+            pdf.line(blockX + padding, fieldY + 9.5, blockX + sectionWidth - padding, fieldY + 9.5);
+          } else {
+            pdf.setDrawColor(...colorToRgb(appearance.textColor));
+            pdf.setLineWidth(0.25);
+            pdf.line(blockX + padding, fieldY + 9.5, blockX + sectionWidth - padding, fieldY + 9.5);
+          }
+        } else {
+          const lines = pdf.splitTextToSize(field.value || ' ', innerWidth);
+          pdf.setFont(primaryFont, 'normal');
+          pdf.setFontSize(9);
+          pdf.setTextColor(...colorToRgb(appearance.textColor));
+          pdf.text(lines, blockX + padding, valueY);
+        }
+        fieldY += height;
+      }
+      cursorY = blockY + blockHeight + 3;
+    };
+
+    const content = section.content || '';
+    const insertions: Array<
+      | { kind: 'image'; position: number }
+      | { kind: 'signature'; position: number; block: InlineSignatureBlock }
+    > = [];
+    if (typeof section.imageMarkerPosition === 'number') {
+      insertions.push({ kind: 'image', position: Math.max(0, Math.min(content.length, section.imageMarkerPosition)) });
+    }
+    (section.signatureBlocks || []).forEach(block => insertions.push({
+      kind: 'signature',
+      position: Math.max(0, Math.min(content.length, block.position)),
+      block
+    }));
+    insertions.sort((left, right) => left.position - right.position || (left.kind === right.kind ? 0 : left.kind === 'image' ? -1 : 1));
+
+    if (insertions.length) {
+      let textOffset = 0;
+      for (const insertion of insertions) {
+        const position = Math.max(textOffset, insertion.position);
+        drawSectionBody(content.slice(textOffset, position));
+        if (insertion.kind === 'image') drawSectionImages();
+        else drawInlineSignatureBlock(insertion.block);
+        textOffset = position;
+      }
+      drawSectionBody(content.slice(textOffset));
+    } else {
+      drawSectionBody(content);
+      if (section.images?.length) drawSectionImages();
     }
 
     if (section.scrollableContent) {
