@@ -114,6 +114,28 @@ test('very tall @ images stay inside the page content area and leave room for th
   assert.ok(firstPageContent.includes('HEADER-FIT-TITLE'), 'Expected the document title to remain on the first page');
 });
 
+test('legacy header images without a saved width use the same 80% default as the editor', () => {
+  const image = makeImage('legacy-image', squarePixel);
+  delete image.widthPercent;
+  const doc = makeHeaderDocument([image]);
+  const placement = imagePlacements(doc)[0];
+  const pdf = generatePdfDocument(doc);
+  const contentWidth = pdf.internal.pageSize.getWidth() - doc.pageConfig.margins.left - doc.pageConfig.margins.right;
+
+  assert.ok(placement, 'Expected the legacy image to render');
+  assert.ok(Math.abs(pointsToMillimeters(placement.widthPoints) - contentWidth * 0.8) < 0.2);
+});
+
+test('wide images keep their requested width on landscape pages when height allows it', () => {
+  const doc = makeHeaderDocument([makeImage('wide-landscape', landscapePixel, 80)], 'landscape');
+  const placement = imagePlacements(doc)[0];
+  const pdf = generatePdfDocument(doc);
+  const contentWidth = pdf.internal.pageSize.getWidth() - doc.pageConfig.margins.left - doc.pageConfig.margins.right;
+
+  assert.ok(placement, 'Expected the landscape page image to render');
+  assert.ok(Math.abs(pointsToMillimeters(placement.widthPoints) - contentWidth * 0.8) < 0.2);
+});
+
 test('resized header dimensions survive the document JSON save and reopen round trip', () => {
   const original = makeHeaderDocument([makeImage('saved-image', squarePixel, 80)]);
   const reopened = JSON.parse(JSON.stringify(original)) as DocumentModel;
