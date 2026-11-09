@@ -164,7 +164,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (!wrapper) return;
     const startX = event.clientX;
     const startY = event.clientY;
-    const startPercent = Math.max(25, Math.min(200, document.brandLogoWidthPercent ?? 100));
+    const startPercent = Math.max(0.1, Number(document.brandLogoWidthPercent ?? 100));
     let nextPercent = startPercent;
     const previousUserSelect = window.document.body.style.userSelect;
     window.document.body.style.userSelect = 'none';
@@ -180,13 +180,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const horizontal = handle.includes('left') ? -dx : handle.includes('right') ? dx : 0;
       const vertical = handle.includes('top') ? -dy : handle.includes('bottom') ? dy : 0;
       const delta = horizontal || vertical;
-      nextPercent = Math.max(25, Math.min(200, startPercent + (delta / 133) * 100));
+      nextPercent = Math.max(0.1, startPercent + (delta / 133) * 100);
       wrapper.style.width = Math.round(133 * nextPercent / 100) + 'px';
       wrapper.style.height = Math.round(70 * nextPercent / 100) + 'px';
     };
     const onUp = () => {
       cleanup();
-      onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(nextPercent), updatedAt: new Date().toISOString() });
+      onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(nextPercent * 100) / 100, updatedAt: new Date().toISOString() });
     };
     const onCancel = () => {
       wrapper.style.width = Math.round(133 * startPercent / 100) + 'px';
@@ -533,17 +533,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('upload-logo', document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo', () => coverLogoInputRef.current?.click()),
         item('edit-brand-name', 'Edit brand name', () => window.document.getElementById('cover-brand-name')?.focus()),
-        item('increase-logo-size', 'Increase logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.min(200, (document.brandLogoWidthPercent ?? 100) + 10), updatedAt: new Date().toISOString() }), { disabled: (document.brandLogoWidthPercent ?? 100) >= 200 || !document.brandLogoUrl }),
-        item('decrease-logo-size', 'Decrease logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.max(25, (document.brandLogoWidthPercent ?? 100) - 10), updatedAt: new Date().toISOString() }), { disabled: (document.brandLogoWidthPercent ?? 100) <= 25 || !document.brandLogoUrl }),
+        item('increase-logo-size', 'Increase logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: (document.brandLogoWidthPercent ?? 100) + 25, updatedAt: new Date().toISOString() }), { disabled: !document.brandLogoUrl }),
+        item('decrease-logo-size', 'Decrease logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: Math.max(0.1, (document.brandLogoWidthPercent ?? 100) - 25), updatedAt: new Date().toISOString() }), { disabled: !document.brandLogoUrl || (document.brandLogoWidthPercent ?? 100) <= 0.1 }),
         item('set-logo-size', 'Set exact logo size…', () => {
           const current = document.brandLogoWidthPercent ?? 100;
-          const value = window.prompt('Logo size (25 to 200 percent)', String(current));
+          const value = window.prompt('Logo scale in percent. Any positive value is allowed, including values above 200%.', String(current));
           if (value === null) return;
           const parsed = Number(value);
-          if (!Number.isFinite(parsed) || parsed < 25 || parsed > 200) { window.alert('Enter a number from 25 to 200.'); return; }
-          onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(parsed), updatedAt: new Date().toISOString() });
+          if (!Number.isFinite(parsed) || parsed <= 0) { window.alert('Enter any positive number. There is no maximum size.'); return; }
+          onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(parsed * 100) / 100, updatedAt: new Date().toISOString() });
         }, { disabled: !document.brandLogoUrl }),
         item('reset-logo-size', 'Reset logo size', () => onUpdateDocument({ ...document, brandLogoWidthPercent: 100, updatedAt: new Date().toISOString() }), { disabled: !document.brandLogoUrl || (document.brandLogoWidthPercent ?? 100) === 100 }),
+        item('set-logo-size-1000', 'Set logo to 1000%', () => onUpdateDocument({ ...document, brandLogoWidthPercent: 1000, updatedAt: new Date().toISOString() }), { disabled: !document.brandLogoUrl }),
         item('remove-logo', 'Remove cover logo', () => onUpdateDocument({ ...document, brandLogoUrl: undefined, brandLogoWidthPercent: undefined, updatedAt: new Date().toISOString() }), { destructive: true, disabled: !document.brandLogoUrl })
       ];
     }
@@ -863,7 +864,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     onClick={() => coverLogoInputRef.current?.click()}
                     onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); coverLogoInputRef.current?.click(); } }}
                     className="relative flex items-center justify-center rounded-lg border border-dashed transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-                    style={{ borderColor: documentDesign.coverPage.borderColor, width: Math.round(133 * (document.brandLogoWidthPercent ?? 100) / 100), height: Math.round(70 * (document.brandLogoWidthPercent ?? 100) / 100), minWidth: 33, maxWidth: 600, cursor: 'pointer' }}
+                    style={{ borderColor: documentDesign.coverPage.borderColor, width: Math.max(1, 133 * (document.brandLogoWidthPercent ?? 100) / 100), height: Math.max(1, 70 * (document.brandLogoWidthPercent ?? 100) / 100), minWidth: 1, maxWidth: 'none', flexShrink: 0, cursor: 'pointer' }}
                   >
                     {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-full max-w-full object-contain" draggable={false} /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
                     {document.brandLogoUrl && (['top-left','top','top-right','right','bottom-right','bottom','bottom-left','left'] as const).map(handle => (
