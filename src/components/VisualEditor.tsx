@@ -143,6 +143,47 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     }
   };
 
+  const startCoverLogoResize = (event: React.PointerEvent<HTMLButtonElement>, handle: 'top' | 'right' | 'bottom' | 'left' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right') => {
+    event.preventDefault();
+    event.stopPropagation();
+    const wrapper = event.currentTarget.parentElement as HTMLDivElement | null;
+    if (!wrapper) return;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startPercent = Math.max(25, Math.min(200, document.brandLogoWidthPercent ?? 100));
+    let nextPercent = startPercent;
+    const previousUserSelect = window.document.body.style.userSelect;
+    window.document.body.style.userSelect = 'none';
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.document.body.style.userSelect = previousUserSelect;
+    };
+    const onMove = (moveEvent: PointerEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      const horizontal = handle.includes('left') ? -dx : handle.includes('right') ? dx : 0;
+      const vertical = handle.includes('top') ? -dy : handle.includes('bottom') ? dy : 0;
+      const delta = horizontal || vertical;
+      nextPercent = Math.max(25, Math.min(200, startPercent + (delta / 192) * 100));
+      wrapper.style.width = Math.round(192 * nextPercent / 100) + 'px';
+      wrapper.style.height = Math.round(64 * nextPercent / 100) + 'px';
+    };
+    const onUp = () => {
+      cleanup();
+      onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(nextPercent), updatedAt: new Date().toISOString() });
+    };
+    const onCancel = () => {
+      wrapper.style.width = Math.round(192 * startPercent / 100) + 'px';
+      wrapper.style.height = Math.round(64 * startPercent / 100) + 'px';
+      cleanup();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointercancel', onCancel, { once: true });
+  };
+
   const handleCoverLogoUpload = async (files: FileList | null) => {
     try {
       const images = await readImageFiles(files);
@@ -692,10 +733,37 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 style={{ color: documentDesign.coverPage.detailColor }}
               />
               {documentDesign.coverPage.showLogoPlaceholder && (
-                <div onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} className="mt-9 flex min-w-16 max-w-56 flex-col items-center gap-2">
-                  <button type="button" aria-label={document.brandLogoUrl ? 'Replace cover logo' : 'Add cover logo'} title="Click to add or replace a logo. Right-click for logo actions." onClick={() => coverLogoInputRef.current?.click()} className="flex h-20 min-w-20 max-w-56 items-center justify-center rounded-lg border border-dashed px-3 py-2 transition-colors hover:bg-white/10" style={{ borderColor: documentDesign.coverPage.borderColor }}>
-                    {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-16 max-w-48 object-contain" /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
-                  </button>
+                <div onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} className="mt-9 flex flex-col items-center gap-2">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label={document.brandLogoUrl ? 'Select cover logo' : 'Add cover logo'}
+                    title="Click to add or replace a logo. Drag any resize handle to change its size. Right-click for logo actions."
+                    onClick={() => coverLogoInputRef.current?.click()}
+                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); coverLogoInputRef.current?.click(); } }}
+                    className="relative flex items-center justify-center rounded-lg border border-dashed px-3 py-2 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    style={{ borderColor: documentDesign.coverPage.borderColor, width: Math.round(192 * (document.brandLogoWidthPercent ?? 100) / 100), height: Math.round(64 * (document.brandLogoWidthPercent ?? 100) / 100), minWidth: 80, maxWidth: 600, cursor: 'pointer' }}
+                  >
+                    {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-full max-w-full object-contain" draggable={false} /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
+                    {document.brandLogoUrl && (['top-left','top','top-right','right','bottom-right','bottom','bottom-left','left'] as const).map(handle => (
+                      <button
+                        key={handle}
+                        type="button"
+                        aria-label={`Resize cover logo ${handle}`}
+                        onPointerDown={event => startCoverLogoResize(event, handle)}
+                        onClick={event => { event.preventDefault(); event.stopPropagation(); }}
+                        className="absolute z-30 h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-600 shadow-[0_0_0_1px_rgba(15,23,42,0.85)] hover:scale-125 focus:scale-125 focus:outline-none"
+                        style={{
+                          touchAction: 'none',
+                          cursor: handle.includes('left') || handle.includes('right') ? 'ew-resize' : handle.includes('top') || handle.includes('bottom') ? 'ns-resize' : 'nwse-resize',
+                          ...(handle.includes('top') ? { top: -7 } : handle.includes('bottom') ? { bottom: -7 } : {}),
+                          ...(handle.includes('left') ? { left: -7 } : handle.includes('right') ? { right: -7 } : {}),
+                          ...(handle === 'top' || handle === 'bottom' ? { left: 'calc(50% - 7px)' } : {}),
+                          ...(handle === 'left' || handle === 'right' ? { top: 'calc(50% - 7px)' } : {})
+                        }}
+                      />
+                    ))}
+                  </div>
                   <input id="cover-brand-name" aria-label="Cover brand name" value={document.brandName || ''} onChange={event => onUpdateDocument({ ...document, brandName: event.target.value, updatedAt: new Date().toISOString() })} onContextMenu={event => openContextMenu(event, { type: 'cover-logo' })} placeholder="Type brand name" className="w-full bg-transparent text-center text-[10px] font-semibold tracking-[0.12em] outline-none placeholder:opacity-60" style={{ color: documentDesign.coverPage.titleColor }} />
                 </div>
               )}
