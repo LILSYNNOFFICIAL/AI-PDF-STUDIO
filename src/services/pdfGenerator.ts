@@ -196,6 +196,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     if (!doc.imageHeaderRequested || !images.length) return;
     const gap = 3;
     const slotWidth = (contentWidth - gap * (images.length - 1)) / images.length;
+    setTextStyle(primaryFont, 'italic', 8.5, colorToRgb(design.colors.mutedText));
     const captionLines = images.map(image => image.caption?.trim()
       ? pdf.splitTextToSize(image.caption.trim(), Math.max(8, slotWidth)) as string[]
       : []);
