@@ -632,8 +632,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 {documentDesign.coverPage.eyebrow.toUpperCase()}
               </div>
               {documentDesign.coverPage.showLogoPlaceholder && (
-                <div className="mt-9 flex h-16 w-16 items-center justify-center rounded-full border text-[9px] font-bold tracking-[0.25em]" style={{ borderColor: documentDesign.coverPage.borderColor, color: documentDesign.coverPage.titleColor }}>
-                  BRAND
+                <div className="mt-9 flex h-16 min-w-16 max-w-48 items-center justify-center rounded-lg border px-3 py-2" style={{ borderColor: documentDesign.coverPage.borderColor }}>
+                  {document.brandLogoUrl ? (
+                    <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-12 max-w-40 object-contain" />
+                  ) : (
+                    <span className="text-[10px] font-semibold tracking-[0.18em]" style={{ color: documentDesign.coverPage.titleColor }}>
+                      {document.brandName || 'ADD LOGO IN BRAND MANAGER'}
+                    </span>
+                  )}
                 </div>
               )}
               {documentDesign.coverPage.showOrnamentalRule && (

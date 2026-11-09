@@ -353,6 +353,9 @@ export interface DocumentModel {
   updatedAt: string;
   author: string;
   brandProfileId?: string;
+  /** Applied brand identity used by cover-page previews and PDF rendering. */
+  brandName?: string;
+  brandLogoUrl?: string;
   styles: StyleConfig;
   design?: DocumentDesign;
   pageConfig: PageConfig;
