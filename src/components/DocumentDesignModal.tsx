@@ -593,17 +593,17 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
           {tab === 'presets' && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {DOCUMENT_DESIGN_PRESETS.map(preset => (
-                <button key={preset.presetId} onClick={() => setDesign(deepCloneDesign(preset))} className={'rounded-lg border p-3 text-left transition-colors ' + (design.presetId === preset.presetId ? 'border-blue-500 bg-blue-950/30' : 'border-slate-700 bg-slate-950 hover:border-slate-500')}>
-                  <div className="mb-3 flex h-16 overflow-hidden rounded border border-slate-700" style={{ background: fillColor(preset.page.background, '#ffffff') }}>
-                    <div className="flex w-full flex-col gap-2 p-2">
-                      <div className="h-2 w-2/3 rounded" style={{ background: preset.colors.headingText }} />
-                      <div className="h-1.5 w-full rounded" style={{ background: preset.colors.border }} />
-                      <div className="h-1.5 w-4/5 rounded" style={{ background: preset.colors.accent }} />
-                      <div className="mt-auto flex gap-1">{[preset.colors.primary, preset.colors.secondary, preset.colors.accent].map(color => <span key={color} className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />)}</div>
+                <button key={preset.presetId} onClick={() => setDesign(deepCloneDesign(preset))} className={'rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-xl ' + (design.presetId === preset.presetId ? 'border-blue-500 bg-blue-950/30 shadow-lg shadow-blue-950/30' : 'border-slate-700 bg-slate-950 hover:border-slate-500')}>
+                  <div className="mb-3 flex h-32 items-center justify-center overflow-hidden rounded-lg border p-2" style={{ background: fillToCss(preset.coverPage.background), borderColor: preset.coverPage.borderColor }}>
+                    <div className="flex h-full w-full flex-col items-center justify-center border px-2 text-center" style={{ borderColor: preset.coverPage.showFrame ? preset.coverPage.borderColor : 'transparent' }}>
+                      <span className="text-[6px] font-semibold tracking-[0.2em]" style={{ color: preset.coverPage.detailColor }}>{preset.coverPage.eyebrow}</span>
+                      <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight" style={{ color: preset.coverPage.titleColor, fontFamily: preset.typography.headingFontFamily }}>{document.title}</span>
+                      {preset.coverPage.showOrnamentalRule && <span className="mt-2 h-px w-9" style={{ background: preset.coverPage.borderColor }} />}
+                      <div className="mt-auto flex gap-1.5 pb-1">{[preset.colors.primary, preset.colors.secondary, preset.colors.accent, preset.colors.border].map((color, index) => <span key={index} className="h-2 w-2 rounded-full" style={{ background: color }} />)}</div>
                     </div>
                   </div>
                   <span className="block text-xs font-semibold">{preset.name}</span>
-                  <span className="mt-1 block text-[10px] text-slate-500">Select preset</span>
+                  <span className="mt-1 block text-[10px] text-slate-500">{preset.coverPage.enabled ? 'Cover + interior theme' : 'Interior theme'}</span>
                 </button>
               ))}
             </div>
@@ -1021,7 +1021,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-slate-950 px-5 py-3">
           <span className="text-[10px] text-slate-500">Active design: {design.name}</span>
           <div className="flex gap-2">
-            <button onClick={() => setDesign(deepCloneDesign(normalizeDocumentDesign(document).design || DEFAULT_DOCUMENT_DESIGN))} className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800">Discard local edits</button>
+            <button onClick={() => { setDesign(deepCloneDesign(normalizeDocumentDesign(document).design || DEFAULT_DOCUMENT_DESIGN)); setPageConfigDraft(deepCloneDesign(document.pageConfig)); }} className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800">Discard local edits</button>
             <button onClick={() => { onApplyDesign(deepCloneDesign(design), deepCloneDesign(pageConfigDraft)); onClose(); }} className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"><Check className="h-3.5 w-3.5" /> Apply design &amp; page layout</button>
           </div>
         </footer>
