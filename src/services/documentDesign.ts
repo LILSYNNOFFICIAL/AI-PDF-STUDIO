@@ -577,7 +577,7 @@ export function resolveSectionDesign(doc: DocumentModel, section: Section): {
     bodyTextColor: section.design?.bodyTextColor || design.colors.bodyText,
     headingColor: section.design?.headingColor || design.colors.headingText,
     border: section.design?.border || design.sectionDefaults.border,
-    padding: section.design?.padding ?? design.sectionDefaults.padding
+    padding: section.design?.padding ?? design.layoutDefaults.sectionPadding ?? design.sectionDefaults.padding
   };
 }
 
