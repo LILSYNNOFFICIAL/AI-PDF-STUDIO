@@ -156,7 +156,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     drawColorFill(fill, 0, 0, pageWidth, pageHeight, 12);
   };
 
-  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3) => {
+  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3, verticalAlign: 'top' | 'center' = 'center') => {
     if (!Number.isFinite(maxHeight) || maxHeight <= 0) return 0;
     const validImages = images.filter(image => typeof image.url === 'string' && image.url.startsWith('data:image/'));
     if (!validImages.length) return 0;
@@ -180,7 +180,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         const slotX = margins.left + index * (slotWidth + gap);
         const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
         const x = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth - width : slotX + (slotWidth - width) / 2;
-        const y = cursorY + (maxHeight - height) / 2;
+        const y = cursorY + (verticalAlign === 'center' ? (maxHeight - height) / 2 : 0);
         const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
         pdf.addImage(image.url, format, x, y, width, height);
         rowHeight = Math.max(rowHeight, height);
@@ -199,7 +199,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     const headerContentReserve = 42;
     const maxHeight = bottomLimit - cursorY - headerContentReserve;
     if (maxHeight <= 0) return;
-    const drawnHeight = drawImageBlocks(images, maxHeight);
+    const drawnHeight = drawImageBlocks(images, maxHeight, 3, 'top');
     if (drawnHeight > 0) cursorY += drawnHeight + 4;
   };
 
