@@ -689,7 +689,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 style={{ gridTemplateColumns: `repeat(${Math.max(1, (document.pageHeaderImages || []).length)}, minmax(0, 1fr))` }}
               >
                 {(document.pageHeaderImages || []).map(image => (
-                  <div key={image.id} className="relative z-20 flex min-w-0 flex-col items-center overflow-visible">
+                  <div key={image.id} onContextMenu={event => openContextMenu(event, { type: 'image', sectionId: section.id, imageId: image.id })} className="relative z-20 flex min-w-0 flex-col items-center overflow-visible">
                     <div
                       className="relative z-30 max-w-full overflow-visible"
                       style={{
@@ -974,7 +974,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                           ? 'none'
                           : `${appearance.border.width}px ${appearance.border.style} ${appearance.border.color}`;
                         return (
-                          <div key={block.id} className="my-3 rounded-lg shadow-sm" style={{ background: fillToCss(appearance.background), color: appearance.textColor, border, padding: appearance.padding }}>
+                          <div key={block.id} id={'signature-block-' + block.id} onContextMenu={event => openContextMenu(event, { type: 'signature', sectionId: section.id, signatureId: block.id })} className="my-3 rounded-lg shadow-sm" style={{ background: fillToCss(appearance.background), color: appearance.textColor, border, padding: appearance.padding }}>
                             {block.title && <div className="mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: appearance.labelColor }}>{block.title}</div>}
                             <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                               {block.fields.map(field => (
@@ -1068,7 +1068,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   {section.clauses && section.clauses.length > 0 && (
                     <div className="space-y-3 pl-3 border-l-2 border-slate-200 ml-1">
                       {section.clauses.map((clause, cIdx) => (
-                        <div key={clause.id} className="relative group/clause flex items-baseline gap-2">
+                        <div key={clause.id} onContextMenu={event => openContextMenu(event, { type: 'clause', sectionId: section.id, clauseId: clause.id })} className="relative group/clause flex items-baseline gap-2">
                           <input aria-label="Clause number" value={clause.clauseNumber} onChange={event => { const updated = [...section.clauses]; updated[cIdx] = { ...clause, clauseNumber: event.target.value }; onUpdateSection({ ...section, clauses: updated }); }} className="w-14 shrink-0 bg-transparent font-mono text-xs font-semibold text-slate-500 outline-none" />
                           <div 
                             className="flex-1"
@@ -1167,7 +1167,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   {section.tables && section.tables.map((table, tIdx) => {
                     const tableStyle = resolveTableDesign(document, section, table);
                     return (
-                    <div key={table.id} className="mt-4 rounded-md shadow-xs overflow-hidden" style={{ border: `1px solid ${tableStyle.gridlineColor}`, background: fillToCss(tableStyle.bodyBackground) }}>
+                    <div key={table.id} onContextMenu={event => openContextMenu(event, { type: 'table', sectionId: section.id, tableId: table.id })} className="mt-4 rounded-md shadow-xs overflow-hidden" style={{ border: `1px solid ${tableStyle.gridlineColor}`, background: fillToCss(tableStyle.bodyBackground) }}>
                       {/* Table Header Bar with Actions */}
                       <div className="px-3 py-1.5 flex items-center justify-between" style={{ background: fillToCss(tableStyle.headerBackground), borderBottom: `${tableStyle.gridlineWidth}px solid ${tableStyle.gridlineColor}` }}>
                         <div className="flex flex-wrap items-center gap-2">
@@ -1392,7 +1392,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-6">
                 {document.signatures.parties.map((party: SignatureParty, idx: number) => (
-                  <div key={party.id} className="rounded p-4" style={{ border: `1px solid ${documentDesign.colors.border}`, background: documentDesign.colors.sectionSurface }}>
+                  <div key={party.id} id={'signature-party-' + party.id} onContextMenu={event => openContextMenu(event, { type: 'party-signature', partyId: party.id, partyIndex: idx })} className="rounded p-4" style={{ border: `1px solid ${documentDesign.colors.border}`, background: documentDesign.colors.sectionSurface }}>
                     <input
                       type="text"
                       value={party.role}
