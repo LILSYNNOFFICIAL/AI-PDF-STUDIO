@@ -426,7 +426,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   const buildContextMenuItems = (target: LocalContextTarget): ContextMenuItem[] => {
     const section = 'sectionId' in target ? document.sections.find(item => item.id === target.sectionId) : undefined;
-    const item = (id: string, label: string, onSelect: () => void, options: Partial<ContextMenuItem> = {}): ContextMenuItem => ({ id, label, onSelect, ...options });
+    const allowedActions = new Set(getContextMenuActionIds(target.type as DocumentContextTargetType));
+    const item = (id: string, label: string, onSelect: () => void, options: Partial<ContextMenuItem> = {}): ContextMenuItem => {
+      if (!allowedActions.has(id)) throw new Error('Action ' + id + ' is not available for ' + target.type + ' objects.');
+      return { id, label, onSelect, ...options };
+    };
     if (target.type === 'text') {
       const selected = target.end > target.start;
       return [
@@ -1461,6 +1465,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           </div>
         </main>
       </div>
+      {contextMenu && contextMenuItems.length > 0 && (
+        <DocumentContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenuItems}
+          onClose={() => setContextMenu(null)}
+          label={contextMenu.target.type === 'party-signature' ? 'Signatory actions' : contextMenu.target.type + ' actions'}
+        />
+      )}
     </div>
   );
 };
