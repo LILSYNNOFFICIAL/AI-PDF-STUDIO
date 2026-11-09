@@ -94,6 +94,13 @@ export interface DocumentDesign {
     border: BorderConfig;
   };
   tableDefaults: DesignTableDefaults;
+  signatureDefaults: {
+    background: ColorFill;
+    textColor: string;
+    labelColor: string;
+    border: BorderConfig;
+    padding: number;
+  };
   pageFurniture: {
     headerTextColor: string;
     footerTextColor: string;
@@ -237,6 +244,24 @@ export interface SignatureBlock {
   onDedicatedPage?: boolean;
 }
 
+export interface SignatureField {
+  id: string;
+  label: string;
+  kind: 'text' | 'signature' | 'date';
+  value?: string;
+}
+
+export interface InlineSignatureBlock {
+  id: string;
+  title?: string;
+  /** Character offset in the containing section's content where this block appears. */
+  position: number;
+  fields: SignatureField[];
+  signatureMode: 'line' | 'typed' | 'drawn';
+  signatureValue?: string;
+  signatureImageDataUrl?: string;
+}
+
 export interface Clause {
   id: string;
   clauseNumber: string; // e.g. "4.1" or "(a)"
@@ -259,6 +284,8 @@ export interface Section {
   tables?: TableBlock[];
   charts?: ChartBlock[];
   images?: ImageBlock[];
+  /** Structured signature cards inserted at character offsets within section content. */
+  signatureBlocks?: InlineSignatureBlock[];
   /** Character offset in content where the source @ image marker was placed. */
   imageMarkerPosition?: number;
   orderIndex: number;

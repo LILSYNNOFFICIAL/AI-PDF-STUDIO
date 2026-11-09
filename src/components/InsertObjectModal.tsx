@@ -1,20 +1,103 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Table as TableIcon, PieChart, Image as ImageIcon, PenTool, X, Plus, Trash2, Check } from 'lucide-react';
-import { DocumentModel } from '../types/document';
+import { DocumentModel, InlineSignatureBlock, SignatureField } from '../types/document';
+import { createDefaultSignatureFields, parseSignatureFields } from '../services/signatureBlocks';
 import { insertTableBlock, insertChartBlock } from '../orchestrator/orchestrator';
+
+export interface SignatureInsertionTarget {
+  sectionId: string;
+  start: number;
+  end: number;
+  selectedText: string;
+}
 
 interface InsertObjectModalProps {
   document: DocumentModel;
   isOpen: boolean;
   defaultTab?: 'table' | 'chart' | 'image' | 'signature';
+  signatureInsertionTarget?: SignatureInsertionTarget | null;
   onClose: () => void;
   onApplyUpdate: (updatedDoc: DocumentModel, summaryText: string) => void;
 }
+
+const SignatureDrawingPad: React.FC<{ onChange: (dataUrl?: string) => void }> = ({ onChange }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef(false);
+
+  const point = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current!;
+    const bounds = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - bounds.left) * (canvas.width / bounds.width),
+      y: (event.clientY - bounds.top) * (canvas.height / bounds.height)
+    };
+  };
+
+  const start = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+    canvas.setPointerCapture(event.pointerId);
+    const p = point(event);
+    context.beginPath();
+    context.moveTo(p.x, p.y);
+    context.strokeStyle = '#172033';
+    context.lineWidth = 3;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    drawingRef.current = true;
+  };
+
+  const move = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawingRef.current) return;
+    const context = canvasRef.current?.getContext('2d');
+    if (!context) return;
+    const p = point(event);
+    context.lineTo(p.x, p.y);
+    context.stroke();
+  };
+
+  const finish = () => {
+    if (!drawingRef.current) return;
+    drawingRef.current = false;
+    const canvas = canvasRef.current;
+    if (canvas) onChange(canvas.toDataURL('image/png'));
+  };
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    onChange(undefined);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <canvas
+        ref={canvasRef}
+        width={640}
+        height={150}
+        aria-label="Draw your signature"
+        onPointerDown={start}
+        onPointerMove={move}
+        onPointerUp={finish}
+        onPointerCancel={finish}
+        className="w-full touch-none rounded-lg border border-slate-600 bg-white"
+      />
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-slate-500">Draw with a mouse, stylus, or finger.</span>
+        <button type="button" onClick={clear} className="text-[10px] text-slate-400 hover:text-white">Clear signature</button>
+      </div>
+    </div>
+  );
+};
 
 export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
   document,
   isOpen,
   defaultTab = 'table',
+  signatureInsertionTarget = null,
   onClose,
   onApplyUpdate
 }) => {
@@ -40,10 +123,25 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
   const [isInsertingImage, setIsInsertingImage] = useState(false);
 
   // Signature form state
-  const [partyRole, setPartyRole] = useState('EXECUTIVE WITNESS / LEGAL COUNSEL');
-  const [partyName, setPartyName] = useState('Jonathan Reynolds, Esq.');
-  const [partyTitle, setPartyTitle] = useState('General Counsel');
-  const [partyCompany, setPartyCompany] = useState('Reynolds & Associates LLP');
+  const [signatureFields, setSignatureFields] = useState<SignatureField[]>(createDefaultSignatureFields);
+  const [signatureMode, setSignatureMode] = useState<'line' | 'typed' | 'drawn'>('line');
+  const [signatureImageDataUrl, setSignatureImageDataUrl] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setActiveTab(defaultTab);
+    if (defaultTab === 'signature') {
+      setTargetSectionId(signatureInsertionTarget?.sectionId || document.sections[0]?.id || '');
+      const parsed = signatureInsertionTarget?.selectedText
+        ? parseSignatureFields(signatureInsertionTarget.selectedText)
+        : [];
+      const fields = parsed.length ? parsed : createDefaultSignatureFields();
+      setSignatureFields(fields);
+      const signatureValue = fields.find(field => field.kind === 'signature')?.value || '';
+      setSignatureMode(signatureValue ? 'typed' : 'line');
+      setSignatureImageDataUrl(undefined);
+    }
+  }, [isOpen, defaultTab, signatureInsertionTarget?.sectionId, signatureInsertionTarget?.selectedText, document.sections]);
 
   if (!isOpen) return null;
 
@@ -123,34 +221,55 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
     }
   };
 
-  // Add Signatory Party
-  const handleAddSignatureParty = () => {
-    const newParty = {
-      id: `party_${Date.now()}`,
-      role: partyRole,
-      name: partyName,
-      title: partyTitle,
-      company: partyCompany,
-      date: new Date().toLocaleDateString(),
-      signaturePlaceholder: `/s/ ${partyName}`,
-      hasWitness: true,
-      witnessName: 'Notary Public',
-      signed: false
-    };
+  const updateSignatureField = (fieldId: string, patch: Partial<SignatureField>) => {
+    setSignatureFields(current => current.map(field => field.id === fieldId ? { ...field, ...patch } : field));
+  };
 
+  const handleInsertSignatureBlock = () => {
+    const targetId = signatureInsertionTarget?.sectionId || targetSectionId;
+    const section = document.sections.find(item => item.id === targetId);
+    if (!section) {
+      window.alert('Choose a section for the signature block.');
+      return;
+    }
+
+    const originalContent = section.content || '';
+    const start = Math.max(0, Math.min(originalContent.length, signatureInsertionTarget?.start ?? originalContent.length));
+    const end = Math.max(start, Math.min(originalContent.length, signatureInsertionTarget?.end ?? start));
+    const nextContent = originalContent.slice(0, start) + originalContent.slice(end);
+    const removedLength = end - start;
+    const reposition = (position: number) => position >= end ? position - removedLength : position > start ? start : position;
+    const signatureBlock: InlineSignatureBlock = {
+      id: 'signature_' + Date.now(),
+      title: 'SIGNATURE DETAILS',
+      position: start,
+      fields: signatureFields.map((field, index) => ({ ...field, id: field.id || 'signature-field-' + (index + 1) })),
+      signatureMode,
+      ...(signatureMode === 'typed' ? {
+        signatureValue: signatureFields.find(field => field.kind === 'signature')?.value || ''
+      } : {}),
+      ...(signatureMode === 'drawn' && signatureImageDataUrl ? { signatureImageDataUrl } : {})
+    };
+    const updatedSections = document.sections.map(item => item.id === section.id
+      ? {
+          ...item,
+          content: nextContent,
+          signatureBlocks: [
+            ...(item.signatureBlocks || []).map(block => ({ ...block, position: reposition(block.position) })),
+            signatureBlock
+          ].sort((left, right) => left.position - right.position),
+          ...(typeof item.imageMarkerPosition === 'number'
+            ? { imageMarkerPosition: reposition(item.imageMarkerPosition) }
+            : {})
+        }
+      : item);
     const updatedDoc: DocumentModel = {
       ...document,
-      signatures: {
-        id: document.signatures?.id || `sig_${Date.now()}`,
-        title: document.signatures?.title || 'SIGNATURES & EXECUTION',
-        layout: document.signatures?.layout || 'side_by_side',
-        onDedicatedPage: document.signatures?.onDedicatedPage || false,
-        parties: [...(document.signatures?.parties || []), newParty]
-      },
+      sections: updatedSections,
       version: document.version + 1,
       updatedAt: new Date().toISOString()
     };
-    onApplyUpdate(updatedDoc, `Added signatory execution party: ${partyName} (${partyRole}).`);
+    onApplyUpdate(updatedDoc, 'Inserted a formatted signature block into Section ' + (section.sectionNumber || section.title) + '.');
     onClose();
   };
 
@@ -414,48 +533,59 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
             </div>
           )}
 
-          {/* TAB 4: SIGNATURE PARTY */}
+          {/* TAB 4: FORMATTED SIGNATURE BLOCK */}
           {activeTab === 'signature' && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Party Role / Legal Capacity</label>
-                <input
-                  type="text"
-                  value={partyRole}
-                  onChange={(e) => setPartyRole(e.target.value)}
-                  placeholder="e.g. PARTY C (EXECUTIVE PRODUCER)"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 text-xs uppercase"
-                />
+            <div className="space-y-4">
+              <div className="rounded-lg border border-slate-700 bg-slate-950/70 p-3">
+                <div className="text-[11px] font-semibold text-slate-200">Insert a signature block</div>
+                <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
+                  {signatureInsertionTarget?.selectedText
+                    ? 'The selected text has been read into these fields. Review or edit the values before inserting.'
+                    : 'No text was selected. Enter the signatory details and choose the fields to include.'}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {signatureFields.map(field => (
+                  <div key={field.id} className="grid grid-cols-[minmax(105px,0.8fr)_minmax(0,1.5fr)_auto] items-center gap-2">
+                    <input
+                      aria-label="Signature field label"
+                      value={field.label}
+                      onChange={event => updateSignatureField(field.id, { label: event.target.value })}
+                      className="min-w-0 rounded border border-slate-700 bg-slate-950 px-2 py-2 text-[11px] text-slate-200"
+                    />
+                    {field.kind === 'signature' && signatureMode === 'line' ? (
+                      <div className="border-b border-slate-500 px-2 py-2 text-[10px] text-slate-500">Blank line for handwritten signature</div>
+                    ) : field.kind === 'signature' && signatureMode === 'drawn' ? (
+                      <div className="px-2 py-2 text-[10px] text-slate-500">{signatureImageDataUrl ? 'Drawn signature captured' : 'Draw in the pad below'}</div>
+                    ) : (
+                      <input
+                        aria-label={field.label + ' value'}
+                        value={field.value || ''}
+                        onChange={event => updateSignatureField(field.id, { value: event.target.value })}
+                        placeholder={field.kind === 'signature' ? 'Type electronic signature' : field.label}
+                        className="min-w-0 rounded border border-slate-700 bg-slate-950 px-2 py-2 text-[11px] text-slate-200"
+                      />
+                    )}
+                    <button type="button" onClick={() => setSignatureFields(current => current.filter(item => item.id !== field.id))} aria-label={'Remove ' + field.label} className="rounded px-2 py-1 text-slate-500 hover:bg-rose-950/50 hover:text-rose-300">×</button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSignatureFields(current => [...current, { id: 'signature-field-' + Date.now(), label: 'Additional field', kind: 'text', value: '' }])}
+                  className="rounded bg-slate-800 px-3 py-1.5 text-[10px] text-slate-300 hover:bg-slate-700"
+                >
+                  <Plus className="mr-1 inline h-3 w-3" /> Add field
+                </button>
               </div>
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Full Signatory Name</label>
-                <input
-                  type="text"
-                  value={partyName}
-                  onChange={(e) => setPartyName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 text-xs"
-                />
+                <label className="mb-1 block text-[11px] font-medium text-slate-300">Signature method</label>
+                <select value={signatureMode} onChange={event => setSignatureMode(event.target.value as 'line' | 'typed' | 'drawn')} className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200">
+                  <option value="line">Printable blank signature line</option>
+                  <option value="typed">Typed electronic signature</option>
+                  <option value="drawn">Drawn electronic signature</option>
+                </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Title / Designation</label>
-                  <input
-                    type="text"
-                    value={partyTitle}
-                    onChange={(e) => setPartyTitle(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Company / Entity</label>
-                  <input
-                    type="text"
-                    value={partyCompany}
-                    onChange={(e) => setPartyCompany(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-200 focus:outline-none focus:border-blue-500 text-xs"
-                  />
-                </div>
-              </div>
+              {signatureMode === 'drawn' && <SignatureDrawingPad onChange={setSignatureImageDataUrl} />}
             </div>
           )}
         </div>
@@ -473,7 +603,7 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
               if (activeTab === 'table') handleInsertTable();
               else if (activeTab === 'chart') handleInsertChart();
               else if (activeTab === 'image') void handleInsertImage();
-              else if (activeTab === 'signature') handleAddSignatureParty();
+              else if (activeTab === 'signature') handleInsertSignatureBlock();
             }}
             className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center gap-1.5 shadow-md shadow-blue-900/30 transition-all"
           >

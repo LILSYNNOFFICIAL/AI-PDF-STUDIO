@@ -11,7 +11,7 @@ import { ValidationReportModal } from './components/ValidationReportModal';
 import { MultiDocWorkspaceModal } from './components/MultiDocWorkspaceModal';
 import { FindReplaceModal } from './components/FindReplaceModal';
 import { RedactionModal } from './components/RedactionModal';
-import { InsertObjectModal } from './components/InsertObjectModal';
+import { InsertObjectModal, type SignatureInsertionTarget } from './components/InsertObjectModal';
 import { DocumentMetadataModal } from './components/DocumentMetadataModal';
 import { ClauseLibraryModal } from './components/ClauseLibraryModal';
 import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal';
@@ -74,6 +74,7 @@ export default function App() {
   const [isRedactionOpen, setIsRedactionOpen] = useState(false);
   const [isInsertObjectOpen, setIsInsertObjectOpen] = useState(false);
   const [insertObjectTab, setInsertObjectTab] = useState<'table' | 'chart' | 'image' | 'signature'>('table');
+  const [signatureInsertionTarget, setSignatureInsertionTarget] = useState<SignatureInsertionTarget | null>(null);
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [isClauseLibraryOpen, setIsClauseLibraryOpen] = useState(false);
   const [isWatermarkCustomizerOpen, setIsWatermarkCustomizerOpen] = useState(false);
@@ -558,6 +559,31 @@ export default function App() {
     showToast(`Inserted Clause: ${heading}`);
   };
 
+  const handleOpenInsertSignature = () => {
+    const activeElement = window.document.activeElement as HTMLTextAreaElement | null;
+    const isSectionTextArea = activeElement?.tagName === 'TEXTAREA'
+      && typeof activeElement.dataset.signatureSectionId === 'string';
+    const sectionId = isSectionTextArea
+      ? activeElement.dataset.signatureSectionId!
+      : activeSectionId || document.sections[0]?.id || '';
+    const section = document.sections.find(item => item.id === sectionId);
+    const sectionContent = section?.content || '';
+    let start = sectionContent.length;
+    let end = start;
+    let selectedText = '';
+
+    if (isSectionTextArea && activeElement) {
+      const baseOffset = Number(activeElement.dataset.signatureContentStart || 0);
+      start = baseOffset + activeElement.selectionStart;
+      end = baseOffset + activeElement.selectionEnd;
+      selectedText = activeElement.value.slice(activeElement.selectionStart, activeElement.selectionEnd);
+    }
+
+    setSignatureInsertionTarget({ sectionId, start, end, selectedText });
+    setInsertObjectTab('signature');
+    setIsInsertObjectOpen(true);
+  };
+
   const handleTransformHeadingsCase = (headingCase: 'uppercase' | 'capitalize' | 'none') => {
     const updatedDoc = {
       ...document,
@@ -915,6 +941,7 @@ export default function App() {
           setInsertObjectTab('image');
           setIsInsertObjectOpen(true);
         }}
+        onOpenInsertSignature={handleOpenInsertSignature}
         onOpenMetadata={() => setIsMetadataOpen(true)}
         onOpenClauseLibrary={() => setIsClauseLibraryOpen(true)}
         onOpenWatermarkCustomizer={() => setIsWatermarkCustomizerOpen(true)}
@@ -1139,6 +1166,7 @@ export default function App() {
         document={document}
         isOpen={isInsertObjectOpen}
         defaultTab={insertObjectTab}
+        signatureInsertionTarget={signatureInsertionTarget}
         onClose={() => setIsInsertObjectOpen(false)}
         onApplyUpdate={(updatedDoc, summaryText) => {
           pushHistory(updatedDoc);

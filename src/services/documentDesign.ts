@@ -65,6 +65,13 @@ const BASE_DESIGN: DocumentDesign = {
     gridlineWidth: 0.25,
     captionColor: '#64748b'
   },
+  signatureDefaults: {
+    background: solid('#f8fafc'),
+    textColor: '#334155',
+    labelColor: '#64748b',
+    border: { style: 'solid', color: '#dbe3ee', width: 0.5 },
+    padding: 12
+  },
   pageFurniture: {
     headerTextColor: '#64748b',
     footerTextColor: '#64748b',
@@ -275,6 +282,11 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   })) validateColor(value, key);
   if (!Number.isFinite(design.tableDefaults?.gridlineWidth) || design.tableDefaults.gridlineWidth < 0 || design.tableDefaults.gridlineWidth > 10) throw new Error('tableDefaults.gridlineWidth must be between 0 and 10.');
   if (!Number.isFinite(design.pageFurniture?.dividerWidth) || design.pageFurniture.dividerWidth < 0 || design.pageFurniture.dividerWidth > 10) throw new Error('pageFurniture.dividerWidth must be between 0 and 10.');
+  validateFill(design.signatureDefaults?.background, 'signatureDefaults.background');
+  validateColor(design.signatureDefaults?.textColor, 'signatureDefaults.textColor');
+  validateColor(design.signatureDefaults?.labelColor, 'signatureDefaults.labelColor');
+  validateBorder(design.signatureDefaults?.border, 'signatureDefaults.border');
+  if (!Number.isFinite(design.signatureDefaults?.padding) || design.signatureDefaults.padding < 0 || design.signatureDefaults.padding > 60) throw new Error('signatureDefaults.padding must be between 0 and 60.');
   const typography = design.typography;
   if (!typography || !FONT_FAMILIES.includes(typography.bodyFontFamily) || !FONT_FAMILIES.includes(typography.headingFontFamily)) throw new Error('Typography uses an unsupported font family.');
   for (const [key, value] of Object.entries({
@@ -342,7 +354,8 @@ export function normalizeDocumentDesign<T extends DocumentModel>(doc: T, brandPr
 }
 
 export function resolveDocumentDesign(doc: DocumentModel): DocumentDesign {
-  return deepCloneDesign(doc.design || DEFAULT_DOCUMENT_DESIGN);
+  // Merge newly introduced design controls into older saved documents without discarding their custom palette.
+  return mergeDeep(DEFAULT_DOCUMENT_DESIGN, doc.design || {});
 }
 
 export function resolveSectionDesign(doc: DocumentModel, section: Section): {

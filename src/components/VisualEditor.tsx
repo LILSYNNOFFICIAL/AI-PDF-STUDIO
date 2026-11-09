@@ -17,7 +17,7 @@ import {
   FilePlus,
   ArrowDownCircle
 } from 'lucide-react';
-import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock } from '../types/document';
+import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock, InlineSignatureBlock } from '../types/document';
 import { calculateImageResizeWidth } from '../services/imageResize';
 import {
   resolveDocumentDesign,
@@ -617,14 +617,24 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     />
                   </div>
 
-                  {/* Section text is split around the exact source @ insertion point. */}
+                  {/* Text areas and inline objects share offsets so inserted signature blocks stay anchored to their text. */}
                   <div className="mb-3">
                     {(() => {
                       const content = section.content || '';
-                      const marker = section.imageMarkerPosition;
-                      const hasMarker = typeof marker === 'number';
-                      const before = hasMarker ? content.slice(0, marker) : content;
-                      const after = hasMarker ? content.slice(marker) : '';
+                      const imageMarker = section.imageMarkerPosition;
+                      const insertions: Array<
+                        | { kind: 'image'; position: number }
+                        | { kind: 'signature'; position: number; block: InlineSignatureBlock }
+                      > = [];
+                      if (typeof imageMarker === 'number') {
+                        insertions.push({ kind: 'image', position: Math.max(0, Math.min(content.length, imageMarker)) });
+                      }
+                      (section.signatureBlocks || []).forEach(block => insertions.push({
+                        kind: 'signature',
+                        position: Math.max(0, Math.min(content.length, block.position)),
+                        block
+                      }));
+                      insertions.sort((left, right) => left.position - right.position || (left.kind === right.kind ? 0 : left.kind === 'image' ? -1 : 1));
                       const textareaStyle = {
                         fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
                         lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
@@ -634,11 +644,79 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         fontFamily: documentDesign.typography.bodyFontFamily
                       } as React.CSSProperties;
                       const textareaClass = "w-full bg-transparent hover:bg-slate-100/50 focus:bg-white rounded p-1.5 border border-transparent focus:border-blue-300 focus:outline-none resize-y placeholder:italic placeholder:text-slate-400";
-                      return (
-                        <>
-                          {(before || !hasMarker) && <textarea rows={Math.max(1, before.split('\n').length)} value={before} placeholder="Add introductory text, recitals, or general section covenants here..." aria-label="Section Content" style={textareaStyle} className={textareaClass} onChange={event => onUpdateSection({ ...section, content: hasMarker ? event.target.value + after : event.target.value, ...(hasMarker ? { imageMarkerPosition: event.target.value.length } : {}) })} />}
-                          {hasMarker && (
-                            <div className="my-3 rounded-lg border-2 border-dashed p-3" style={{ borderColor: documentDesign.colors.accent, background: documentDesign.colors.pageSurface }}>
+                      const renderText = (start: number, end: number, index: number) => {
+                        const value = content.slice(start, end);
+                        if (!value && insertions.length > 0) return null;
+                        return (
+                          <textarea
+                            key={`section-text-${section.id}-${index}`}
+                            rows={Math.max(1, value.split('\n').length)}
+                            value={value}
+                            placeholder={start === 0 ? "Add introductory text, recitals, or general section covenants here..." : "Continue writing here..."}
+                            aria-label={start === 0 ? "Section Content" : "Section Content Continuation"}
+                            data-signature-section-id={section.id}
+                            data-signature-content-start={start}
+                            data-signature-content-end={end}
+                            style={textareaStyle}
+                            className={textareaClass}
+                            onChange={event => {
+                              const nextValue = event.target.value;
+                              const delta = nextValue.length - (end - start);
+                              const shift = (position: number) => position >= end && end > start ? position + delta : position > start && position < end ? start : position;
+                              onUpdateSection({
+                                ...section,
+                                content: content.slice(0, start) + nextValue + content.slice(end),
+                                signatureBlocks: (section.signatureBlocks || []).map(block => ({ ...block, position: shift(block.position) })),
+                                ...(typeof imageMarker === 'number' ? { imageMarkerPosition: shift(imageMarker) } : {})
+                              });
+                            }}
+                          />
+                        );
+                      };
+                      const renderSignature = (block: InlineSignatureBlock) => {
+                        const appearance = documentDesign.signatureDefaults;
+                        const updateField = (fieldId: string, value: string) => onUpdateSection({
+                          ...section,
+                          signatureBlocks: (section.signatureBlocks || []).map(item => item.id !== block.id ? item : {
+                            ...item,
+                            fields: item.fields.map(field => field.id === fieldId ? { ...field, value } : field),
+                            ...(item.fields.find(field => field.id === fieldId)?.kind === 'signature' ? { signatureValue: value } : {})
+                          })
+                        });
+                        const border = appearance.border.style === 'none'
+                          ? 'none'
+                          : `${appearance.border.width}px ${appearance.border.style} ${appearance.border.color}`;
+                        return (
+                          <div key={block.id} className="my-3 rounded-lg shadow-sm" style={{ background: fillToCss(appearance.background), color: appearance.textColor, border, padding: appearance.padding }}>
+                            {block.title && <div className="mb-3 text-[10px] font-bold uppercase tracking-wider" style={{ color: appearance.labelColor }}>{block.title}</div>}
+                            <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                              {block.fields.map(field => (
+                                <div key={field.id} className={field.kind === 'signature' ? 'sm:col-span-2' : ''}>
+                                  <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: appearance.labelColor }}>{field.label}</div>
+                                  {field.kind === 'signature' ? (
+                                    block.signatureMode === 'drawn' && block.signatureImageDataUrl ? (
+                                      <img src={block.signatureImageDataUrl} alt="Electronic signature" className="h-12 max-w-64 object-contain object-left" />
+                                    ) : block.signatureMode === 'typed' ? (
+                                      <input aria-label="Typed electronic signature" value={block.signatureValue || field.value || ''} onChange={event => updateField(field.id, event.target.value)} className="w-full border-b bg-transparent px-1 py-1 font-serif text-lg italic outline-none" style={{ borderColor: appearance.textColor, color: appearance.textColor }} />
+                                    ) : (
+                                      <div className="h-10 border-b" style={{ borderColor: appearance.textColor }} />
+                                    )
+                                  ) : (
+                                    <input aria-label={field.label} value={field.value || ''} onChange={event => updateField(field.id, event.target.value)} className="w-full border-b border-transparent bg-transparent px-1 py-1 text-sm outline-none focus:border-slate-400" style={{ color: appearance.textColor }} />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      };
+                      const parts: React.ReactNode[] = [];
+                      let cursor = 0;
+                      insertions.forEach((insertion, index) => {
+                        parts.push(renderText(cursor, insertion.position, index));
+                        if (insertion.kind === 'image') {
+                          parts.push(
+                            <div key={`image-marker-${section.id}`} className="my-3 rounded-lg border-2 border-dashed p-3" style={{ borderColor: documentDesign.colors.accent, background: documentDesign.colors.pageSurface }}>
                               <div className="mb-2 flex items-center justify-between text-xs font-semibold" style={{ color: documentDesign.colors.headingText }}>
                                 <span>IMAGE INSERTION POINT</span>
                                 <label className="cursor-pointer rounded px-3 py-1 text-white" style={{ background: documentDesign.colors.accent }}>
@@ -649,16 +727,22 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                               {renderSectionImages(section)}
                               {!section.images?.length && <p className="text-center text-xs" style={{ color: documentDesign.colors.mutedText }}>Images added here will appear at this exact point in the document.</p>}
                             </div>
-                          )}
-                          {hasMarker && <textarea rows={Math.max(1, after.split('\n').length)} value={after} placeholder="Continue writing after the image..." aria-label="Section Content After Image" style={textareaStyle} className={textareaClass} onChange={event => onUpdateSection({ ...section, content: before + event.target.value })} />}
-                          {!hasMarker && section.images?.length ? (
-                            <div className="my-3 rounded-lg border border-dashed p-3" style={{ borderColor: documentDesign.colors.border, background: documentDesign.colors.pageSurface }}>
-                              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: documentDesign.colors.mutedText }}>Section artwork</div>
-                              {renderSectionImages(section)}
-                            </div>
-                          ) : null}
-                        </>
-                      );
+                          );
+                        } else {
+                          parts.push(renderSignature(insertion.block));
+                        }
+                        cursor = insertion.position;
+                      });
+                      parts.push(renderText(cursor, content.length, insertions.length));
+                      if (!insertions.length && section.images?.length) {
+                        parts.push(
+                          <div key={`section-images-${section.id}`} className="my-3 rounded-lg border border-dashed p-3" style={{ borderColor: documentDesign.colors.border, background: documentDesign.colors.pageSurface }}>
+                            <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: documentDesign.colors.mutedText }}>Section artwork</div>
+                            {renderSectionImages(section)}
+                          </div>
+                        );
+                      }
+                      return <>{parts}</>;
                     })()}
                   </div>
 
