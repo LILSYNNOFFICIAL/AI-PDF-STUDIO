@@ -656,7 +656,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
               <section className="col-span-full rounded-xl border border-slate-700 p-4" style={{ background: fillToCss(design.coverPage.background) }}>
                 <div className="mx-auto flex min-h-[230px] max-w-2xl flex-col items-center justify-between border px-8 py-8 text-center" style={{ borderColor: design.coverPage.showFrame ? design.coverPage.borderColor : 'transparent', color: design.coverPage.titleColor }}>
                   <span className="text-[10px] font-semibold tracking-[0.3em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.eyebrow.toUpperCase() || 'DOCUMENT'}</span>
-                  {design.coverPage.showLogoPlaceholder && <div className="flex h-10 min-w-10 max-w-28 items-center justify-center rounded border px-2" style={{ borderColor: design.coverPage.borderColor }}>{document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-8 max-w-24 object-contain" /> : <span className="text-[6px] font-semibold tracking-wider">{document.brandName || 'ADD LOGO'}</span>}</div>}
+                  {design.coverPage.showLogoPlaceholder && <div className="flex h-10 w-10 items-center justify-center rounded-full border text-[7px] font-bold" style={{ borderColor: design.coverPage.borderColor }}>BRAND</div>}
                   <div>
                     <h3 className="text-2xl font-semibold" style={{ fontFamily: design.typography.headingFontFamily }}>{document.title}</h3>
                     {design.coverPage.brandLine && <p className="mt-3 text-[10px] tracking-[0.18em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.brandLine}</p>}

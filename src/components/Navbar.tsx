@@ -50,6 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   persona,
   onSelectPersona,
   brand,
+  brandProfiles,
   onSelectBrand,
   canUndo,
   canRedo,
@@ -125,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               aria-label="Select Brand Profile"
               value={brand.id}
               onChange={(e) => {
-                const found = SAMPLE_BRAND_PROFILES.find(b => b.id === e.target.value);
+                const found = brandProfiles.find(b => b.id === e.target.value);
                 if (found) onSelectBrand(found);
               }}
               className="bg-transparent text-slate-200 cursor-pointer focus:outline-none appearance-none pr-4 font-medium"
