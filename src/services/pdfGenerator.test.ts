@@ -235,8 +235,17 @@ test('premium enabled cover page renders as a separate first page before agreeme
   doc.author = 'COVER AUTHOR';
   doc.sections = [{
     ...doc.sections[0],
-    content: 'BODY MUST BEGIN AFTER COVER PAGE'
+    sectionNumber: '1.0',
+    title: 'FIRST CONTENT SECTION',
+    content: 'BODY MUST BEGIN AFTER COVER PAGE',
+    clauses: [],
+    tables: [],
+    charts: [],
+    images: []
   }];
+  doc.signatures = undefined;
+  doc.imageHeaderRequested = false;
+  doc.pageHeaderImages = [];
   doc.pageConfig.headerText = 'RUNNING HEADER ON CONTENT PAGES';
   doc.pageConfig.footerText = 'RUNNING FOOTER ON CONTENT PAGES';
   const themed = applyDocumentPreset(doc, 'midnight-executive');
@@ -260,7 +269,19 @@ test('premium enabled cover page renders as a separate first page before agreeme
 test('disabled cover page keeps title and body content together on the first page', () => {
   const doc = buildDocumentFromPrompt('Cover page disabled').updatedDoc;
   doc.title = 'NO COVER TITLE';
-  doc.sections = [{ ...doc.sections[0], content: 'NO COVER BODY' }];
+  doc.sections = [{
+    ...doc.sections[0],
+    sectionNumber: '1.0',
+    title: 'FIRST CONTENT SECTION',
+    content: 'NO COVER BODY',
+    clauses: [],
+    tables: [],
+    charts: [],
+    images: []
+  }];
+  doc.signatures = undefined;
+  doc.imageHeaderRequested = false;
+  doc.pageHeaderImages = [];
   const pdf = generatePdfDocument(doc);
   const pages = (pdf as any).internal.pages as string[][];
   const firstPage = pages[1].join('');
