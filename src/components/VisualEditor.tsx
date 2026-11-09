@@ -896,6 +896,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 <section 
                   key={section.id} 
                   id={section.id}
+                  onContextMenu={event => openContextMenu(event, { type: 'section', sectionId: section.id })}
                   className={`relative group rounded-md p-3 transition-all ${
                     isActive ? 'ring-2 ring-blue-500/50' : 'hover:bg-slate-50/50'
                   } ${section.forcePageBreakBefore ? 'pt-8' : ''}`}
@@ -1041,6 +1042,18 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                             data-signature-section-id={section.id}
                             data-signature-content-start={start}
                             data-signature-content-end={end}
+                            onContextMenu={event => {
+                              const element = event.currentTarget;
+                              const localStart = element.selectionStart;
+                              const localEnd = element.selectionEnd;
+                              const baseOffset = Number(element.dataset.signatureContentStart || 0);
+                              openContextMenu(event, {
+                                type: 'text', sectionId: section.id,
+                                start: baseOffset + localStart, end: baseOffset + localEnd,
+                                selectedText: element.value.slice(localStart, localEnd),
+                                localStart, localEnd, element
+                              });
+                            }}
                             style={textareaStyle}
                             className={textareaClass}
                             onChange={event => {
