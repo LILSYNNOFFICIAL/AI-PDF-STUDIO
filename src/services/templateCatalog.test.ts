@@ -32,6 +32,7 @@ test('the catalog contains exactly 100 templates in the approved category counts
     assert.ok(item.description.trim());
     assert.ok(item.tags.length > 0);
     assert.ok(item.tags.every(tag => tag.trim()));
+    assert.ok(item.sectionTitles.length >= 5, item.id + ' should expose a section outline for the gallery preview');
   }
 });
 
@@ -111,4 +112,40 @@ test('applying a selected visual theme never changes template content', async ()
   }), before);
   assert.equal(updated.design?.presetId, 'midnight-executive');
   assert.equal(DOCUMENT_DESIGN_PRESETS.find(item => item.presetId === 'midnight-executive')?.name, 'Midnight Executive');
+});
+
+
+test('template gallery favorites and recent history survive storage round trips and malformed storage', async () => {
+  const api = await import('./templateCatalog') as unknown as {
+    TEMPLATE_GALLERY_STORAGE_KEY: string;
+    loadTemplateGalleryPreferences: (storage: any) => { favorites: string[]; recents: string[] };
+    saveTemplateGalleryPreferences: (storage: any, preferences: { favorites: string[]; recents: string[] }) => boolean;
+    recordTemplateRecent: (preferences: { favorites: string[]; recents: string[] }, id: string) => { favorites: string[]; recents: string[] };
+  };
+  assert.equal(typeof api.loadTemplateGalleryPreferences, 'function');
+  assert.equal(typeof api.saveTemplateGalleryPreferences, 'function');
+  assert.equal(typeof api.recordTemplateRecent, 'function');
+
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); }
+  };
+  const initial = { favorites: ['recording-artist-agreement'], recents: ['residential-lease-agreement'] };
+  assert.equal(api.saveTemplateGalleryPreferences(storage, initial), true);
+  assert.deepEqual(api.loadTemplateGalleryPreferences(storage), initial);
+
+  const updated = api.recordTemplateRecent(initial, 'recording-artist-agreement');
+  assert.deepEqual(updated.recents, ['recording-artist-agreement', 'residential-lease-agreement']);
+  assert.deepEqual(updated.favorites, initial.favorites);
+
+  values.set(api.TEMPLATE_GALLERY_STORAGE_KEY, '{broken json');
+  assert.deepEqual(api.loadTemplateGalleryPreferences(storage), { favorites: [], recents: [] });
+
+  const blockedStorage = {
+    getItem: () => { throw new Error('storage blocked'); },
+    setItem: () => { throw new Error('storage blocked'); }
+  };
+  assert.deepEqual(api.loadTemplateGalleryPreferences(blockedStorage), { favorites: [], recents: [] });
+  assert.equal(api.saveTemplateGalleryPreferences(blockedStorage, initial), false);
 });
