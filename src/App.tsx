@@ -56,7 +56,7 @@ import {
 } from './orchestrator/orchestrator';
 
 export default function App() {
-  const [document, setDocument] = useState<DocumentModel>(() => normalizeDocumentDesign(getInitialDocument()));
+  const [document, setDocument] = useState<DocumentModel>(() => applyDocumentPreset(normalizeDocumentDesign(getInitialDocument()), 'midnight-executive'));
   const [history, setHistory] = useState<DocumentModel[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const [activeSectionId, setActiveSectionId] = useState<string | null>('sec_1');
