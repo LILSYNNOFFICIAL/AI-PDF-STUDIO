@@ -136,6 +136,29 @@ test('wide images keep their requested width on landscape pages when height allo
   assert.ok(Math.abs(pointsToMillimeters(placement.widthPoints) - contentWidth * 0.8) < 0.2);
 });
 
+test('leading @ images honor left, center and right alignment within their own slots', () => {
+  const left = makeImage('left-aligned', squarePixel, 50);
+  const center = makeImage('center-aligned', squarePixel, 50);
+  const right = makeImage('right-aligned', squarePixel, 50);
+  left.alignment = 'left';
+  center.alignment = 'center';
+  right.alignment = 'right';
+  const doc = makeHeaderDocument([left, center, right]);
+  const placements = imagePlacements(doc).sort((a, b) => a.xPoints - b.xPoints);
+  const pageWidth = generatePdfDocument(doc).internal.pageSize.getWidth();
+  const margins = doc.pageConfig.margins;
+  const contentWidth = pageWidth - margins.left - margins.right;
+  const gap = 3;
+  const slotWidth = (contentWidth - gap * 2) / 3;
+  const expectedLeft = margins.left;
+  const expectedRight = margins.left + 2 * (slotWidth + gap) + slotWidth * 0.5;
+
+  assert.equal(placements.length, 3);
+  assert.ok(Math.abs(pointsToMillimeters(placements[0].xPoints) - expectedLeft) < 0.2);
+  assert.ok(Math.abs(pointsToMillimeters(placements[1].xPoints) - (margins.left + slotWidth + gap + slotWidth * 0.25)) < 0.2);
+  assert.ok(Math.abs(pointsToMillimeters(placements[2].xPoints) - expectedRight) < 0.2);
+});
+
 test('leading @ image captions are included in the PDF when the header image is the only image', () => {
   const image = makeImage('captioned-header', squarePixel, 70);
   image.caption = 'HEADER-ONLY-CAPTION-MARKER';
