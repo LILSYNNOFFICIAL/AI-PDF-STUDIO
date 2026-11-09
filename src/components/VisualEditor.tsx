@@ -180,17 +180,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const horizontal = handle.includes('left') ? -dx : handle.includes('right') ? dx : 0;
       const vertical = handle.includes('top') ? -dy : handle.includes('bottom') ? dy : 0;
       const delta = horizontal || vertical;
-      nextPercent = Math.max(25, Math.min(200, startPercent + (delta / 192) * 100));
-      wrapper.style.width = Math.round(192 * nextPercent / 100) + 'px';
-      wrapper.style.height = Math.round(64 * nextPercent / 100) + 'px';
+      nextPercent = Math.max(25, Math.min(200, startPercent + (delta / 133) * 100));
+      wrapper.style.width = Math.round(133 * nextPercent / 100) + 'px';
+      wrapper.style.height = Math.round(70 * nextPercent / 100) + 'px';
     };
     const onUp = () => {
       cleanup();
       onUpdateDocument({ ...document, brandLogoWidthPercent: Math.round(nextPercent), updatedAt: new Date().toISOString() });
     };
     const onCancel = () => {
-      wrapper.style.width = Math.round(192 * startPercent / 100) + 'px';
-      wrapper.style.height = Math.round(64 * startPercent / 100) + 'px';
+      wrapper.style.width = Math.round(133 * startPercent / 100) + 'px';
+      wrapper.style.height = Math.round(70 * startPercent / 100) + 'px';
       cleanup();
     };
     window.addEventListener('pointermove', onMove);
@@ -814,8 +814,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                     title="Click to add or replace a logo. Drag any resize handle to change its size. Right-click for logo actions."
                     onClick={() => coverLogoInputRef.current?.click()}
                     onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); coverLogoInputRef.current?.click(); } }}
-                    className="relative flex items-center justify-center rounded-lg border border-dashed px-3 py-2 transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-                    style={{ borderColor: documentDesign.coverPage.borderColor, width: Math.round(192 * (document.brandLogoWidthPercent ?? 100) / 100), height: Math.round(64 * (document.brandLogoWidthPercent ?? 100) / 100), minWidth: 80, maxWidth: 600, cursor: 'pointer' }}
+                    className="relative flex items-center justify-center rounded-lg border border-dashed transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    style={{ borderColor: documentDesign.coverPage.borderColor, width: Math.round(133 * (document.brandLogoWidthPercent ?? 100) / 100), height: Math.round(70 * (document.brandLogoWidthPercent ?? 100) / 100), minWidth: 33, maxWidth: 600, cursor: 'pointer' }}
                   >
                     {document.brandLogoUrl ? <img src={document.brandLogoUrl} alt={document.brandName ? document.brandName + ' logo' : 'Brand logo'} className="max-h-full max-w-full object-contain" draggable={false} /> : <span className="text-[10px] font-semibold tracking-[0.12em]" style={{ color: documentDesign.coverPage.titleColor }}>ADD LOGO</span>}
                     {document.brandLogoUrl && (['top-left','top','top-right','right','bottom-right','bottom','bottom-left','left'] as const).map(handle => (
