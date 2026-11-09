@@ -18,7 +18,7 @@ const EXPECTED_COUNTS = {
 
 test('the catalog contains exactly 100 templates in the approved category counts', async () => {
   const catalogApi = await import('./templateCatalog') as unknown as {
-    DOCUMENT_TEMPLATE_CATALOG: Array<{ id: string; title: string; category: string; description: string; tags: string[] }>;
+    DOCUMENT_TEMPLATE_CATALOG: Array<{ id: string; title: string; category: string; description: string; tags: string[]; sectionTitles: string[] }>;
     TEMPLATE_CATEGORY_COUNTS: Record<string, number>;
   };
   assert.ok(Array.isArray(catalogApi.DOCUMENT_TEMPLATE_CATALOG));
