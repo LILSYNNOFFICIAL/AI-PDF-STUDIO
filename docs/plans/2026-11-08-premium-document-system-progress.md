@@ -2,9 +2,7 @@
 
 Plan: `docs/plans/2026-11-08-premium-document-system.md`
 
-- Task 1: complete. Red observed for missing premium presets, cover/layout settings, exact LIL SYNN identity, and theme import/duplication helpers. Green verified with 98/98 tests, TypeScript, Vite build and Pages artifact verification.
-- Task 2: complete. Red observed for missing dedicated PDF cover pagination. Green verified after a separate vector-drawn cover renderer, editable editor cover sheet, layout heading variants, page rules, section spacing, and paragraph indentation. Covered enabled/disabled cover behavior and body/header/footer separation in PDF tests.
-- Task 3: complete. Document Design Studio 2.0 now has Cover, Page & Colors, Layout, Typography, Sections, Tables, Signatures, Themes, and Saved & Export panels; live cover/interior preview; page size/orientation/margins; header/footer text; theme JSON import/export; theme duplication; and one Apply operation that persists design and page configuration together.
-- Stage 1 latest CI: `bc1d9da53d3f6aad190d2abb6b7e77b5166a02fa`, 98/98 tests passed, `tsc --noEmit`, `vite build`, and Pages artifact verification passed.
-- Stage 2: pending.
+- Stage 1: complete and merged as PR #28. Added premium design presets, a dedicated cover-page renderer in the visual editor and PDF, Document Design Studio 2.0, validated theme JSON import/export/duplication, and the professional LIL SYNN redesign with its exact existing palette preserved. Main CI and GitHub Pages deployment for merge commit `f9ab39998dbd0f5635860171d0eec1da5dcdf149` passed.
+- Stage 2: implementation complete. Added exactly 100 new template definitions across the approved 10 categories; unique editable document builders; category-specific section structures; search across multi-word title/description/tags; persistent favorites/recent history with safe local-storage fallback; full responsive template gallery; theme selection before document creation; desktop and mobile entry points; and Midnight Executive styling for the existing non-blank legacy templates.
+- Stage 2 verification: latest branch CI at `130d7ad6a38cfafb4ac6be8a6dd71fcfa1c5c303` passed; full test suite, TypeScript, production build and Pages artifact verification all green. Catalog tests verify exactly 100 items, category counts, unique IDs, fresh editable document instances, category-specific representative content, search, persistence fallback and theme/content independence.
 - Stage 3: pending.
