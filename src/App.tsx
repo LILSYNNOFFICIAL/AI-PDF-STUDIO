@@ -801,14 +801,15 @@ export default function App() {
     pushHistory(res.updatedDoc);
   };
 
-  const handleApplyDocumentDesign = (design: DocumentDesign) => {
+  const handleApplyDocumentDesign = (design: DocumentDesign, pageConfig?: Partial<PageConfig>) => {
     pushHistory({
       ...document,
       design: deepCloneDesign(design),
+      pageConfig: pageConfig ? { ...document.pageConfig, ...pageConfig, margins: { ...document.pageConfig.margins, ...(pageConfig.margins || {}) } } : document.pageConfig,
       version: document.version + 1,
       updatedAt: new Date().toISOString()
     });
-    addAiMessage('Applied document-wide visual design. Document content and structure were preserved.');
+    addAiMessage('Applied document-wide visual design and page layout. Document wording and section structure were preserved.');
     showToast('Document design applied');
   };
 
