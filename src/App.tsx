@@ -120,6 +120,10 @@ export default function App() {
           primary: newBrand.primaryColor,
           secondary: newBrand.secondaryColor,
           accent: newBrand.secondaryColor
+        },
+        coverPage: {
+          ...formatted.updatedDoc.design.coverPage,
+          showLogoPlaceholder: true
         }
       } : formatted.updatedDoc.design
     };

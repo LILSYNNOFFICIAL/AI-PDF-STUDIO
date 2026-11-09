@@ -644,7 +644,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <h3 className="col-span-full text-xs font-semibold uppercase tracking-wide text-slate-300">Decorative elements</h3>
                 {([
                   ['showFrame', 'Decorative frame'],
-                  ['showLogoPlaceholder', 'Brand / logo placeholder'],
+                  ['showLogoPlaceholder', 'Show brand logo'],
                   ['showOrnamentalRule', 'Ornamental divider']
                 ] as Array<[keyof DocumentDesign['coverPage'], string]>).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-[11px] text-slate-300">
