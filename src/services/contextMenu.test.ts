@@ -29,6 +29,19 @@ test('context menu action registry exposes only actions relevant to each documen
   ]);
 });
 
+
+test('canvas and cover context menus expose direct editing actions', () => {
+  assert.deepEqual(getContextMenuActionIds('document'), [
+    'add-section', 'insert-image', 'document-design'
+  ]);
+  assert.deepEqual(getContextMenuActionIds('cover-logo'), [
+    'upload-logo', 'edit-brand-name', 'remove-logo'
+  ]);
+  assert.deepEqual(getContextMenuActionIds('cover-text'), [
+    'edit-cover-text', 'clear-cover-text'
+  ]);
+});
+
 test('context menu placement stays inside viewport near right and bottom edges', () => {
   assert.deepEqual(
     clampContextMenuPosition(980, 760, 220, 180, 1200, 900),
