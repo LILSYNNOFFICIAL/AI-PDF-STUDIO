@@ -739,6 +739,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
                         lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
                         textAlign: documentDesign.typography.textAlignment || document.styles.alignment || 'left',
+                        textIndent: `${documentDesign.layoutDefaults.paragraphIndent}px`,
                         color: sectionStyle.bodyTextColor,
                         backgroundColor: document.styles.highlightColor || 'transparent',
                         fontFamily: documentDesign.typography.bodyFontFamily
@@ -1268,7 +1269,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           )}
 
           {/* Running Footer */}
-          <div className="mt-16 pt-4 border-t flex items-center justify-between text-[11px] font-sans" style={{ color: documentDesign.pageFurniture.footerTextColor, borderColor: documentDesign.pageFurniture.dividerColor, borderTopWidth: `${documentDesign.pageFurniture.dividerWidth}px` }}>
+          <div className="mt-16 pt-4 flex items-center justify-between text-[11px] font-sans" style={{ color: documentDesign.pageFurniture.footerTextColor, borderColor: documentDesign.pageFurniture.dividerColor, borderTopStyle: documentDesign.layoutDefaults.footerRule ? 'solid' : 'none', borderTopWidth: `${documentDesign.pageFurniture.dividerWidth}px` }}>
             <input aria-label="Running page footer" value={document.pageConfig.footerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, footerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
             <span>Page 1 of 1</span>
           </div>
