@@ -521,7 +521,12 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('add-section', 'Add document section', () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: 'Click to edit this section.', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() })),
         item('insert-image', 'Insert image into document', () => canvasImageInputRef.current?.click()),
-        item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || ''))
+        item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || '')),
+        item('toggle-page-numbers', document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() })),
+        item('toggle-cover-page', documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() })),
+        item('change-page-size', 'Change page size…', () => { const value = window.prompt('Page size: A4, LETTER, or LEGAL', document.pageConfig.pageSize); if (value === 'A4' || value === 'LETTER' || value === 'LEGAL') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, pageSize: value }, updatedAt: new Date().toISOString() }); }),
+        item('change-page-orientation', 'Change page orientation…', () => { const value = window.prompt('Orientation: portrait or landscape', document.pageConfig.orientation); if (value === 'portrait' || value === 'landscape') onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, orientation: value }, updatedAt: new Date().toISOString() }); }),
+        item('change-page-background', 'Change page background…', () => { const value = window.prompt('Background color (hex)', documentDesign.colors.pageSurface); if (value && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) onUpdateDocument({ ...document, design: { ...documentDesign, page: { ...documentDesign.page, background: { type: 'solid', color: value } } }, updatedAt: new Date().toISOString() }); })
       ];
     }
     if (target.type === 'cover-logo') {
@@ -562,7 +567,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         item('select-all', 'Select all text', () => { target.element.focus(); target.element.select(); }, { shortcut: 'Ctrl+A' }),
         item('insert-signature', 'Insert signature block', () => onInsertSignatureAtSelection?.({
           sectionId: target.sectionId, start: target.start, end: target.end, selectedText: target.selectedText
-        }))
+        })),
+        item('ai-rewrite', 'AI: Rewrite selection', () => onQuickAIAction('rewrite', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-expand', 'AI: Expand selection', () => onQuickAIAction('expand', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-shorten', 'AI: Shorten selection', () => onQuickAIAction('shorten', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-professional', 'AI: Make more professional', () => onQuickAIAction('professional', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-grammar', 'AI: Fix grammar', () => onQuickAIAction('grammar', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected }),
+        item('ai-summarize', 'AI: Summarize selection', () => onQuickAIAction('summarize', { sectionId: target.sectionId, text: target.selectedText }), { disabled: !selected })
       ];
     }
     if (target.type === 'header-image') {
@@ -604,12 +615,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (!section) return [];
 
     if (target.type === 'section') {
+      const insertSection = (index: number) => {
+        const next = [...document.sections];
+        next.splice(index, 0, { id: 'sec_' + Date.now(), sectionNumber: (index + 1) + '.0', title: 'New Section', content: '', clauses: [], orderIndex: index + 1 });
+        onUpdateDocument({ ...document, sections: next.map((entry, orderIndex) => ({ ...entry, orderIndex: orderIndex + 1 })), updatedAt: new Date().toISOString() });
+      };
       return [
-        item('add-clause', 'Add clause', () => {
-          const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1';
-          const next = [...section.clauses, { id: 'cl_' + Date.now(), clauseNumber: prefix + '.' + (section.clauses.length + 1), heading: 'New Provision', content: 'Enter the provision text here.', orderIndex: section.clauses.length + 1 }];
-          onUpdateSection({ ...section, clauses: next });
-        }),
+        item('add-clause', 'Add clause', () => handleAddClauseToSection(section)),
+        item('add-section-before', 'Insert section before', () => insertSection(document.sections.findIndex(entry => entry.id === section.id))),
+        item('add-section-after', 'Insert section after', () => insertSection(document.sections.findIndex(entry => entry.id === section.id) + 1)),
+        item('rename-section', 'Rename section…', () => { const value = window.prompt('Section title', section.title); if (value !== null) onUpdateSection({ ...section, title: value }); }),
+        item('convert-to-appendix', section.isAppendix ? 'Remove appendix designation' : 'Convert to appendix', () => onUpdateSection({ ...section, isAppendix: !section.isAppendix, appendixCode: section.isAppendix ? undefined : 'APPENDIX ' + String.fromCharCode(65 + document.sections.filter(entry => entry.isAppendix).length) })),
         item('duplicate-section', 'Duplicate section', () => onDuplicateSection(section.id)),
         item('move-section-up', 'Move section up', () => onMoveSection?.(section.id, 'up'), { disabled: !onMoveSection || document.sections[0]?.id === section.id }),
         item('move-section-down', 'Move section down', () => onMoveSection?.(section.id, 'down'), { disabled: !onMoveSection || document.sections[document.sections.length - 1]?.id === section.id }),
@@ -622,8 +638,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       const clauseIndex = section.clauses.findIndex(clause => clause.id === target.clauseId);
       const clause = section.clauses[clauseIndex];
       if (!clause) return [];
+      const reorderClause = (direction: -1 | 1) => {
+        const next = [...section.clauses];
+        const destination = clauseIndex + direction;
+        if (destination < 0 || destination >= next.length) return;
+        [next[clauseIndex], next[destination]] = [next[destination], next[clauseIndex]];
+        onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
+      };
       return [
         item('copy-clause', 'Copy clause text', () => { void copyText([clause.heading, clause.content].filter(Boolean).join('\n')); }),
+        item('edit-clause', 'Edit clause heading…', () => { const value = window.prompt('Clause heading', clause.heading || ''); if (value !== null) onUpdateSection({ ...section, clauses: section.clauses.map(entry => entry.id === clause.id ? { ...entry, heading: value } : entry) }); }),
         item('add-clause-after', 'Add clause after', () => {
           const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1';
           const next = [...section.clauses];
@@ -635,6 +659,9 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           next.splice(clauseIndex + 1, 0, { ...clause, id: 'cl_' + Date.now(), clauseNumber: clause.clauseNumber + 'A' });
           onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
         }),
+        item('move-clause-up', 'Move clause up', () => reorderClause(-1), { disabled: clauseIndex <= 0 }),
+        item('move-clause-down', 'Move clause down', () => reorderClause(1), { disabled: clauseIndex >= section.clauses.length - 1 }),
+        item('renumber-clauses', 'Renumber clauses', () => { const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1'; onUpdateSection({ ...section, clauses: section.clauses.map((entry, index) => ({ ...entry, clauseNumber: prefix + '.' + (index + 1), orderIndex: index + 1 })) }); }),
         item('delete-clause', 'Delete clause', () => onUpdateSection({ ...section, clauses: section.clauses.filter(entry => entry.id !== clause.id).map((entry, index) => ({ ...entry, orderIndex: index + 1 })) }), { destructive: true })
       ];
     }
@@ -668,9 +695,30 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     if (target.type === 'table') {
       const tableIndex = (section.tables || []).findIndex(table => table.id === target.tableId);
       if (!section.tables?.[tableIndex]) return [];
+      const table = section.tables[tableIndex];
+      const selected = selectedTableCell?.sectionId === section.id && selectedTableCell.tableId === target.tableId ? selectedTableCell : null;
+      const deleteSelectedRow = () => {
+        if (!selected || selected.rowIndex < 0) return;
+        const rows = table.rows.filter((_, index) => index !== selected.rowIndex);
+        onUpdateSection({ ...section, tables: (section.tables || []).map(entry => entry.id === table.id ? { ...entry, rows } : entry) });
+        setSelectedTableCell(null);
+      };
+      const deleteSelectedColumn = () => {
+        if (!selected || selected.columnIndex < 0 || table.headers.length <= 1) return;
+        const headers = table.headers.filter((_, index) => index !== selected.columnIndex);
+        const rows = table.rows.map(row => row.filter((_, index) => index !== selected.columnIndex));
+        onUpdateSection({ ...section, tables: (section.tables || []).map(entry => entry.id === table.id ? { ...entry, headers, rows } : entry) });
+        setSelectedTableCell(null);
+      };
       return [
         item('add-table-row', 'Add row', () => handleAddRow(section, tableIndex)),
         item('add-table-column', 'Add column', () => handleAddColumn(section, tableIndex)),
+        item('delete-table-row', 'Delete selected row', deleteSelectedRow, { destructive: true, disabled: !selected || selected.rowIndex < 0 || table.rows.length <= 1 }),
+        item('delete-table-column', 'Delete selected column', deleteSelectedColumn, { destructive: true, disabled: !selected || table.headers.length <= 1 }),
+        item('duplicate-table', 'Duplicate table', () => {
+          const duplicate = { ...table, id: 'table_' + Date.now(), headers: table.headers.map(cell => ({ ...cell, id: 'th_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) })), rows: table.rows.map(row => row.map(cell => ({ ...cell, id: 'cell_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) }))) };
+          onUpdateSection({ ...section, tables: [...(section.tables || []), duplicate] });
+        }),
         item('delete-table', 'Delete table', () => onUpdateSection({ ...section, tables: (section.tables || []).filter(entry => entry.id !== target.tableId) }), { destructive: true })
       ];
     }
