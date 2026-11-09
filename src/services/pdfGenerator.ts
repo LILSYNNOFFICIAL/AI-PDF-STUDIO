@@ -194,13 +194,38 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   const drawPageHeaderImages = () => {
     const images = doc.pageHeaderImages || [];
     if (!doc.imageHeaderRequested || !images.length) return;
-    // Reserve room for the document title, metadata, divider and first section heading.
+    const gap = 3;
+    const slotWidth = (contentWidth - gap * (images.length - 1)) / images.length;
+    const captionLines = images.map(image => image.caption?.trim()
+      ? pdf.splitTextToSize(image.caption.trim(), Math.max(8, slotWidth)) as string[]
+      : []);
+    const maxCaptionLines = Math.max(0, ...captionLines.map(lines => lines.length));
+    const captionHeight = maxCaptionLines * 4 + (maxCaptionLines ? 4 : 0);
+    // Reserve room for captions, the document title, metadata, divider and first section heading.
     // Tall images are scaled proportionally to the remaining page area instead of overflowing.
-    const headerContentReserve = 42;
+    const headerContentReserve = 42 + captionHeight;
     const maxHeight = bottomLimit - cursorY - headerContentReserve;
     if (maxHeight <= 0) return;
-    const drawnHeight = drawImageBlocks(images, maxHeight, 3, 'top');
-    if (drawnHeight > 0) cursorY += drawnHeight + 4;
+    const drawnHeight = drawImageBlocks(images, maxHeight, gap, 'top');
+    if (drawnHeight <= 0) return;
+
+    if (maxCaptionLines > 0) {
+      const captionTop = cursorY + drawnHeight + 2;
+      setTextStyle(primaryFont, 'italic', 8.5, colorToRgb(design.colors.mutedText));
+      captionLines.forEach((lines, index) => {
+        if (!lines.length) return;
+        const image = images[index];
+        const slotX = margins.left + index * (slotWidth + gap);
+        const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
+        const textX = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth : slotX + slotWidth / 2;
+        lines.forEach((line, lineIndex) => {
+          pdf.text(line, textX, captionTop + 3.2 + lineIndex * 4, { align: alignment });
+        });
+      });
+      cursorY = captionTop + maxCaptionLines * 4 + 2;
+    } else {
+      cursorY += drawnHeight + 4;
+    }
   };
 
   const addPage = () => {
@@ -210,7 +235,6 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   };
 
   drawPageBackground(1);
-  drawPageHeaderImages();
 
   const ensureSpace = (height: number) => {
     if (cursorY + height > bottomLimit) addPage();
@@ -286,6 +310,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
     cursorY += options.after ?? 2;
   };
+
+  // Render the one-time @ insertion after the wrapped-text helper is initialized so captions share its typography.
+  drawPageHeaderImages();
 
   const drawTable = (table: TableBlock, section: Section) => {
     const tableStyle = resolveTableDesign(doc, section, table);
