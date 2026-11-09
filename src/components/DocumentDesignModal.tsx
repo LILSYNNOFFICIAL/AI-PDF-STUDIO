@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, Palette, Save, Trash2, X } from 'lucide-react';
+import { Check, Palette, Save, Trash2, X, Copy, Download, Upload } from 'lucide-react';
 import type {
   ColorFill,
   BorderSide,
   DocumentDesign,
   DocumentModel,
+  PageConfig,
   SectionDesign,
   TableDesign
 } from '../types/document';
@@ -19,6 +20,9 @@ import {
   contrastRatio,
   normalizeDocumentDesign,
   fillToCss,
+  serializeDocumentTheme,
+  parseDocumentTheme,
+  duplicateSavedTheme,
   type SavedDocumentTheme
 } from '../services/documentDesign';
 
@@ -27,7 +31,7 @@ interface DocumentDesignModalProps {
   activeSectionId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onApplyDesign: (design: DocumentDesign) => void;
+  onApplyDesign: (design: DocumentDesign, pageConfig?: Partial<PageConfig>) => void;
   onApplySectionDesign: (sectionId: string, design: SectionDesign) => void;
   onApplyTableDesign: (sectionId: string, tableId: string, design: TableDesign) => void;
   onResetSectionDesign: (sectionId: string) => void;
@@ -35,7 +39,7 @@ interface DocumentDesignModalProps {
   onResetAllOverrides: () => void;
 }
 
-type TabId = 'presets' | 'page' | 'typography' | 'section' | 'table' | 'signatures' | 'saved';
+type TabId = 'presets' | 'cover' | 'page' | 'layout' | 'typography' | 'section' | 'table' | 'signatures' | 'saved';
 
 function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -266,6 +270,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
 }) => {
   const [tab, setTab] = useState<TabId>('presets');
   const [design, setDesign] = useState<DocumentDesign>(DEFAULT_DOCUMENT_DESIGN);
+  const [pageConfigDraft, setPageConfigDraft] = useState<PageConfig>(document.pageConfig);
   const [sectionId, setSectionId] = useState<string>('');
   const [sectionDraft, setSectionDraft] = useState<SectionDesign>({});
   const [tableId, setTableId] = useState<string>('');
@@ -302,6 +307,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
     if (!isOpen) return;
     const normalized = normalizeDocumentDesign(document);
     setDesign(deepCloneDesign(normalized.design || DEFAULT_DOCUMENT_DESIGN));
+    setPageConfigDraft(deepCloneDesign(document.pageConfig));
     const nextSectionId = activeSectionId && document.sections.some(section => section.id === activeSectionId)
       ? activeSectionId
       : (document.sections[0]?.id || '');
