@@ -302,14 +302,21 @@ test('LIL SYNN theme preserves its exact palette and uses a professional framed 
     }
   );
   const cover = (preset as any).coverPage;
-  assert.equal(cover.enabled, true);
-  assert.equal(cover.style, 'art-deco');
-  assert.equal(cover.background.color, '#050505');
-  assert.equal(cover.titleColor, '#ff4fa3');
-  assert.equal(cover.detailColor, '#c5c5c5');
-  assert.equal(cover.borderColor, '#d99a32');
-  assert.equal((preset as any).layoutDefaults.sectionHeadingStyle, 'editorial-rule');
-  assert.equal((preset as any).layoutDefaults.sectionSpacing, 28);
+  assert.deepEqual(cover, {
+    enabled: true,
+    style: 'art-deco',
+    background: { type: 'solid', color: '#050505', opacity: 1 },
+    titleColor: '#ff4fa3',
+    detailColor: '#c5c5c5',
+    borderColor: '#d99a32',
+    eyebrow: 'LIL SYNN • SYNTIENT RECORDS',
+    brandLine: 'MUSIC • CREATIVE • INTELLECTUAL PROPERTY',
+    showFrame: true,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: true
+  });
+  assert.equal((preset as any).layoutDefaults?.sectionHeadingStyle, 'editorial-rule');
+  assert.equal((preset as any).layoutDefaults?.sectionSpacing, 28);
 });
 
 test('legacy document design normalization supplies cover and layout defaults', () => {
@@ -319,12 +326,27 @@ test('legacy document design normalization supplies cover and layout defaults', 
   const cover = (normalized.design as any).coverPage;
   const layout = (normalized.design as any).layoutDefaults;
 
-  assert.equal(cover.enabled, false);
-  assert.equal(cover.style, 'midnight-executive');
-  assert.equal(layout.sectionHeadingStyle, 'editorial-rule');
-  assert.equal(layout.sectionSpacing, 22);
-  assert.equal(layout.headerRule, true);
-  assert.equal(layout.footerRule, true);
+  assert.deepEqual(cover, {
+    enabled: false,
+    style: 'midnight-executive',
+    background: { type: 'solid', color: '#0b0d12', opacity: 1 },
+    titleColor: '#172033',
+    detailColor: '#64748b',
+    borderColor: '#b08a45',
+    eyebrow: 'AGREEMENT',
+    brandLine: '',
+    showFrame: true,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  });
+  assert.deepEqual(layout, {
+    sectionHeadingStyle: 'editorial-rule',
+    sectionSpacing: 22,
+    headerRule: true,
+    footerRule: true,
+    paragraphIndent: 0,
+    sectionPadding: 12
+  });
 });
 
 test('applying any visual preset preserves all agreement content and structure', () => {
@@ -339,6 +361,7 @@ test('applying any visual preset preserves all agreement content and structure',
     sourceText: doc.sourceText
   });
 
+  assert.ok(DOCUMENT_DESIGN_PRESETS.some(preset => preset.presetId === 'midnight-executive'));
   const updated = applyDocumentPreset(doc, 'midnight-executive');
 
   assert.equal(JSON.stringify({
