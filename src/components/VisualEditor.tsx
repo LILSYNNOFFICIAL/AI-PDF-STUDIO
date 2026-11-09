@@ -634,7 +634,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         position: Math.max(0, Math.min(content.length, block.position)),
                         block
                       }));
-                      insertions.sort((left, right) => left.position - right.position || (left.kind === 'image' ? -1 : 1));
+                      insertions.sort((left, right) => left.position - right.position || (left.kind === right.kind ? 0 : left.kind === 'image' ? -1 : 1));
                       const textareaStyle = {
                         fontSize: `${documentDesign.typography.bodyFontSize || document.styles.fontSize || 11}pt`,
                         lineHeight: documentDesign.typography.bodyLineHeight || document.styles.lineHeight || 1.5,
