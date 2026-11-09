@@ -269,6 +269,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       padding?: number;
       minHeight?: number;
       verticalAlign?: 'top' | 'middle' | 'bottom';
+      firstLineIndent?: number;
     } = {}
   ) => {
     const size = options.size ?? design.typography.bodyFontSize ?? 10.5;
@@ -302,7 +303,8 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       cursorY += verticalOffset;
       for (let offset = 0; offset < segmentCount; offset++) {
         const line = lines[lineIndex + offset];
-        const textX = align === 'center' ? x + width / 2 : align === 'right' ? x + width : x;
+        const indent = offset === 0 ? options.firstLineIndent || 0 : 0;
+        const textX = align === 'center' ? x + width / 2 : align === 'right' ? x + width : x + indent;
         pdf.text(line, textX, cursorY, { align });
         cursorY += lineHeight;
       }
@@ -312,8 +314,129 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     cursorY += options.after ?? 2;
   };
 
-  // Render the one-time @ insertion after the wrapped-text helper is initialized so captions share its typography.
-  drawPageHeaderImages();
+  const hasCoverPage = design.coverPage.enabled;
+
+  const drawCoverPage = () => {
+    const cover = design.coverPage;
+    drawColorFill(cover.background, 0, 0, pageWidth, pageHeight, 20);
+
+    const frameInset = Math.max(10, Math.min(margins.left, margins.right) * 0.65);
+    if (cover.showFrame) {
+      pdf.setDrawColor(...colorToRgb(cover.borderColor));
+      pdf.setLineWidth(0.65);
+      pdf.rect(frameInset, frameInset, pageWidth - frameInset * 2, pageHeight - frameInset * 2, 'S');
+      if (cover.style === 'art-deco' || cover.style === 'dark-luxury') {
+        const inner = frameInset + 3;
+        pdf.setLineWidth(0.22);
+        pdf.rect(inner, inner, pageWidth - inner * 2, pageHeight - inner * 2, 'S');
+      }
+    }
+
+    const centerX = pageWidth / 2;
+    const innerWidth = pageWidth - margins.left - margins.right - 28;
+    const titleText = applyHeadingCase(doc.title);
+    const titleSize = Math.max(22, Math.min(34, (design.typography.heading1Size || 24) + 5));
+    pdf.setFont(headingFont, 'bold');
+    pdf.setFontSize(titleSize);
+    pdf.setTextColor(...colorToRgb(cover.titleColor));
+    const titleLines = pdf.splitTextToSize(titleText, innerWidth) as string[];
+    const titleLineHeight = titleSize * 0.48;
+    const titleHeight = titleLines.length * titleLineHeight;
+    const titleY = Math.max(pageHeight * 0.38, pageHeight * 0.48 - titleHeight / 2);
+    const eyebrowY = Math.max(38, pageHeight * 0.17);
+
+    pdf.setFont(primaryFont, 'bold');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(...colorToRgb(cover.detailColor));
+    pdf.text(cover.eyebrow.toUpperCase(), centerX, eyebrowY, { align: 'center' });
+
+    if (cover.showLogoPlaceholder) {
+      const badgeY = pageHeight * 0.235;
+      const badgeSize = 18;
+      pdf.setDrawColor(...colorToRgb(cover.borderColor));
+      pdf.setLineWidth(0.45);
+      pdf.circle(centerX, badgeY, badgeSize / 2, 'S');
+      pdf.setFont(primaryFont, 'bold');
+      pdf.setFontSize(5.8);
+      pdf.setTextColor(...colorToRgb(cover.titleColor));
+      pdf.text('BRAND', centerX, badgeY + 1, { align: 'center' });
+    }
+
+    if (cover.showOrnamentalRule) {
+      const ruleY = titleY - 13;
+      pdf.setDrawColor(...colorToRgb(cover.borderColor));
+      pdf.setLineWidth(0.45);
+      pdf.line(centerX - 42, ruleY, centerX - 5, ruleY);
+      pdf.line(centerX + 5, ruleY, centerX + 42, ruleY);
+      if (cover.style === 'art-deco' || cover.style === 'dark-luxury') {
+        pdf.setFillColor(...colorToRgb(cover.borderColor));
+        pdf.triangle(centerX, ruleY - 2.6, centerX + 2.6, ruleY, centerX, ruleY + 2.6, 'F');
+        pdf.triangle(centerX, ruleY - 2.6, centerX - 2.6, ruleY, centerX, ruleY + 2.6, 'F');
+      } else {
+        pdf.circle(centerX, ruleY, 1.2, 'F');
+      }
+    }
+
+    pdf.setFont(headingFont, 'bold');
+    pdf.setFontSize(titleSize);
+    pdf.setTextColor(...colorToRgb(cover.titleColor));
+    titleLines.forEach((line, index) => {
+      pdf.text(line, centerX, titleY + index * titleLineHeight, { align: 'center' });
+    });
+
+    let detailY = titleY + titleHeight + 11;
+    if (cover.brandLine.trim()) {
+      pdf.setFont(primaryFont, 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...colorToRgb(cover.detailColor));
+      const brandLines = pdf.splitTextToSize(cover.brandLine, innerWidth) as string[];
+      brandLines.forEach((line, index) => pdf.text(line, centerX, detailY + index * 4.5, { align: 'center' }));
+      detailY += brandLines.length * 4.5 + 6;
+    }
+
+    pdf.setDrawColor(...colorToRgb(cover.borderColor));
+    pdf.setLineWidth(0.3);
+    pdf.line(centerX - 24, detailY, centerX + 24, detailY);
+
+    const metadataY = pageHeight - margins.bottom - 33;
+    pdf.setFont(primaryFont, 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...colorToRgb(cover.detailColor));
+    pdf.text('PREPARED BY', centerX, metadataY, { align: 'center' });
+    pdf.setFont(primaryFont, 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(...colorToRgb(cover.titleColor));
+    pdf.text(doc.author || 'Document Author', centerX, metadataY + 7, { align: 'center' });
+    pdf.setFont(primaryFont, 'normal');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(...colorToRgb(cover.detailColor));
+    pdf.text(new Date(doc.updatedAt).toLocaleDateString(), centerX, metadataY + 13, { align: 'center' });
+
+    if (cover.style === 'art-deco' && cover.showFrame) {
+      const corner = frameInset + 7;
+      const cornerLength = 10;
+      pdf.setDrawColor(...colorToRgb(cover.borderColor));
+      pdf.setLineWidth(0.6);
+      for (const x of [corner, pageWidth - corner]) {
+        for (const y of [corner, pageHeight - corner]) {
+          const directionX = x < centerX ? 1 : -1;
+          const directionY = y < pageHeight / 2 ? 1 : -1;
+          pdf.line(x, y, x + directionX * cornerLength, y);
+          pdf.line(x, y, x, y + directionY * cornerLength);
+        }
+      }
+    }
+  };
+
+  // A cover is a true first PDF page, not a title treatment painted behind the body.
+  if (hasCoverPage) {
+    drawCoverPage();
+    addPage();
+    drawPageHeaderImages();
+  } else {
+    // Render the one-time @ insertion after the wrapped-text helper is initialized so captions share its typography.
+    drawPageHeaderImages();
+  }
 
   const drawTable = (table: TableBlock, section: Section) => {
     const tableStyle = resolveTableDesign(doc, section, table);
@@ -428,24 +551,26 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     cursorY += 5;
   };
 
-  // Document title and metadata
-  const title = applyHeadingCase(doc.title);
-  drawWrappedText(title, margins.left, contentWidth, {
-    font: headingFont, style: 'bold', size: design.typography.heading1Size || doc.styles.heading1Size || 18,
-    color: colorToRgb(design.colors.headingText), lineHeight: 8, after: 2, align: 'center'
-  });
+  // Without a dedicated cover, keep the classic title and metadata at the start of the first content page.
+  if (!hasCoverPage) {
+    const title = applyHeadingCase(doc.title);
+    drawWrappedText(title, margins.left, contentWidth, {
+      font: headingFont, style: 'bold', size: design.typography.heading1Size || doc.styles.heading1Size || 18,
+      color: colorToRgb(design.colors.headingText), lineHeight: 8, after: 2, align: 'center'
+    });
 
-  drawWrappedText(
-    `Version ${doc.version} | Last Updated: ${new Date(doc.updatedAt).toLocaleDateString()} | Author: ${doc.author}`,
-    margins.left, contentWidth,
-    { font: primaryFont, style: 'italic', size: 9, color: colorToRgb(design.colors.mutedText), lineHeight: 4.5, after: 2, align: 'center' }
-  );
+    drawWrappedText(
+      `Version ${doc.version} | Last Updated: ${new Date(doc.updatedAt).toLocaleDateString()} | Author: ${doc.author}`,
+      margins.left, contentWidth,
+      { font: primaryFont, style: 'italic', size: 9, color: colorToRgb(design.colors.mutedText), lineHeight: 4.5, after: 2, align: 'center' }
+    );
 
-  ensureSpace(5);
-  pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
-  pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);
-  pdf.line(margins.left, cursorY, pageWidth - margins.right, cursorY);
-  cursorY += 8;
+    ensureSpace(5);
+    pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
+    pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);
+    pdf.line(margins.left, cursorY, pageWidth - margins.right, cursorY);
+    cursorY += 8;
+  }
 
   // Document sections
   for (const section of doc.sections) {
@@ -456,10 +581,21 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     if (section.forcePageBreakBefore) addPage();
     else ensureSpace(12);
 
+    const headingStyle = design.layoutDefaults.sectionHeadingStyle;
+    const headingBackground = headingStyle === 'banner'
+      ? { type: 'solid' as const, color: design.colors.primary, opacity: 1 }
+      : headingStyle === 'numbered-card'
+        ? { type: 'solid' as const, color: design.colors.sectionSurface, opacity: 1 }
+        : sectionStyle.background;
+    const headingBorder: BorderConfig | undefined = headingStyle === 'editorial-rule'
+      ? { style: 'solid', color: design.colors.border, width: 0.5, sides: ['bottom'] }
+      : headingStyle === 'numbered-card'
+        ? { style: 'solid', color: design.colors.border, width: 0.5 }
+        : undefined;
     drawWrappedText(applyHeadingCase(`${section.sectionNumber} ${section.title}`), sectionX, sectionWidth, {
       font: headingFont, style: 'bold', size: design.typography.heading2Size || doc.styles.heading2Size || 13,
-      color: colorToRgb(sectionStyle.headingColor), lineHeight: 6, after: 2,
-      background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+      color: colorToRgb(headingStyle === 'banner' ? '#ffffff' : sectionStyle.headingColor), lineHeight: 6, after: 2,
+      background: headingBackground, border: headingBorder, padding: sectionPadding,
       align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
       verticalAlign: design.typography.verticalAlignment || 'top'
     });
@@ -472,6 +608,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
         after: design.typography.paragraphSpacing * 0.264583,
         background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+        firstLineIndent: design.layoutDefaults.paragraphIndent * 0.264583,
         align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
         verticalAlign: design.typography.verticalAlignment || 'top'
       });
@@ -640,7 +777,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
     for (const table of section.tables || []) drawTable(table, section);
     if (typeof section.imageMarkerPosition !== 'number' && section.images?.length) drawSectionImages();
-    cursorY += 3;
+    cursorY += design.layoutDefaults.sectionSpacing * 0.264583;
   }
 
   // Signatures
@@ -709,7 +846,9 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
 
   // Stamp page furniture after all content has been paginated.
   const totalPages = pdf.internal.pages.length - 1;
-  for (let page = 1; page <= totalPages; page++) {
+  const firstContentPage = hasCoverPage ? 2 : 1;
+  const totalContentPages = totalPages - (hasCoverPage ? 1 : 0);
+  for (let page = firstContentPage; page <= totalPages; page++) {
     pdf.setPage(page);
     if (doc.pageConfig.watermarkText) {
       pdf.setFont(primaryFont, 'bold');
@@ -722,20 +861,28 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       pdf.setFontSize(8);
       pdf.setTextColor(...colorToRgb(design.pageFurniture.headerTextColor));
       pdf.text(doc.pageConfig.headerText, margins.left, 12);
+      if (design.layoutDefaults.headerRule) {
+        pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
+        pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);
+        pdf.line(margins.left, 14, pageWidth - margins.right, 14);
+      }
+    }
+    if (design.layoutDefaults.footerRule) {
       pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
       pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);
-      pdf.line(margins.left, 14, pageWidth - margins.right, 14);
+      pdf.line(margins.left, pageHeight - 14, pageWidth - margins.right, pageHeight - 14);
     }
     pdf.setFont(primaryFont, 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(...colorToRgb(design.pageFurniture.footerTextColor));
     if (doc.pageConfig.footerText) pdf.text(doc.pageConfig.footerText, margins.left, pageHeight - 10);
     if (doc.pageConfig.showPageNumbers) {
+      const displayedPage = page - (hasCoverPage ? 1 : 0);
       const pageNum = doc.pageConfig.pageNumberFormat === 'PAGE_X'
-        ? `Page ${page}`
+        ? `Page ${displayedPage}`
         : doc.pageConfig.pageNumberFormat === 'DASH_X_DASH'
-          ? `- ${page} -`
-          : `Page ${page} of ${totalPages}`;
+          ? `- ${displayedPage} -`
+          : `Page ${displayedPage} of ${totalContentPages}`;
       pdf.text(pageNum, pageWidth - margins.right, pageHeight - 10, { align: 'right' });
     }
   }

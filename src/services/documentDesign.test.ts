@@ -26,8 +26,8 @@ class MemoryStorage {
   removeItem(key: string): void { this.data.delete(key); }
 }
 
-test('all nine built-in presets contain valid semantic tokens', () => {
-  assert.equal(DOCUMENT_DESIGN_PRESETS.length, 9);
+test('all eighteen built-in themes contain valid semantic tokens', () => {
+  assert.equal(DOCUMENT_DESIGN_PRESETS.length, 18);
   for (const preset of DOCUMENT_DESIGN_PRESETS) {
     validateDocumentDesign(preset);
     assert.ok(preset.colors.primary);
@@ -266,3 +266,152 @@ test('contrast ratio helper distinguishes accessible and low-contrast pairs', ()
   assert.equal(contrastRatio('#ffffff', '#ffffff'), 1);
   assert.ok(contrastRatio('#777777', '#ffffff') < 4.5);
 });
+
+
+test('premium dark design presets include distinct Midnight Executive, Art Deco and luxury directions', () => {
+  const byId = new Map(DOCUMENT_DESIGN_PRESETS.map(preset => [preset.presetId, preset]));
+  assert.ok(byId.has('midnight-executive'));
+  assert.ok(byId.has('art-deco'));
+  assert.ok(byId.has('dark-luxury'));
+  assert.ok(byId.has('bauhaus-modern'));
+  assert.ok(byId.has('glassmorphism'));
+});
+
+test('LIL SYNN theme preserves its exact palette and uses a professional framed cover hierarchy', () => {
+  const preset = DOCUMENT_DESIGN_PRESETS.find(item => item.presetId === 'lil-synn')!;
+  assert.deepEqual(
+    {
+      page: preset.colors.pageSurface,
+      section: preset.colors.sectionSurface,
+      heading: preset.colors.headingText,
+      accent: preset.colors.accent,
+      body: preset.colors.bodyText,
+      secondary: preset.colors.secondary,
+      muted: preset.colors.mutedText,
+      border: preset.colors.border
+    },
+    {
+      page: '#050505',
+      section: '#080808',
+      heading: '#ff4fa3',
+      accent: '#ff4fa3',
+      body: '#f5f5f5',
+      secondary: '#d1d5db',
+      muted: '#c5c5c5',
+      border: '#d99a32'
+    }
+  );
+  const cover = (preset as any).coverPage;
+  assert.deepEqual(cover, {
+    enabled: true,
+    style: 'art-deco',
+    background: { type: 'solid', color: '#050505', opacity: 1 },
+    titleColor: '#ff4fa3',
+    detailColor: '#c5c5c5',
+    borderColor: '#d99a32',
+    eyebrow: 'LIL SYNN • SYNTIENT RECORDS',
+    brandLine: 'MUSIC • CREATIVE • INTELLECTUAL PROPERTY',
+    showFrame: true,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: true
+  });
+  assert.equal((preset as any).layoutDefaults?.sectionHeadingStyle, 'editorial-rule');
+  assert.equal((preset as any).layoutDefaults?.sectionSpacing, 28);
+});
+
+test('legacy document design normalization supplies cover and layout defaults', () => {
+  const doc = buildDocumentFromPrompt('Legacy design migration').updatedDoc;
+  doc.design = undefined;
+  const normalized = normalizeDocumentDesign(doc);
+  const cover = (normalized.design as any).coverPage;
+  const layout = (normalized.design as any).layoutDefaults;
+
+  assert.deepEqual(cover, {
+    enabled: false,
+    style: 'midnight-executive',
+    background: { type: 'solid', color: '#0b0d12', opacity: 1 },
+    titleColor: '#f8fafc',
+    detailColor: '#94a3b8',
+    borderColor: '#b08a45',
+    eyebrow: 'AGREEMENT',
+    brandLine: '',
+    showFrame: true,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  });
+  assert.deepEqual(layout, {
+    sectionHeadingStyle: 'editorial-rule',
+    sectionSpacing: 22,
+    headerRule: true,
+    footerRule: true,
+    paragraphIndent: 0,
+    sectionPadding: 12
+  });
+});
+
+test('applying any visual preset preserves all agreement content and structure', () => {
+  const doc = buildDocumentFromPrompt('Theme must not rewrite agreement content').updatedDoc;
+  doc.title = 'Contract Text Must Stay Exact';
+  doc.sections[0].content = 'PRESERVE THIS EXACT LEGAL LANGUAGE.';
+  doc.sections[0].clauses[0].content = 'DO NOT REWRITE THIS CLAUSE.';
+  const before = JSON.stringify({
+    title: doc.title,
+    sections: doc.sections,
+    signatures: doc.signatures,
+    sourceText: doc.sourceText
+  });
+
+  assert.ok(DOCUMENT_DESIGN_PRESETS.some(preset => preset.presetId === 'midnight-executive'));
+  const updated = applyDocumentPreset(doc, 'midnight-executive');
+
+  assert.equal(JSON.stringify({
+    title: updated.title,
+    sections: updated.sections,
+    signatures: updated.signatures,
+    sourceText: updated.sourceText
+  }), before);
+});
+
+
+test('document design themes export and import as a validated JSON round trip', async () => {
+  const api = await import('./documentDesign') as unknown as {
+    serializeDocumentTheme: (design: typeof DOCUMENT_DESIGN_PRESETS[number]) => string;
+    parseDocumentTheme: (source: string) => typeof DOCUMENT_DESIGN_PRESETS[number];
+  };
+  assert.equal(typeof api.serializeDocumentTheme, 'function');
+  assert.equal(typeof api.parseDocumentTheme, 'function');
+  const source = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'lil-synn')!;
+  const serialized = api.serializeDocumentTheme(source);
+  const parsed = api.parseDocumentTheme(serialized);
+  assert.deepEqual(parsed, source);
+  assert.throws(() => api.parseDocumentTheme('{invalid json'), /valid JSON/i);
+  const invalid = JSON.parse(serialized);
+  invalid.coverPage.titleColor = 'not-a-color';
+  assert.throws(() => api.parseDocumentTheme(JSON.stringify(invalid)), /hexadecimal color/i);
+});
+
+test('saved theme duplication creates an independent named copy without changing the original', async () => {
+  const api = await import('./documentDesign') as unknown as {
+    duplicateSavedTheme: (storage: any, sourceId: string, newName: string) => SavedTheme[];
+  };
+  assert.equal(typeof api.duplicateSavedTheme, 'function');
+  const storage = new MemoryStorage();
+  saveTheme(storage as any, {
+    id: 'theme-source',
+    name: 'Source Theme',
+    design: DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'lil-synn')!,
+    updatedAt: '2026-11-08T00:00:00.000Z'
+  } as any);
+  const duplicated = api.duplicateSavedTheme(storage as any, 'theme-source', 'Professional LIL SYNN');
+  assert.equal(duplicated.length, 2);
+  const copy = duplicated.find(item => item.name === 'Professional LIL SYNN');
+  const original = duplicated.find(item => item.id === 'theme-source');
+  assert.ok(copy);
+  assert.ok(original);
+  assert.notEqual(copy.id, original.id);
+  assert.deepEqual(copy.design, original.design);
+  copy.design.name = 'Modified copy';
+  assert.equal(listSavedThemes(storage as any).find(item => item.id === 'theme-source')?.design.name, 'LIL SYNN');
+});
+
+type SavedTheme = ReturnType<typeof listSavedThemes>[number];

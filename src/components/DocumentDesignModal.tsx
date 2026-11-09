@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Check, Palette, Save, Trash2, X } from 'lucide-react';
+import { Check, Palette, Save, Trash2, X, Copy, Download, Upload } from 'lucide-react';
 import type {
   ColorFill,
   BorderSide,
   DocumentDesign,
   DocumentModel,
+  PageConfig,
   SectionDesign,
   TableDesign
 } from '../types/document';
@@ -19,6 +20,9 @@ import {
   contrastRatio,
   normalizeDocumentDesign,
   fillToCss,
+  serializeDocumentTheme,
+  parseDocumentTheme,
+  duplicateSavedTheme,
   type SavedDocumentTheme
 } from '../services/documentDesign';
 
@@ -27,7 +31,7 @@ interface DocumentDesignModalProps {
   activeSectionId: string | null;
   isOpen: boolean;
   onClose: () => void;
-  onApplyDesign: (design: DocumentDesign) => void;
+  onApplyDesign: (design: DocumentDesign, pageConfig?: Partial<PageConfig>) => void;
   onApplySectionDesign: (sectionId: string, design: SectionDesign) => void;
   onApplyTableDesign: (sectionId: string, tableId: string, design: TableDesign) => void;
   onResetSectionDesign: (sectionId: string) => void;
@@ -35,7 +39,7 @@ interface DocumentDesignModalProps {
   onResetAllOverrides: () => void;
 }
 
-type TabId = 'presets' | 'page' | 'typography' | 'section' | 'table' | 'signatures' | 'saved';
+type TabId = 'presets' | 'cover' | 'page' | 'layout' | 'typography' | 'section' | 'table' | 'signatures' | 'saved';
 
 function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
@@ -266,6 +270,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
 }) => {
   const [tab, setTab] = useState<TabId>('presets');
   const [design, setDesign] = useState<DocumentDesign>(DEFAULT_DOCUMENT_DESIGN);
+  const [pageConfigDraft, setPageConfigDraft] = useState<PageConfig>(document.pageConfig);
   const [sectionId, setSectionId] = useState<string>('');
   const [sectionDraft, setSectionDraft] = useState<SectionDesign>({});
   const [tableId, setTableId] = useState<string>('');
@@ -302,6 +307,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
     if (!isOpen) return;
     const normalized = normalizeDocumentDesign(document);
     setDesign(deepCloneDesign(normalized.design || DEFAULT_DOCUMENT_DESIGN));
+    setPageConfigDraft(deepCloneDesign(document.pageConfig));
     const nextSectionId = activeSectionId && document.sections.some(section => section.id === activeSectionId)
       ? activeSectionId
       : (document.sections[0]?.id || '');
@@ -389,6 +395,62 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
     }));
   };
 
+  const updateCover = (patch: Partial<DocumentDesign['coverPage']>) => {
+    setDesign(current => ({ ...current, coverPage: { ...current.coverPage, ...patch } }));
+  };
+
+  const updateLayout = (patch: Partial<DocumentDesign['layoutDefaults']>) => {
+    setDesign(current => ({ ...current, layoutDefaults: { ...current.layoutDefaults, ...patch } }));
+  };
+
+  const updatePageConfigDraft = (patch: Partial<PageConfig>) => {
+    setPageConfigDraft(current => ({
+      ...current,
+      ...patch,
+      margins: { ...current.margins, ...(patch.margins || {}) }
+    }));
+  };
+
+  const duplicateThemeCopy = (theme: SavedDocumentTheme) => {
+    const suggestedName = theme.name + ' Copy';
+    const name = window.prompt('Name the duplicated theme', suggestedName);
+    if (!name?.trim()) return;
+    try {
+      setSavedThemes(duplicateSavedTheme(window.localStorage, theme.id, name.trim()));
+      setStorageMessage('Theme duplicated.');
+    } catch (error) {
+      setStorageMessage(error instanceof Error ? error.message : 'The theme could not be duplicated.');
+    }
+  };
+
+  const exportThemeJson = () => {
+    try {
+      const blob = new Blob([serializeDocumentTheme(design)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = (design.name || 'document-theme').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.json';
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setStorageMessage('Theme JSON exported.');
+    } catch (error) {
+      setStorageMessage(error instanceof Error ? error.message : 'The theme could not be exported.');
+    }
+  };
+
+  const importThemeJson = async (file?: File) => {
+    if (!file) return;
+    try {
+      const parsed = parseDocumentTheme(await file.text());
+      setDesign(parsed);
+      setThemeName(parsed.name + ' Imported');
+      setTab('cover');
+      setStorageMessage('Theme imported into the local preview. Apply document design to use it.');
+    } catch (error) {
+      setStorageMessage(error instanceof Error ? error.message : 'The selected file is not a valid design theme.');
+    }
+  };
+
   const applySavedTheme = (theme: SavedDocumentTheme) => {
     setDesign(deepCloneDesign(theme.design));
     setTab('page');
@@ -436,18 +498,20 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
   };
 
   const tabs: Array<{ id: TabId; label: string }> = [
-    { id: 'presets', label: 'Templates' },
-    { id: 'page', label: 'Colors & Pages' },
+    { id: 'presets', label: 'Themes' },
+    { id: 'cover', label: 'Cover' },
+    { id: 'page', label: 'Page & Colors' },
+    { id: 'layout', label: 'Layout' },
     { id: 'typography', label: 'Typography' },
     { id: 'section', label: 'Sections' },
     { id: 'table', label: 'Tables' },
     { id: 'signatures', label: 'Signatures' },
-    { id: 'saved', label: 'My Themes' }
+    { id: 'saved', label: 'Saved & Export' }
   ];
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm">
-      <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl">
+      <div className="flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl">
         <header className="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-5 py-3">
           <div className="flex items-center gap-2">
             <Palette className="h-4 w-4 text-blue-400" />
@@ -477,27 +541,168 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
               <p className="mt-1 text-[10px] text-amber-300/70">These are advisory checks. Your selected colors will not be changed automatically.</p>
             </div>
           )}
+          <section aria-label="Live document design preview" className="mb-5 grid gap-3 xl:grid-cols-2">
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Live cover preview</span>
+                <span className="text-[10px] text-slate-500">{design.coverPage.enabled ? 'Cover enabled' : 'Cover disabled'}</span>
+              </div>
+              <div className="flex min-h-[178px] items-center justify-center rounded-lg p-3" style={{ background: fillToCss(design.coverPage.background) }}>
+                <div className="flex min-h-[150px] w-full max-w-[210px] flex-col items-center justify-center border px-3 py-4 text-center" style={{ borderColor: design.coverPage.showFrame ? design.coverPage.borderColor : 'transparent' }}>
+                  {design.coverPage.enabled ? (
+                    <>
+                      <span className="text-[7px] font-semibold tracking-[0.2em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.eyebrow.toUpperCase()}</span>
+                      <span className="mt-3 line-clamp-3 text-[15px] font-semibold leading-tight" style={{ color: design.coverPage.titleColor, fontFamily: design.typography.headingFontFamily }}>{document.title}</span>
+                      {design.coverPage.brandLine.trim() && <span className="mt-3 line-clamp-2 text-[6px] font-semibold tracking-[0.12em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.brandLine}</span>}
+                      <span className="mt-3 h-px w-8" style={{ background: design.coverPage.borderColor }} />
+                    </>
+                  ) : (
+                    <span className="text-[10px] font-medium" style={{ color: design.coverPage.titleColor }}>No separate cover page</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Interior page preview</span>
+                <span className="text-[10px] text-slate-500">{pageConfigDraft.pageSize} • {pageConfigDraft.orientation}</span>
+              </div>
+              <div className="rounded-lg border p-4" style={{ background: fillToCss(design.page.background), borderColor: design.colors.border }}>
+                <div className="mb-3 flex items-center justify-between border-b pb-2 text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.pageFurniture.headerTextColor, borderColor: design.layoutDefaults.headerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
+                  <span>{pageConfigDraft.headerText || 'DOCUMENT HEADER'}</span><span>CONFIDENTIAL</span>
+                </div>
+                <div className="mb-2 text-[14px] font-semibold" style={{ color: design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>1.0 {document.sections[0]?.title || 'SECTION HEADING'}</div>
+                <div className="mb-2 h-px w-full" style={{ background: design.colors.border }} />
+                <div className="space-y-1.5">
+                  <div className="h-1.5 w-full rounded" style={{ background: design.colors.bodyText, opacity: 0.65 }} />
+                  <div className="h-1.5 w-[94%] rounded" style={{ background: design.colors.bodyText, opacity: 0.55 }} />
+                  <div className="h-1.5 w-[82%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
+                </div>
+                <div className="mt-4 rounded border p-2" style={{ background: fillToCss(design.sectionDefaults.background), borderColor: design.colors.border }}>
+                  <span className="text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.colors.accent }}>Design detail</span>
+                  <div className="mt-2 h-1 w-[90%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
+                  <div className="mt-1.5 h-1 w-[65%] rounded" style={{ background: design.colors.bodyText, opacity: 0.35 }} />
+                </div>
+                <div className="mt-3 flex justify-between border-t pt-2 text-[7px]" style={{ color: design.pageFurniture.footerTextColor, borderColor: design.layoutDefaults.footerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
+                  <span>{pageConfigDraft.footerText || 'DOCUMENT FOOTER'}</span><span>Page 1</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {tab === 'presets' && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {DOCUMENT_DESIGN_PRESETS.map(preset => (
-                <button key={preset.presetId} onClick={() => setDesign(deepCloneDesign(preset))} className={'rounded-lg border p-3 text-left transition-colors ' + (design.presetId === preset.presetId ? 'border-blue-500 bg-blue-950/30' : 'border-slate-700 bg-slate-950 hover:border-slate-500')}>
-                  <div className="mb-3 flex h-16 overflow-hidden rounded border border-slate-700" style={{ background: fillColor(preset.page.background, '#ffffff') }}>
-                    <div className="flex w-full flex-col gap-2 p-2">
-                      <div className="h-2 w-2/3 rounded" style={{ background: preset.colors.headingText }} />
-                      <div className="h-1.5 w-full rounded" style={{ background: preset.colors.border }} />
-                      <div className="h-1.5 w-4/5 rounded" style={{ background: preset.colors.accent }} />
-                      <div className="mt-auto flex gap-1">{[preset.colors.primary, preset.colors.secondary, preset.colors.accent].map(color => <span key={color} className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />)}</div>
+                <button key={preset.presetId} onClick={() => setDesign(deepCloneDesign(preset))} className={'rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-xl ' + (design.presetId === preset.presetId ? 'border-blue-500 bg-blue-950/30 shadow-lg shadow-blue-950/30' : 'border-slate-700 bg-slate-950 hover:border-slate-500')}>
+                  <div className="mb-3 flex h-32 items-center justify-center overflow-hidden rounded-lg border p-2" style={{ background: fillToCss(preset.coverPage.background), borderColor: preset.coverPage.borderColor }}>
+                    <div className="flex h-full w-full flex-col items-center justify-center border px-2 text-center" style={{ borderColor: preset.coverPage.showFrame ? preset.coverPage.borderColor : 'transparent' }}>
+                      <span className="text-[6px] font-semibold tracking-[0.2em]" style={{ color: preset.coverPage.detailColor }}>{preset.coverPage.eyebrow}</span>
+                      <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight" style={{ color: preset.coverPage.titleColor, fontFamily: preset.typography.headingFontFamily }}>{document.title}</span>
+                      {preset.coverPage.showOrnamentalRule && <span className="mt-2 h-px w-9" style={{ background: preset.coverPage.borderColor }} />}
+                      <div className="mt-auto flex gap-1.5 pb-1">{[preset.colors.primary, preset.colors.secondary, preset.colors.accent, preset.colors.border].map((color, index) => <span key={index} className="h-2 w-2 rounded-full" style={{ background: color }} />)}</div>
                     </div>
                   </div>
                   <span className="block text-xs font-semibold">{preset.name}</span>
-                  <span className="mt-1 block text-[10px] text-slate-500">Select preset</span>
+                  <span className="mt-1 block text-[10px] text-slate-500">{preset.coverPage.enabled ? 'Cover + interior theme' : 'Interior theme'}</span>
                 </button>
               ))}
             </div>
           )}
 
+          {tab === 'cover' && (
+            <div className="grid gap-5 xl:grid-cols-2">
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Cover page</h3>
+                <label className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] text-slate-200">
+                  <input type="checkbox" checked={design.coverPage.enabled} onChange={event => updateCover({ enabled: event.target.checked })} className="accent-blue-500" />
+                  Use a dedicated, professionally designed cover page
+                </label>
+                <label className="block text-[11px] text-slate-300">Cover style
+                  <select value={design.coverPage.style} onChange={event => updateCover({ style: event.target.value as DocumentDesign['coverPage']['style'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100">
+                    <option value="midnight-executive">Midnight Executive</option>
+                    <option value="art-deco">Art Deco</option>
+                    <option value="dark-luxury">Dark Luxury</option>
+                    <option value="editorial">Editorial</option>
+                    <option value="minimal">Minimal</option>
+                  </select>
+                </label>
+                <label className="block text-[11px] text-slate-300">Eyebrow / upper label
+                  <input value={design.coverPage.eyebrow} onChange={event => updateCover({ eyebrow: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="AGREEMENT • PRIVATE & CONFIDENTIAL" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Brand line / subtitle
+                  <input value={design.coverPage.brandLine} onChange={event => updateCover({ brandLine: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="COMPANY • DIVISION • DOCUMENT SERIES" />
+                </label>
+              </section>
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Cover palette & frame</h3>
+                <ColorFillControl label="Cover background" value={design.coverPage.background} fallback="#0b0d12" onChange={background => updateCover({ background })} />
+                <ColorControl label="Cover title" value={design.coverPage.titleColor} onChange={titleColor => updateCover({ titleColor })} />
+                <ColorControl label="Cover details" value={design.coverPage.detailColor} onChange={detailColor => updateCover({ detailColor })} />
+                <ColorControl label="Cover frame / accent" value={design.coverPage.borderColor} onChange={borderColor => updateCover({ borderColor })} />
+              </section>
+              <section className="col-span-full grid gap-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4 sm:grid-cols-3">
+                <h3 className="col-span-full text-xs font-semibold uppercase tracking-wide text-slate-300">Decorative elements</h3>
+                {([
+                  ['showFrame', 'Decorative frame'],
+                  ['showLogoPlaceholder', 'Brand / logo placeholder'],
+                  ['showOrnamentalRule', 'Ornamental divider']
+                ] as Array<[keyof DocumentDesign['coverPage'], string]>).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 text-[11px] text-slate-300">
+                    <input type="checkbox" checked={Boolean(design.coverPage[key])} onChange={event => updateCover({ [key]: event.target.checked } as Partial<DocumentDesign['coverPage']>)} className="accent-blue-500" />
+                    {label}
+                  </label>
+                ))}
+              </section>
+              <section className="col-span-full rounded-xl border border-slate-700 p-4" style={{ background: fillToCss(design.coverPage.background) }}>
+                <div className="mx-auto flex min-h-[230px] max-w-2xl flex-col items-center justify-between border px-8 py-8 text-center" style={{ borderColor: design.coverPage.showFrame ? design.coverPage.borderColor : 'transparent', color: design.coverPage.titleColor }}>
+                  <span className="text-[10px] font-semibold tracking-[0.3em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.eyebrow.toUpperCase() || 'DOCUMENT'}</span>
+                  {design.coverPage.showLogoPlaceholder && <div className="flex h-10 w-10 items-center justify-center rounded-full border text-[7px] font-bold" style={{ borderColor: design.coverPage.borderColor }}>BRAND</div>}
+                  <div>
+                    <h3 className="text-2xl font-semibold" style={{ fontFamily: design.typography.headingFontFamily }}>{document.title}</h3>
+                    {design.coverPage.brandLine && <p className="mt-3 text-[10px] tracking-[0.18em]" style={{ color: design.coverPage.detailColor }}>{design.coverPage.brandLine}</p>}
+                  </div>
+                  <span className="h-px w-20" style={{ background: design.coverPage.borderColor }} />
+                  <span className="text-[10px]" style={{ color: design.coverPage.detailColor }}>{document.author}</span>
+                </div>
+              </section>
+            </div>
+          )}
+
           {tab === 'page' && (
             <div className="grid gap-6 md:grid-cols-2">
+              <section className="col-span-full rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-300">Paper size & print layout</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-[11px] text-slate-300">Page size
+                    <select value={pageConfigDraft.pageSize} onChange={event => updatePageConfigDraft({ pageSize: event.target.value as PageConfig['pageSize'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100"><option value="LETTER">US Letter</option><option value="LEGAL">US Legal</option><option value="A4">A4</option></select>
+                  </label>
+                  <label className="block text-[11px] text-slate-300">Orientation
+                    <select value={pageConfigDraft.orientation} onChange={event => updatePageConfigDraft({ orientation: event.target.value as PageConfig['orientation'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+                  </label>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-4">
+                  {(['top', 'bottom', 'left', 'right'] as const).map(side => (
+                    <label key={side} className="block text-[11px] capitalize text-slate-300">{side} margin (mm)
+                      <input type="number" min="0" max="60" step="0.5" value={pageConfigDraft.margins[side]} onChange={event => updatePageConfigDraft({ margins: { [side]: Number(event.target.value) } as PageConfig['margins'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="block text-[11px] text-slate-300">Running header text
+                    <input value={pageConfigDraft.headerText} onChange={event => updatePageConfigDraft({ headerText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="COMPANY • AGREEMENT NAME" />
+                  </label>
+                  <label className="block text-[11px] text-slate-300">Running footer text
+                    <input value={pageConfigDraft.footerText} onChange={event => updatePageConfigDraft({ footerText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="CONFIDENTIAL • DOCUMENT VERSION" />
+                  </label>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={pageConfigDraft.showPageNumbers} onChange={event => updatePageConfigDraft({ showPageNumbers: event.target.checked })} className="accent-blue-500" /> Page numbers</label>
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={pageConfigDraft.firstPageDifferent} onChange={event => updatePageConfigDraft({ firstPageDifferent: event.target.checked })} className="accent-blue-500" /> Different first page furniture</label>
+                  <label className="flex items-center gap-2 text-[11px] text-slate-300">Number format
+                    <select value={pageConfigDraft.pageNumberFormat} onChange={event => updatePageConfigDraft({ pageNumberFormat: event.target.value as PageConfig['pageNumberFormat'] })} className="rounded border border-slate-700 bg-slate-900 px-2 py-1.5 text-slate-100"><option value="PAGE_X_OF_Y">Page X of Y</option><option value="PAGE_X">Page X</option><option value="DASH_X_DASH">- X -</option></select>
+                  </label>
+                </div>
+              </section>
               <section className="space-y-3">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Page Background</h3>
                 <ColorFillControl
@@ -534,6 +739,48 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 ] as Array<[keyof DocumentDesign['colors'], string]>).map(([key, label]) => (
                   <ColorControl key={key} label={label} value={design.colors[key]} onChange={value => updateColor(key, value)} />
                 ))}
+              </section>
+            </div>
+          )}
+
+          {tab === 'layout' && (
+            <div className="grid gap-5 md:grid-cols-2">
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Document rhythm</h3>
+                <label className="block text-[11px] text-slate-300">Section heading style
+                  <select value={design.layoutDefaults.sectionHeadingStyle} onChange={event => updateLayout({ sectionHeadingStyle: event.target.value as DocumentDesign['layoutDefaults']['sectionHeadingStyle'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100">
+                    <option value="editorial-rule">Editorial rule</option>
+                    <option value="numbered-card">Numbered card</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="banner">Full-width banner</option>
+                  </select>
+                </label>
+                <label className="block text-[11px] text-slate-300">Space between sections (px)
+                  <input type="number" min="0" max="100" value={design.layoutDefaults.sectionSpacing} onChange={event => updateLayout({ sectionSpacing: Number(event.target.value) })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Section padding (px)
+                  <input type="number" min="0" max="60" value={design.layoutDefaults.sectionPadding} onChange={event => updateLayout({ sectionPadding: Number(event.target.value) })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                </label>
+                <label className="block text-[11px] text-slate-300">Paragraph first-line indent (px)
+                  <input type="number" min="0" max="30" value={design.layoutDefaults.paragraphIndent} onChange={event => updateLayout({ paragraphIndent: Number(event.target.value) })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" />
+                </label>
+              </section>
+              <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Page furniture</h3>
+                <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={design.layoutDefaults.headerRule} onChange={event => updateLayout({ headerRule: event.target.checked })} className="accent-blue-500" /> Show running header rule</label>
+                <label className="flex items-center gap-2 text-[11px] text-slate-300"><input type="checkbox" checked={design.layoutDefaults.footerRule} onChange={event => updateLayout({ footerRule: event.target.checked })} className="accent-blue-500" /> Show running footer rule</label>
+                <p className="text-[10px] leading-relaxed text-slate-500">These settings apply to the live editor and PDF renderer. Section and page spacing use the same saved design values.</p>
+              </section>
+              <section className="col-span-full rounded-xl border border-slate-700 bg-slate-950/50 p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Heading style preview</h3>
+                <div className={'mt-3 flex items-center gap-3 ' + (design.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded px-3 py-3' : design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded border p-2' : 'pb-2')} style={{
+                  background: design.layoutDefaults.sectionHeadingStyle === 'banner' ? design.colors.primary : 'transparent',
+                  borderBottom: design.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '1px solid ' + design.colors.border : 'none',
+                  borderColor: design.colors.border
+                }}>
+                  <span className="rounded px-2 py-1 font-mono text-xs font-bold" style={{ color: design.colors.accent, background: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.sectionSurface : 'transparent' }}>1.0</span>
+                  <span className="text-lg font-semibold" style={{ color: design.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>Professional Section Heading</span>
+                </div>
               </section>
             </div>
           )}
@@ -752,6 +999,13 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
 
           {tab === 'saved' && (
             <div className="space-y-4">
+              <div className="flex flex-wrap gap-2 rounded-lg border border-slate-700 bg-slate-950 p-3">
+                <button onClick={exportThemeJson} className="flex items-center gap-1.5 rounded border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800"><Download className="h-3.5 w-3.5" /> Export theme JSON</button>
+                <label className="flex cursor-pointer items-center gap-1.5 rounded border border-slate-700 px-3 py-2 text-xs text-slate-200 hover:bg-slate-800">
+                  <Upload className="h-3.5 w-3.5" /> Import theme JSON
+                  <input type="file" accept="application/json,.json" className="hidden" onChange={event => { void importThemeJson(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+                </label>
+              </div>
               <div className="flex flex-wrap items-end gap-2 rounded-lg border border-slate-700 bg-slate-950 p-3">
                 <label className="min-w-52 flex-1 text-[11px] text-slate-300">Theme name<input value={themeName} onChange={event => setThemeName(event.target.value)} placeholder="My custom theme" className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" /></label>
                 <button onClick={persistSavedTheme} className="flex items-center gap-1.5 rounded bg-blue-600 px-3 py-2 text-xs font-semibold hover:bg-blue-500"><Save className="h-3.5 w-3.5" /> Save current theme</button>
@@ -761,7 +1015,8 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 {savedThemes.map(theme => (
                   <div key={theme.id} className="flex flex-wrap items-center gap-3 rounded border border-slate-700 bg-slate-950 p-3">
                     <button onClick={() => applySavedTheme(theme)} className="min-w-0 flex-1 text-left"><span className="block text-xs font-medium">{theme.name}</span><span className="text-[10px] text-slate-500">Updated {new Date(theme.updatedAt).toLocaleDateString()}</span></button>
-                    <button onClick={() => handleRenameTheme(theme)} className="rounded border border-slate-700 px-2 py-1 text-[10px] hover:bg-slate-800">Rename</button>
+                    <button onClick={() => duplicateThemeCopy(theme)} className="flex items-center gap-1 rounded border border-slate-700 px-2 py-1 text-[10px] hover:bg-slate-800"><Copy className="h-3 w-3" /> Duplicate</button>
+                     <button onClick={() => handleRenameTheme(theme)} className="rounded border border-slate-700 px-2 py-1 text-[10px] hover:bg-slate-800">Rename</button>
                     <button onClick={() => handleDeleteTheme(theme.id)} aria-label={'Delete ' + theme.name} className="rounded p-1.5 text-rose-400 hover:bg-rose-950/40"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 ))}
@@ -774,8 +1029,8 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-slate-950 px-5 py-3">
           <span className="text-[10px] text-slate-500">Active design: {design.name}</span>
           <div className="flex gap-2">
-            <button onClick={() => setDesign(deepCloneDesign(normalizeDocumentDesign(document).design || DEFAULT_DOCUMENT_DESIGN))} className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800">Discard local edits</button>
-            <button onClick={() => { onApplyDesign(deepCloneDesign(design)); onClose(); }} className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"><Check className="h-3.5 w-3.5" /> Apply document design</button>
+            <button onClick={() => { setDesign(deepCloneDesign(normalizeDocumentDesign(document).design || DEFAULT_DOCUMENT_DESIGN)); setPageConfigDraft(deepCloneDesign(document.pageConfig)); }} className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800">Discard local edits</button>
+            <button onClick={() => { onApplyDesign(deepCloneDesign(design), deepCloneDesign(pageConfigDraft)); onClose(); }} className="flex items-center gap-1.5 rounded bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500"><Check className="h-3.5 w-3.5" /> Apply design &amp; page layout</button>
           </div>
         </footer>
       </div>
