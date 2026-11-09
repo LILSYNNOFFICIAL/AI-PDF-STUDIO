@@ -483,6 +483,29 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   if (!['uppercase', 'capitalize', 'none'].includes(typography.headingCase)) throw new Error('typography.headingCase is unsupported.');
 }
 
+export function serializeDocumentTheme(design: DocumentDesign): string {
+  validateDocumentDesign(design);
+  return JSON.stringify(deepCloneDesign(design), null, 2);
+}
+
+export function parseDocumentTheme(source: string): DocumentDesign {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source) as unknown;
+  } catch {
+    throw new Error('Theme file must contain valid JSON.');
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Theme file must contain a document design object.');
+  }
+  const candidate = 'design' in parsed ? (parsed as { design?: unknown }).design : parsed;
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    throw new Error('Theme JSON does not contain a document design.');
+  }
+  validateDocumentDesign(candidate as DocumentDesign);
+  return deepCloneDesign(candidate as DocumentDesign);
+}
+
 function mergeDeep<T>(base: T, patch: unknown): T {
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return patch === undefined ? deepCloneDesign(base) : patch as T;
   const source = base && typeof base === 'object' && !Array.isArray(base) ? base as Record<string, unknown> : {};
@@ -762,6 +785,26 @@ export function saveTheme(storage: StorageLike, theme: SavedDocumentTheme): Save
   themes.push(deepCloneDesign(theme));
   storage.setItem(SAVED_THEMES_KEY, JSON.stringify(themes));
   return themes;
+}
+
+export function duplicateSavedTheme(storage: StorageLike, sourceThemeId: string, newName: string): SavedDocumentTheme[] {
+  const name = newName.trim();
+  if (!name) throw new Error('A name is required for the duplicated theme.');
+  const themes = listSavedThemes(storage);
+  const source = themes.find(theme => theme.id === sourceThemeId);
+  if (!source) throw new Error('Saved theme was not found.');
+
+  let id = '';
+  do {
+    id = 'theme-copy-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  } while (themes.some(theme => theme.id === id));
+
+  return saveTheme(storage, {
+    id,
+    name,
+    design: deepCloneDesign(source.design),
+    updatedAt: new Date().toISOString()
+  });
 }
 
 export function renameTheme(storage: StorageLike, themeId: string, name: string): SavedDocumentTheme[] {
