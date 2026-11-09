@@ -21,7 +21,7 @@ const ACTIONS: Record<DocumentContextTargetType, string[]> = {
   text: ['cut', 'copy', 'paste', 'select-all', 'insert-signature'],
   section: ['add-clause', 'duplicate-section', 'move-section-up', 'move-section-down', 'toggle-page-break', 'edit-section-design', 'delete-section'],
   clause: ['copy-clause', 'add-clause-after', 'duplicate-clause', 'delete-clause'],
-  image: ['align-left', 'align-center', 'align-right', 'increase-image-size', 'decrease-image-size', 'edit-caption', 'edit-alt-text', 'delete-image'],
+  image: ['align-left', 'align-center', 'align-right', 'increase-image-size', 'decrease-image-size', 'set-image-size', 'reset-image-size', 'duplicate-image', 'edit-caption', 'edit-alt-text', 'delete-image'],
   'header-image': ['align-left', 'align-center', 'align-right', 'increase-image-size', 'decrease-image-size', 'set-image-size', 'reset-image-size', 'duplicate-image', 'edit-caption', 'edit-alt-text', 'delete-image'],
   table: ['add-table-row', 'add-table-column', 'delete-table'],
   signature: ['edit-signature', 'duplicate-signature', 'toggle-signature-method', 'delete-signature']
