@@ -156,7 +156,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     drawColorFill(fill, 0, 0, pageWidth, pageHeight, 12);
   };
 
-  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number, gap = 3) => {
+  const drawImageBlocks = (images: NonNullable<DocumentModel['pageHeaderImages']>, maxHeight: number | null, gap = 3) => {
     const validImages = images.filter(image => typeof image.url === 'string' && image.url.startsWith('data:image/'));
     if (!validImages.length) return 0;
     const slotWidth = (contentWidth - gap * (validImages.length - 1)) / validImages.length;
@@ -166,12 +166,12 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         const properties = pdf.getImageProperties(image.url);
         const ratio = properties.width / Math.max(1, properties.height);
         const requestedWidth = slotWidth * Math.max(10, Math.min(100, image.widthPercent ?? 100)) / 100;
-        const width = Math.min(requestedWidth, maxHeight * ratio);
-        const height = Math.min(maxHeight, width / Math.max(0.01, ratio));
+        const width = Math.min(requestedWidth, maxHeight === null ? slotWidth : maxHeight * ratio);
+        const height = maxHeight === null ? width / Math.max(0.01, ratio) : Math.min(maxHeight, width / Math.max(0.01, ratio));
         const slotX = margins.left + index * (slotWidth + gap);
         const alignment = image.alignment === 'left' ? 'left' : image.alignment === 'right' ? 'right' : 'center';
         const x = alignment === 'left' ? slotX : alignment === 'right' ? slotX + slotWidth - width : slotX + (slotWidth - width) / 2;
-        const y = cursorY + (maxHeight - height) / 2;
+        const y = maxHeight === null ? cursorY : cursorY + (maxHeight - height) / 2;
         const format = /image\/(jpeg|jpg)/i.test(image.url.slice(0, 40)) ? 'JPEG' : 'PNG';
         pdf.addImage(image.url, format, x, y, width, height);
         rowHeight = Math.max(rowHeight, height);
@@ -185,9 +185,8 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
   const drawPageHeaderImages = () => {
     const images = doc.pageHeaderImages || [];
     if (!doc.imageHeaderRequested || !images.length) return;
-    const maxHeight = Math.min(22, Math.max(10, margins.top - 2));
-    const drawnHeight = drawImageBlocks(images, maxHeight);
-    if (drawnHeight > 0) cursorY += maxHeight + 4;
+    const drawnHeight = drawImageBlocks(images, null);
+    if (drawnHeight > 0) cursorY += drawnHeight + 4;
   };
 
   const addPage = () => {
