@@ -20,7 +20,8 @@ test('context menu action registry exposes only actions relevant to each documen
   ]);
   assert.deepEqual(getContextMenuActionIds('header-image'), [
     'align-left', 'align-center', 'align-right', 'increase-image-size',
-    'decrease-image-size', 'edit-caption', 'edit-alt-text', 'delete-image'
+    'decrease-image-size', 'set-image-size', 'reset-image-size', 'duplicate-image',
+    'edit-caption', 'edit-alt-text', 'delete-image'
   ]);
   assert.deepEqual(getContextMenuActionIds('table'), [
     'add-table-row', 'add-table-column', 'delete-table'
