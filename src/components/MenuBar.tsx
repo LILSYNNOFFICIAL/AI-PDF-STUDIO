@@ -70,6 +70,7 @@ interface MenuBarProps {
   onOpenInsertTable: () => void;
   onOpenInsertChart: () => void;
   onOpenInsertImage: () => void;
+  onOpenInsertSignature: () => void;
   onOpenMetadata: () => void;
   onOpenClauseLibrary: () => void;
   onOpenWatermarkCustomizer: () => void;
@@ -116,6 +117,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onOpenInsertTable,
   onOpenInsertChart,
   onOpenInsertImage,
+  onOpenInsertSignature,
   onOpenMetadata,
   onOpenClauseLibrary,
   onOpenWatermarkCustomizer,
@@ -345,6 +347,14 @@ export const MenuBar: React.FC<MenuBarProps> = ({
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
               >
                 <PieChart className="w-3.5 h-3.5 text-amber-400" /> Visual Chart (Donut/Bar)
+              </button>
+              <button 
+                onMouseDown={event => event.preventDefault()}
+                onClick={() => executeAction(onOpenInsertSignature)}
+                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+                title="Convert selected text or enter signatory details to insert a formatted signature block"
+              >
+                <PenTool className="w-3.5 h-3.5 text-emerald-400" /> Signature
               </button>
               <button 
                 onClick={() => executeAction(onOpenInsertImage)}
