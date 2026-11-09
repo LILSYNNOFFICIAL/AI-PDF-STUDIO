@@ -69,6 +69,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     | { type: 'section'; sectionId: string }
     | { type: 'clause'; sectionId: string; clauseId: string }
     | { type: 'image'; sectionId: string; imageId: string }
+    | { type: 'header-image'; imageId: string }
     | { type: 'table'; sectionId: string; tableId: string }
     | { type: 'signature'; sectionId: string; signatureId: string }
     | { type: 'party-signature'; partyId: string; partyIndex: number };
@@ -446,6 +447,29 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         }))
       ];
     }
+    if (target.type === 'header-image') {
+      const image = (document.pageHeaderImages || []).find(entry => entry.id === target.imageId);
+      if (!image) return [];
+      const update = (patch: Partial<ImageBlock>) => onUpdateDocument({
+        ...document,
+        pageHeaderImages: (document.pageHeaderImages || []).map(entry => entry.id === image.id ? { ...entry, ...patch } : entry),
+        updatedAt: new Date().toISOString()
+      });
+      return [
+        item('align-left', 'Align left', () => update({ alignment: 'left' })),
+        item('align-center', 'Align center', () => update({ alignment: 'center' })),
+        item('align-right', 'Align right', () => update({ alignment: 'right' })),
+        item('increase-image-size', 'Increase image size', () => update({ widthPercent: Math.min(100, (image.widthPercent || 80) + 10) }), { disabled: (image.widthPercent || 80) >= 100 }),
+        item('decrease-image-size', 'Decrease image size', () => update({ widthPercent: Math.max(20, (image.widthPercent || 80) - 10) }), { disabled: (image.widthPercent || 80) <= 20 }),
+        item('edit-caption', 'Edit caption', () => { const value = window.prompt('Image caption', image.caption || ''); if (value !== null) update({ caption: value }); }),
+        item('edit-alt-text', 'Edit alternative text', () => { const value = window.prompt('Alternative text', image.altText || ''); if (value !== null) update({ altText: value }); }),
+        item('delete-image', 'Delete image', () => onUpdateDocument({
+          ...document,
+          pageHeaderImages: (document.pageHeaderImages || []).filter(entry => entry.id !== image.id),
+          updatedAt: new Date().toISOString()
+        }), { destructive: true })
+      ];
+    }
     if (!section) return [];
 
     if (target.type === 'section') {
@@ -693,7 +717,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 style={{ gridTemplateColumns: `repeat(${Math.max(1, (document.pageHeaderImages || []).length)}, minmax(0, 1fr))` }}
               >
                 {(document.pageHeaderImages || []).map(image => (
-                  <div key={image.id} onContextMenu={event => openContextMenu(event, { type: 'image', sectionId: section.id, imageId: image.id })} className="relative z-20 flex min-w-0 flex-col items-center overflow-visible">
+                  <div key={image.id} onContextMenu={event => openContextMenu(event, { type: 'header-image', imageId: image.id })} className="relative z-20 flex min-w-0 flex-col items-center overflow-visible">
                     <div
                       className="relative z-30 max-w-full overflow-visible"
                       style={{
