@@ -446,7 +446,11 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
     if (target.type === 'section') {
       return [
-        item('add-clause', 'Add clause', () => handleAddClauseToSection(section)),
+        item('add-clause', 'Add clause', () => {
+          const prefix = section.sectionNumber ? section.sectionNumber.replace('.0', '') : '1';
+          const next = [...section.clauses, { id: 'cl_' + Date.now(), clauseNumber: prefix + '.' + (section.clauses.length + 1), heading: 'New Provision', content: 'Enter the provision text here.', orderIndex: section.clauses.length + 1 }];
+          onUpdateSection({ ...section, clauses: next });
+        }),
         item('duplicate-section', 'Duplicate section', () => onDuplicateSection(section.id)),
         item('move-section-up', 'Move section up', () => onMoveSection?.(section.id, 'up'), { disabled: !onMoveSection || document.sections[0]?.id === section.id }),
         item('move-section-down', 'Move section down', () => onMoveSection?.(section.id, 'down'), { disabled: !onMoveSection || document.sections[document.sections.length - 1]?.id === section.id }),
@@ -472,7 +476,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           next.splice(clauseIndex + 1, 0, { ...clause, id: 'cl_' + Date.now(), clauseNumber: clause.clauseNumber + 'A' });
           onUpdateSection({ ...section, clauses: next.map((entry, index) => ({ ...entry, orderIndex: index + 1 })) });
         }),
-        item('delete-clause', 'Delete clause', () => handleDeleteClause(section, clause.id), { destructive: true })
+        item('delete-clause', 'Delete clause', () => onUpdateSection({ ...section, clauses: section.clauses.filter(entry => entry.id !== clause.id).map((entry, index) => ({ ...entry, orderIndex: index + 1 })) }), { destructive: true })
       ];
     }
     if (target.type === 'image') {
@@ -496,7 +500,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('add-table-row', 'Add row', () => handleAddRow(section, tableIndex)),
         item('add-table-column', 'Add column', () => handleAddColumn(section, tableIndex)),
-        item('delete-table', 'Delete table', () => handleDeleteTable(section, tableIndex), { destructive: true })
+        item('delete-table', 'Delete table', () => onUpdateSection({ ...section, tables: (section.tables || []).filter(entry => entry.id !== target.tableId) }), { destructive: true })
       ];
     }
     if (target.type === 'signature') {
