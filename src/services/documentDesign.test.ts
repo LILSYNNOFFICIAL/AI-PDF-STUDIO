@@ -266,3 +266,85 @@ test('contrast ratio helper distinguishes accessible and low-contrast pairs', ()
   assert.equal(contrastRatio('#ffffff', '#ffffff'), 1);
   assert.ok(contrastRatio('#777777', '#ffffff') < 4.5);
 });
+
+
+test('premium dark design presets include distinct Midnight Executive, Art Deco and luxury directions', () => {
+  const byId = new Map(DOCUMENT_DESIGN_PRESETS.map(preset => [preset.presetId, preset]));
+  assert.ok(byId.has('midnight-executive'));
+  assert.ok(byId.has('art-deco'));
+  assert.ok(byId.has('dark-luxury'));
+  assert.ok(byId.has('bauhaus-modern'));
+  assert.ok(byId.has('glassmorphism'));
+});
+
+test('LIL SYNN theme preserves its exact palette and uses a professional framed cover hierarchy', () => {
+  const preset = DOCUMENT_DESIGN_PRESETS.find(item => item.presetId === 'lil-synn')!;
+  assert.deepEqual(
+    {
+      page: preset.colors.pageSurface,
+      section: preset.colors.sectionSurface,
+      heading: preset.colors.headingText,
+      accent: preset.colors.accent,
+      body: preset.colors.bodyText,
+      secondary: preset.colors.secondary,
+      muted: preset.colors.mutedText,
+      border: preset.colors.border
+    },
+    {
+      page: '#050505',
+      section: '#080808',
+      heading: '#ff4fa3',
+      accent: '#ff4fa3',
+      body: '#f5f5f5',
+      secondary: '#d1d5db',
+      muted: '#c5c5c5',
+      border: '#d99a32'
+    }
+  );
+  const cover = (preset as any).coverPage;
+  assert.equal(cover.enabled, true);
+  assert.equal(cover.style, 'art-deco');
+  assert.equal(cover.background.color, '#050505');
+  assert.equal(cover.titleColor, '#ff4fa3');
+  assert.equal(cover.detailColor, '#c5c5c5');
+  assert.equal(cover.borderColor, '#d99a32');
+  assert.equal((preset as any).layoutDefaults.sectionHeadingStyle, 'editorial-rule');
+  assert.equal((preset as any).layoutDefaults.sectionSpacing, 28);
+});
+
+test('legacy document design normalization supplies cover and layout defaults', () => {
+  const doc = buildDocumentFromPrompt('Legacy design migration').updatedDoc;
+  doc.design = undefined;
+  const normalized = normalizeDocumentDesign(doc);
+  const cover = (normalized.design as any).coverPage;
+  const layout = (normalized.design as any).layoutDefaults;
+
+  assert.equal(cover.enabled, false);
+  assert.equal(cover.style, 'midnight-executive');
+  assert.equal(layout.sectionHeadingStyle, 'editorial-rule');
+  assert.equal(layout.sectionSpacing, 22);
+  assert.equal(layout.headerRule, true);
+  assert.equal(layout.footerRule, true);
+});
+
+test('applying any visual preset preserves all agreement content and structure', () => {
+  const doc = buildDocumentFromPrompt('Theme must not rewrite agreement content').updatedDoc;
+  doc.title = 'Contract Text Must Stay Exact';
+  doc.sections[0].content = 'PRESERVE THIS EXACT LEGAL LANGUAGE.';
+  doc.sections[0].clauses[0].content = 'DO NOT REWRITE THIS CLAUSE.';
+  const before = JSON.stringify({
+    title: doc.title,
+    sections: doc.sections,
+    signatures: doc.signatures,
+    sourceText: doc.sourceText
+  });
+
+  const updated = applyDocumentPreset(doc, 'midnight-executive');
+
+  assert.equal(JSON.stringify({
+    title: updated.title,
+    sections: updated.sections,
+    signatures: updated.signatures,
+    sourceText: updated.sourceText
+  }), before);
+});
