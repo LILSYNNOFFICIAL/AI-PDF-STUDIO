@@ -354,7 +354,8 @@ export function normalizeDocumentDesign<T extends DocumentModel>(doc: T, brandPr
 }
 
 export function resolveDocumentDesign(doc: DocumentModel): DocumentDesign {
-  return deepCloneDesign(doc.design || DEFAULT_DOCUMENT_DESIGN);
+  // Merge newly introduced design controls into older saved documents without discarding their custom palette.
+  return mergeDeep(DEFAULT_DOCUMENT_DESIGN, doc.design || {});
 }
 
 export function resolveSectionDesign(doc: DocumentModel, section: Section): {
