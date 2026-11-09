@@ -17,9 +17,11 @@ import { ClauseLibraryModal } from './components/ClauseLibraryModal';
 import { WatermarkCustomizerModal } from './components/WatermarkCustomizerModal';
 import { ReadabilityInspectorModal } from './components/ReadabilityInspectorModal';
 import { DocumentDesignModal } from './components/DocumentDesignModal';
+import { TemplateGalleryModal } from './components/TemplateGalleryModal';
 import { SourceOfTruthModal } from './components/SourceOfTruthModal';
 import { parseTextDocument, getSourceIntegrityReport } from './services/textDocumentImporter';
-import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides } from './services/documentDesign';
+import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides, applyDocumentPreset } from './services/documentDesign';
+import { buildTemplateDocument, getTemplateById } from './services/templateCatalog';
 import { 
   DocumentModel, 
   AIPersona, 
@@ -80,6 +82,7 @@ export default function App() {
   const [isWatermarkCustomizerOpen, setIsWatermarkCustomizerOpen] = useState(false);
   const [isReadabilityOpen, setIsReadabilityOpen] = useState(false);
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
+  const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(true);
   const [sourceTruthText, setSourceTruthText] = useState('');
   const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
@@ -485,37 +488,37 @@ export default function App() {
   const handleOpenTemplate = (templateName: string) => {
     if (templateName === 'saas') {
       const doc = getSaaSDocument();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Enterprise SaaS Master Services Agreement template.');
       showToast('Loaded SaaS Agreement');
     } else if (templateName === 'term_sheet') {
       const doc = getTermSheetDocument();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Series A Preferred Stock Investment Term Sheet template.');
       showToast('Loaded Investment Term Sheet');
     } else if (templateName === 'beat_license') {
       const doc = getBeatLicenseDocument();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Exclusive Beat License & Producer Royalty Agreement template.');
       showToast('Loaded Beat License Agreement');
     } else if (templateName === 'featured_artist') {
       const doc = getFeaturedArtistDocument();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Featured Vocalist Performance & Clearance Agreement template.');
       showToast('Loaded Featured Artist Agreement');
     } else if (templateName === 'sync_license') {
       const doc = getSyncLicenseDocument();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Master Synchronization Rights Licensing Agreement template.');
       showToast('Loaded Sync License Agreement');
     } else if (templateName === 'label_360') {
       const doc = getRecordLabel360Document();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Single Master Recording & 360 DSP Distribution Agreement template.');
       showToast('Loaded 360 Distribution Agreement');
@@ -523,10 +526,30 @@ export default function App() {
       handleNewBlankDocument();
     } else {
       const doc = getInitialDocument();
-      pushHistory(doc);
+      pushHistory(applyDocumentPreset(normalizeDocumentDesign(doc), 'midnight-executive'));
       setActiveSectionId(doc.sections[0]?.id || null);
       addAiMessage('Loaded Music Collaboration & Master Recording Agreement template.');
       showToast('Loaded Music Collaboration Agreement');
+    }
+  };
+
+
+  const handleCreateGalleryTemplate = (templateId: string, themeId: string) => {
+    const template = getTemplateById(templateId);
+    if (!template) {
+      showToast('That template is no longer available.');
+      return;
+    }
+    try {
+      const freshDocument = buildTemplateDocument(templateId);
+      const themedDocument = applyDocumentPreset(freshDocument, themeId);
+      pushHistory(themedDocument);
+      setActiveSectionId(themedDocument.sections[0]?.id || null);
+      setIsTemplateGalleryOpen(false);
+      addAiMessage('Created a fresh ' + template.title + ' document using the ' + (themedDocument.design?.name || themeId) + ' theme. The template content and visual theme remain independent.');
+      showToast('Created ' + template.title);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to create the selected template.');
     }
   };
 
@@ -913,6 +936,7 @@ export default function App() {
         onNewDocument={handleNewDocument}
         onNewBlankDocument={handleNewBlankDocument}
         onOpenTemplate={handleOpenTemplate}
+        onOpenTemplateGallery={() => setIsTemplateGalleryOpen(true)}
         onExportPdf={() => setIsPdfPreviewOpen(true)}
         onPrint={handlePrint}
         onExportJson={handleExportJson}
@@ -1211,6 +1235,12 @@ export default function App() {
         onRender={handleRenderSourceTruth}
         onClose={() => setIsSourceTruthOpen(false)}
         isRendering={isRenderingSource}
+      />
+
+      <TemplateGalleryModal
+        isOpen={isTemplateGalleryOpen}
+        onClose={() => setIsTemplateGalleryOpen(false)}
+        onCreateTemplate={handleCreateGalleryTemplate}
       />
 
       <DocumentDesignModal
