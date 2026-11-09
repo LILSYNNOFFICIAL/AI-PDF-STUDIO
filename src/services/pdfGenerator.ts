@@ -509,7 +509,19 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       if (appearance.border.style !== 'none' && appearance.border.width > 0) {
         pdf.setDrawColor(...colorToRgb(appearance.border.color));
         pdf.setLineWidth(appearance.border.width * 0.264583);
+        const dashApi = (pdf as any).setLineDashPattern;
+        if (typeof dashApi === 'function') {
+          if (appearance.border.style === 'dashed') dashApi.call(pdf, [2, 1.5], 0);
+          else if (appearance.border.style === 'dotted') dashApi.call(pdf, [0.4, 1.2], 0);
+        }
         pdf.rect(blockX, blockY, sectionWidth, blockHeight, 'S');
+        if (typeof dashApi === 'function' && ['dashed', 'dotted'].includes(appearance.border.style)) {
+          dashApi.call(pdf, [], 0);
+        }
+        if (appearance.border.style === 'double') {
+          const inset = Math.max(0.7, appearance.border.width * 0.8);
+          pdf.rect(blockX + inset, blockY + inset, Math.max(0, sectionWidth - inset * 2), Math.max(0, blockHeight - inset * 2), 'S');
+        }
       }
 
       let fieldY = blockY + padding + 3;
