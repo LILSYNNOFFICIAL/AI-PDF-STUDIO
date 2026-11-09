@@ -756,7 +756,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           role="main"
           aria-label="Document Canvas"
           onContextMenu={event => openContextMenu(event, { type: 'document' })}
-          className={`w-[820px` min-h-[1050px] text-slate-900 shadow-2xl rounded-sm p-12 sm:p-16 border border-slate-200 relative mb-12 ${currentFontClass}`}
+          className={`w-[820px] min-h-[1050px] text-slate-900 shadow-2xl rounded-sm p-12 sm:p-16 border border-slate-200 relative mb-12 ${currentFontClass}`}
           style={{
             paddingTop: `${document.pageConfig.margins.top * 1.5}px`,
             paddingBottom: `${document.pageConfig.margins.bottom * 1.5}px`,
