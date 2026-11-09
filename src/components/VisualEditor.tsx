@@ -441,6 +441,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       ))}
                     </div>
                     <input aria-label="Header image caption" value={image.caption || ''} placeholder="Caption" onChange={event => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id ? { ...item, caption: event.target.value } : item) })} className="mt-2 w-full bg-transparent text-center text-[10px] outline-none" />
+                    <select
+                      aria-label="Header image alignment"
+                      value={image.alignment === 'left' || image.alignment === 'right' ? image.alignment : 'center'}
+                      onChange={event => onUpdateDocument({
+                        ...document,
+                        pageHeaderImages: (document.pageHeaderImages || []).map(item => item.id === image.id
+                          ? { ...item, alignment: event.target.value as ImageBlock['alignment'] }
+                          : item)
+                      })}
+                      className="mt-1 rounded border px-2 py-1 text-[10px]"
+                    >
+                      <option value="left">Align left</option>
+                      <option value="center">Center</option>
+                      <option value="right">Align right</option>
+                    </select>
                     <button type="button" aria-label="Remove header image" onClick={() => onUpdateDocument({ ...document, pageHeaderImages: (document.pageHeaderImages || []).filter(item => item.id !== image.id) })} className="mt-1 text-[10px] text-rose-500">Remove image</button>
                   </div>
                 ))}
