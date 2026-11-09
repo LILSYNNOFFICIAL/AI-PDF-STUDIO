@@ -413,11 +413,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   <input type="file" accept="image/*" multiple className="hidden" onChange={event => { void handlePageHeaderImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
               </div>
-              <div className="flex w-full flex-wrap items-center justify-center gap-3 overflow-visible">
+              <div
+                className="grid w-full gap-3 overflow-visible"
+                style={{ gridTemplateColumns: `repeat(${Math.max(1, (document.pageHeaderImages || []).length)}, minmax(0, 1fr))` }}
+              >
                 {(document.pageHeaderImages || []).map(image => (
-                  <div key={image.id} className="relative z-20 min-w-0 overflow-visible" style={{ width: `${image.widthPercent ?? 80}%`, maxWidth: '100%' }}>
-                    <div className="relative z-30 w-full overflow-visible">
-                      <img draggable={false} src={image.url} alt={image.altText || 'Page header image'} className="block max-h-96 w-full select-none rounded object-contain shadow-sm" />
+                  <div key={image.id} className="relative z-20 flex min-w-0 flex-col items-center overflow-visible">
+                    <div
+                      className="relative z-30 max-w-full overflow-visible"
+                      style={{
+                        width: `${image.widthPercent ?? 80}%`,
+                        marginLeft: image.alignment === 'left' ? 0 : 'auto',
+                        marginRight: image.alignment === 'right' ? 0 : 'auto'
+                      }}
+                    >
+                      <img draggable={false} src={image.url} alt={image.altText || 'Page header image'} className="block h-auto w-full select-none rounded object-contain shadow-sm" />
                       {(['top-left','top-right','bottom-left','bottom-right'] as const).map(corner => (
                         <button
                           key={corner}
