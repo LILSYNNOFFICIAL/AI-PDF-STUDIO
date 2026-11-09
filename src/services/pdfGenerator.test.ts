@@ -254,6 +254,13 @@ test('premium enabled cover page renders as a separate first page before agreeme
   const pages = (pdf as any).internal.pages as string[][];
   const coverPage = pages[1].join('');
   const contentPage = pages[2].join('');
+  console.log('COVER DEBUG', {
+    designEnabled: themed.design?.coverPage.enabled,
+    page1HasTitle: coverPage.includes('MIDNIGHT EXECUTIVE COVER TITLE'),
+    page2HasTitle: contentPage.includes('MIDNIGHT EXECUTIVE COVER TITLE'),
+    page1: coverPage.slice(0, 1800),
+    page2: contentPage.slice(0, 500)
+  });
   assert.ok(coverPage.includes('MIDNIGHT EXECUTIVE COVER TITLE'));
   assert.ok(coverPage.includes('AGREEMENT'));
   assert.ok(coverPage.includes('COVER AUTHOR'));
