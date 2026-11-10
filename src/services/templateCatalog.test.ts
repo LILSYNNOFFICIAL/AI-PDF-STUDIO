@@ -149,3 +149,17 @@ test('template gallery favorites and recent history survive storage round trips 
   assert.deepEqual(api.loadTemplateGalleryPreferences(blockedStorage), { favorites: [], recents: [] });
   assert.equal(api.saveTemplateGalleryPreferences(blockedStorage, initial), false);
 });
+
+
+test('standard music-category templates use a neutral legal type and accept a user-defined agreement type', async () => {
+  const api = await import('./templateCatalog') as unknown as {
+    buildTemplateDocument: (id: string, agreementType?: string) => import('../types/document').DocumentModel;
+  };
+  const doc = api.buildTemplateDocument('recording-artist-agreement', 'Independent Recording Services Agreement');
+  assert.equal(doc.type, 'legal_agreement');
+  assert.equal(doc.title, 'Independent Recording Services Agreement');
+  assert.equal(doc.pageConfig.headerText, 'INDEPENDENT RECORDING SERVICES AGREEMENT');
+  const fallback = api.buildTemplateDocument('recording-artist-agreement');
+  assert.equal(fallback.title, 'Recording Artist Agreement');
+  assert.notEqual(fallback.type, 'music_agreement');
+});
