@@ -577,20 +577,20 @@ export default function App() {
   };
 
 
-  const handleCreateGalleryTemplate = (templateId: string, themeId: string) => {
+  const handleCreateGalleryTemplate = (templateId: string, themeId: string, agreementType: string) => {
     const template = getTemplateById(templateId);
     if (!template) {
       showToast('That template is no longer available.');
       return;
     }
     try {
-      const freshDocument = buildTemplateDocument(templateId);
+      const freshDocument = buildTemplateDocument(templateId, agreementType);
       const themedDocument = applyDocumentPreset(freshDocument, themeId);
       pushHistory(themedDocument);
       setActiveSectionId(themedDocument.sections[0]?.id || null);
       setIsTemplateGalleryOpen(false);
-      addAiMessage('Created a fresh ' + template.title + ' document using the ' + (themedDocument.design?.name || themeId) + ' theme. The template content and visual theme remain independent.');
-      showToast('Created ' + template.title);
+      addAiMessage('Created a fresh ' + themedDocument.title + ' document from the ' + template.title + ' template using the ' + (themedDocument.design?.name || themeId) + ' theme. The template content and visual theme remain independent.');
+      showToast('Created ' + themedDocument.title);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create the selected template.');
     }
