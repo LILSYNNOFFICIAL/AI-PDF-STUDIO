@@ -184,7 +184,7 @@ const CATEGORY_BLUEPRINTS: Record<TemplateCategory, {
 }> = {
   'Music & Entertainment': {
     sectionTitles: ["Engagement, Masters & Scope","Recording Services & Deliverables","Compensation, Royalties & Accounting","Master, Composition & Credits","Release, Clearances & Termination","Notices, Schedules & Execution"],
-    documentType: 'music_agreement',
+    documentType: 'legal_agreement',
     partyA: 'ARTIST / RIGHTS HOLDER',
     partyB: 'PRODUCER / LICENSEE / SERVICE PROVIDER',
     performanceHeading: 'Creative Services, Deliverables & Approval',
@@ -377,10 +377,11 @@ function buildSection(
   };
 }
 
-export function buildTemplateDocument(templateId: string): DocumentModel {
+export function buildTemplateDocument(templateId: string, agreementType?: string): DocumentModel {
   const template = getTemplateById(templateId);
   if (!template) throw new Error('Unknown document template: ' + templateId);
   const blueprint = CATEGORY_BLUEPRINTS[template.category];
+  const resolvedAgreementType = agreementType?.trim() || template.title;
   const parties = [
     {
       id: makeId('party'),
@@ -463,13 +464,13 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
   const now = new Date().toISOString();
   return {
     id: makeId('document'),
-    title: template.title,
+    title: resolvedAgreementType,
     type: template.documentType,
     version: 1,
     createdAt: now,
     updatedAt: now,
     author: 'Document Author',
-    changeSummary: 'Created from the ' + template.title + ' template.',
+    changeSummary: 'Created from the ' + template.title + ' template. Agreement type: ' + resolvedAgreementType + '.',
     sections,
     signatures: {
       id: makeId('signatures'),
@@ -496,7 +497,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
       pageSize: 'LETTER',
       orientation: 'portrait',
       margins: { top: 25.4, bottom: 25.4, left: 25.4, right: 25.4 },
-      headerText: template.title.toUpperCase(),
+      headerText: resolvedAgreementType.toUpperCase(),
       footerText: 'CONFIDENTIAL • TEMPLATE DRAFT',
       showPageNumbers: true,
       pageNumberFormat: 'PAGE_X_OF_Y',
