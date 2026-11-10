@@ -98,6 +98,9 @@ test('AI prompt requires actual document operations and forbids unsolicited summ
   assert.match(prompt, /execute.*instruction.*document/i);
   assert.match(prompt, /never summarize|do not summarize/i);
   assert.match(prompt, /sectionUpdates/);
+  assert.match(prompt, /Interpret intent semantically, not by exact command wording/i);
+  assert.match(prompt, /Available document capabilities include/i);
+  assert.match(prompt, /signature\/date insertion/i);
   assert.match(prompt, /SOURCE-BEGIN/);
 });
 
