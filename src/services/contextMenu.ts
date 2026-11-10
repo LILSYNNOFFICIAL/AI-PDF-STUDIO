@@ -15,7 +15,7 @@ export interface ContextMenuItem {
 }
 
 const ACTIONS: Record<DocumentContextTargetType, string[]> = {
-  document: ['add-section', 'insert-image', 'document-design', 'toggle-page-numbers', 'toggle-cover-page', 'change-page-size', 'change-page-orientation', 'change-page-background'],
+  document: ['add-section', 'insert-image', 'insert-signature', 'toggle-page-break', 'document-design', 'toggle-page-numbers', 'toggle-cover-page', 'change-page-size', 'change-page-orientation', 'change-page-background'],
   'cover-logo': ['upload-logo', 'edit-brand-name', 'increase-logo-size', 'decrease-logo-size', 'set-logo-size', 'reset-logo-size', 'remove-logo'],
   'cover-text': ['edit-cover-text', 'clear-cover-text'],
   text: ['cut', 'copy', 'paste', 'select-all', 'insert-signature', 'ai-rewrite', 'ai-expand', 'ai-shorten', 'ai-professional', 'ai-grammar', 'ai-summarize'],
