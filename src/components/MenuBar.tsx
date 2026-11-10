@@ -606,7 +606,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           <button
             type="button"
             onClick={() => handleMenuClick('more')}
-            onMouseEnter={() => handleMenuHover('more')}
+            onMouseEnter={() => setActiveMenu('more')}
             aria-haspopup="menu"
             aria-expanded={activeMenu === 'more'}
             className={`flex items-center gap-1 rounded px-2.5 py-1 font-semibold transition-colors hover:bg-slate-800 hover:text-white ${activeMenu === 'more' ? 'bg-slate-800 text-white' : 'text-slate-300'}`}
