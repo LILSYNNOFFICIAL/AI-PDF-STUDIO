@@ -37,8 +37,6 @@ import {
   Copy,
   FileCode,
   BookOpen,
-  Droplets,
-  BarChart3,
   CaseUpper
 } from 'lucide-react';
 import { DocumentModel, AIPersona, BrandProfile } from '../types/document';
