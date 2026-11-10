@@ -36,10 +36,24 @@ test('returns no fields for text that is not a labeled signature template', () =
   assert.deepEqual(parseSignatureFields('Please sign below.\nThank you.'), []);
 });
 
-test('provides the five standard empty signature fields when no text is selected', () => {
+test('provides neutral editable Date, Name and Extra fields when no text is selected', () => {
   const fields = createDefaultSignatureFields();
-  assert.deepEqual(fields.map(field => field.label), ['Legal name', 'Artist name', 'Label', 'Signature', 'Date']);
+  assert.deepEqual(fields.map(field => [field.label, field.kind]), [
+    ['Date', 'date'],
+    ['Name', 'text'],
+    ['Extra field 1', 'text'],
+    ['Extra field 2', 'text'],
+    ['Signature', 'signature']
+  ]);
   assert.ok(fields.every(field => field.value === ''));
+});
+
+test('parses custom signature fields with unrestricted line lengths', () => {
+  const longLabel = 'Additional execution detail '.repeat(12).trim();
+  const longValue = 'Custom value '.repeat(30).trim();
+  const fields = parseSignatureFields('Date: ____\\nName: _____\\n' + longLabel + ': ' + longValue);
+  assert.deepEqual(fields.map(field => field.label), ['Date', 'Name', longLabel]);
+  assert.equal(fields[2].value, longValue);
 });
 
 test('PDF places an inline signature panel between the surrounding section text', () => {
