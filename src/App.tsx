@@ -20,6 +20,7 @@ import { DocumentDesignModal } from './components/DocumentDesignModal';
 import { TemplateGalleryModal } from './components/TemplateGalleryModal';
 import { BrandManagerModal } from './components/BrandManagerModal';
 import { SourceOfTruthModal } from './components/SourceOfTruthModal';
+import { HelpCenterModal } from './components/HelpCenterModal';
 import { parseTextDocument, getSourceIntegrityReport } from './services/textDocumentImporter';
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides, applyDocumentPreset } from './services/documentDesign';
 import { buildTemplateDocument, getTemplateById } from './services/templateCatalog';
@@ -87,6 +88,7 @@ export default function App() {
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [isBrandManagerOpen, setIsBrandManagerOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(true);
   const [sourceTruthText, setSourceTruthText] = useState('');
   const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
@@ -195,6 +197,7 @@ export default function App() {
         setIsFindReplaceOpen(false);
         setIsRedactionOpen(false);
         setIsInsertObjectOpen(false);
+        setIsHelpOpen(false);
         setIsMetadataOpen(false);
         setIsClauseLibraryOpen(false);
         setIsWatermarkCustomizerOpen(false);
@@ -972,6 +975,7 @@ export default function App() {
         onNewBlankDocument={handleNewBlankDocument}
         onOpenTemplate={handleOpenTemplate}
         onOpenTemplateGallery={() => setIsTemplateGalleryOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
         onExportPdf={() => setIsPdfPreviewOpen(true)}
         onPrint={handlePrint}
         onExportJson={handleExportJson}
@@ -1296,6 +1300,8 @@ export default function App() {
         }}
         onApply={applyBrandProfile}
       />
+
+      <HelpCenterModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       <TemplateGalleryModal
         isOpen={isTemplateGalleryOpen}
