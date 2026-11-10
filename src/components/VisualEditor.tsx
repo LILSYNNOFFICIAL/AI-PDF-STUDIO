@@ -521,6 +521,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('add-section', 'Add document section', () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: 'Click to edit this section.', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() })),
         item('insert-image', 'Insert image into document', () => canvasImageInputRef.current?.click()),
+        item('insert-signature', 'Insert signature / date fields', () => {
+          const targetSection = document.sections.find(entry => entry.id === activeSectionId) || document.sections[0];
+          if (!targetSection) return;
+          const end = (targetSection.content || '').length;
+          onInsertSignatureAtSelection?.({ sectionId: targetSection.id, start: end, end, selectedText: '' });
+        }),
+        item('toggle-page-break', activeSection?.forcePageBreakBefore ? 'Remove page break before active section' : 'Add page break before active section', () => {
+          if (activeSection) handleTogglePageBreak(activeSection);
+        }, { disabled: !activeSection }),
         item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || '')),
         item('toggle-page-numbers', document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() })),
         item('toggle-cover-page', documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() })),
