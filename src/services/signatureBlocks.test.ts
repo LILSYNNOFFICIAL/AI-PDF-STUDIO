@@ -51,7 +51,7 @@ test('provides neutral editable Date, Name and Extra fields when no text is sele
 test('parses custom signature fields with unrestricted line lengths', () => {
   const longLabel = 'Additional execution detail '.repeat(12).trim();
   const longValue = 'Custom value '.repeat(30).trim();
-  const fields = parseSignatureFields('Date: ____\\nName: _____\\n' + longLabel + ': ' + longValue);
+  const fields = parseSignatureFields('Date: ____\nName: _____\n' + longLabel + ': ' + longValue);
   assert.deepEqual(fields.map(field => field.label), ['Date', 'Name', longLabel]);
   assert.equal(fields[2].value, longValue);
 });
