@@ -25,6 +25,7 @@ import {
   duplicateSavedTheme,
   filterDocumentDesignPresets,
   getDocumentDesignPresetCategory,
+  getSectionHeadingBorderStyles,
   type SavedDocumentTheme
 } from '../services/documentDesign';
 
@@ -589,10 +590,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                       : design.layoutDefaults.sectionHeadingStyle === 'numbered-card'
                         ? design.colors.sectionSurface
                         : 'transparent',
-                    borderColor: design.colors.border,
-                    borderBottom: ['editorial-rule', 'double-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '1px solid ' + design.colors.accent : undefined,
-                    borderTop: design.layoutDefaults.sectionHeadingStyle === 'double-rule' ? '1px solid ' + design.colors.accent : undefined,
-                    borderLeft: ['numbered-card', 'side-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '3px solid ' + design.colors.accent : undefined
+                    ...getSectionHeadingBorderStyles(design.layoutDefaults.sectionHeadingStyle, design.colors.accent, design.colors.border)
                   }}
                 >
                   <span className="font-mono text-[8px] font-bold" style={{ color: design.colors.accent }}>1.0</span>
@@ -872,10 +870,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                           : 'pb-2'
                 )} style={{
                   background: design.layoutDefaults.sectionHeadingStyle === 'banner' ? design.colors.primary : design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.sectionSurface : 'transparent',
-                  borderBottom: ['editorial-rule', 'double-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '1px solid ' + design.colors.accent : 'none',
-                  borderTop: design.layoutDefaults.sectionHeadingStyle === 'double-rule' ? '1px solid ' + design.colors.accent : 'none',
-                  borderLeft: ['numbered-card', 'side-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '3px solid ' + design.colors.accent : 'none',
-                  borderColor: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.border : design.colors.accent
+                  ...getSectionHeadingBorderStyles(design.layoutDefaults.sectionHeadingStyle, design.colors.accent, design.colors.border)
                 }}>
                   <span className="rounded px-2 py-1 font-mono text-xs font-bold" style={{ color: design.colors.accent, background: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.sectionSurface : 'transparent' }}>1.0</span>
                   <span className="text-lg font-semibold" style={{ color: design.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>Professional Section Heading</span>
