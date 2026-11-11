@@ -191,6 +191,8 @@ export interface PageConfig {
     right: number;
   };
   headerText: string;
+  /** Editable right-aligned running header label. Defaults to CONFIDENTIAL for legacy documents. */
+  headerRightText?: string;
   footerText: string;
   showPageNumbers: boolean;
   pageNumberFormat: 'PAGE_X_OF_Y' | 'PAGE_X' | 'DASH_X_DASH';
