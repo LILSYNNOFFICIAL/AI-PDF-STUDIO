@@ -264,7 +264,7 @@ test('expanded template families receive their own operationally specific clause
     ['business-loan-agreement', /Facility, Borrower & Funding Conditions/i, /Interest, Repayment & Prepayment/i],
     ['api-license-agreement', /API Products & Licensed Access/i, /Rate Limits, Availability & Support/i],
     ['brand-sponsorship-agreement', /Sponsorship Property & Deliverables/i, /Sponsorship Fee & Performance Metrics/i],
-    ['event-services-agreement', /Event Scope, Venue & Production Plan/i, /Ticketing, Revenue & Settlement/i]
+    ['event-services-agreement', /Event Scope, Venue & Production Plan/i, /Ticketing, Revenue Share & Settlement/i]
   ];
   for (const [id, first, second] of expectations) {
     const doc = api.buildTemplateDocument(id);
