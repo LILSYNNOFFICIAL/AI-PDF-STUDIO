@@ -996,11 +996,13 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       pdf.setTextColor(226, 232, 240);
       pdf.text(doc.pageConfig.watermarkText, pageWidth / 2, pageHeight / 2, { align: 'center', angle: 45 });
     }
-    if (doc.pageConfig.headerText) {
+    const rightHeaderText = doc.pageConfig.headerRightText ?? 'CONFIDENTIAL';
+    if (doc.pageConfig.headerText || rightHeaderText) {
       pdf.setFont(primaryFont, 'normal');
       pdf.setFontSize(8);
       pdf.setTextColor(...colorToRgb(design.pageFurniture.headerTextColor));
-      pdf.text(doc.pageConfig.headerText, margins.left, 12);
+      if (doc.pageConfig.headerText) pdf.text(doc.pageConfig.headerText, margins.left, 12);
+      if (rightHeaderText) pdf.text(rightHeaderText.toUpperCase(), pageWidth - margins.right, 12, { align: 'right' });
       if (design.layoutDefaults.headerRule) {
         pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));
         pdf.setLineWidth(design.pageFurniture.dividerWidth * 0.264583);

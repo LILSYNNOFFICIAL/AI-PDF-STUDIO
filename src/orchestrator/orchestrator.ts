@@ -941,6 +941,7 @@ export function buildDocumentFromPrompt(
     orientation: 'portrait',
     margins: { top: 25, bottom: 25, left: 25, right: 25 },
     headerText: 'SYNTIENT RECORDS | MASTER COLLABORATION AGREEMENT',
+    headerRightText: 'CONFIDENTIAL',
     footerText: 'CONFIDENTIAL & PROPRIETARY',
     showPageNumbers: true,
     pageNumberFormat: 'PAGE_X_OF_Y',

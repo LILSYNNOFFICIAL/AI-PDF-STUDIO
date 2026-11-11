@@ -1049,7 +1049,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               style={{ color: documentDesign.pageFurniture.headerTextColor, borderBottom: documentDesign.layoutDefaults.headerRule ? `${documentDesign.pageFurniture.dividerWidth}px solid ${documentDesign.pageFurniture.dividerColor}` : "none" }}
             >
               <input aria-label="Running page header" value={document.pageConfig.headerText} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, headerText: event.target.value } })} className="w-3/4 bg-transparent outline-none" />
-              <span>CONFIDENTIAL</span>
+              <input aria-label="Running page header right text" value={document.pageConfig.headerRightText ?? 'CONFIDENTIAL'} onChange={event => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, headerRightText: event.target.value } })} className="w-1/4 bg-transparent text-right outline-none" />
             </div>
           )}
 
