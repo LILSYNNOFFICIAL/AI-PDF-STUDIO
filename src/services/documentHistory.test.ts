@@ -8,8 +8,8 @@ import {
   type DocumentHistoryState
 } from './documentHistory';
 
-function doc(id: string, title: string): DocumentModel {
-  return { id, title } as DocumentModel;
+function doc(id: string, title: string, version = 1): DocumentModel {
+  return { id, title, version } as DocumentModel;
 }
 
 const emptyHistory = (): DocumentHistoryState => ({ snapshots: [], index: -1 });
@@ -76,7 +76,7 @@ test('version rollback lookup never crosses document boundaries', async () => {
   const previousDocument = doc('previous-document', 'Old document');
   const currentVersionOne = doc('current-document', 'Current version one');
   const otherDocumentVersionOne = doc('other-document', 'Other version one');
-  const currentVersionTwo = doc('current-document', 'Current version two');
+  const currentVersionTwo = doc('current-document', 'Current version two', 2);
   const snapshots = [previousDocument, currentVersionOne, otherDocumentVersionOne, currentVersionTwo];
 
   assert.equal(api.findDocumentVersionSnapshot(snapshots, 'current-document', 1), currentVersionOne);
