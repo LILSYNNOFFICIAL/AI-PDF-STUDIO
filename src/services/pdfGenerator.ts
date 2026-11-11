@@ -584,11 +584,12 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     const colOffsets = colWidths.map((_, index) =>
       colWidths.slice(0, index).reduce((sum, value) => sum + value, 0)
     );
-    const cellPadding = 2;
-    const tableFontSize = 8.5;
-    const tableLineHeight = 4;
-    const headerFontSize = 9;
-    const headerLineHeight = 4.2;
+    const cellPadding = 2.3;
+    const bodyFontSize = design.typography.bodyFontSize || doc.styles.fontSize || 10.5;
+    const tableFontSize = Math.max(8, Math.min(9.5, bodyFontSize - 1.8));
+    const tableLineHeight = tableFontSize * 0.47;
+    const headerFontSize = Math.max(8.5, Math.min(10, (design.typography.heading3Size || 12) - 2));
+    const headerLineHeight = headerFontSize * 0.47;
 
     const wrapCells = (cells: TableCell[], size: number, boldDefault: boolean) =>
       Array.from({ length: colCount }, (_, index) => {
@@ -730,16 +731,23 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       ? { type: 'solid' as const, color: design.colors.primary, opacity: 1 }
       : headingStyle === 'numbered-card'
         ? { type: 'solid' as const, color: design.colors.sectionSurface, opacity: 1 }
-        : sectionStyle.background;
-    const headingBorder: BorderConfig | undefined = headingStyle === 'editorial-rule'
-      ? { style: 'solid', color: design.colors.border, width: 0.5, sides: ['bottom'] }
-      : headingStyle === 'numbered-card'
-        ? { style: 'solid', color: design.colors.border, width: 0.5 }
         : undefined;
-    drawWrappedText(applyHeadingCase(`${section.sectionNumber} ${section.title}`), sectionX, sectionWidth, {
+    const headingBorder: BorderConfig | undefined = headingStyle === 'editorial-rule'
+      ? { style: 'solid', color: design.colors.accent, width: 0.8, sides: ['bottom'] }
+      : headingStyle === 'numbered-card'
+        ? { style: 'solid', color: design.colors.border, width: 0.55, sides: ['left', 'bottom'] }
+        : undefined;
+    const primaryRgb = colorToRgb(design.colors.primary);
+    const primaryLuminance = (0.2126 * primaryRgb[0] + 0.7152 * primaryRgb[1] + 0.0722 * primaryRgb[2]) / 255;
+    const headingTextColor = headingStyle === 'banner'
+      ? (primaryLuminance > 0.55 ? '#172033' : '#ffffff')
+      : sectionStyle.headingColor;
+    const headingPadding = headingStyle === 'minimal' ? 0 : Math.max(1.5, sectionPadding * 0.45);
+    drawWrappedText(applyHeadingCase(`${section.sectionNumber}  ${section.title}`), sectionX, sectionWidth, {
       font: headingFont, style: 'bold', size: design.typography.heading2Size || doc.styles.heading2Size || 13,
-      color: colorToRgb(headingStyle === 'banner' ? '#ffffff' : sectionStyle.headingColor), lineHeight: 6, after: 2,
-      background: headingBackground, border: headingBorder, padding: sectionPadding,
+      color: colorToRgb(headingTextColor), lineHeight: Math.max(5.5, (design.typography.heading2Size || 14) * 0.43),
+      after: headingStyle === 'minimal' ? 4 : 3,
+      background: headingBackground, border: headingBorder, padding: headingPadding,
       align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
       verticalAlign: design.typography.verticalAlignment || 'top'
     });
@@ -911,16 +919,40 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     }
 
     for (const clause of section.clauses || []) {
-      const heading = clause.heading ? `${clause.heading}: ` : '';
-      drawWrappedText(`${clause.clauseNumber}  ${heading}${clause.content}`, sectionX + 4, Math.max(8, sectionWidth - 4), {
-        font: primaryFont, size: design.typography.bodyFontSize || doc.styles.fontSize || 10.5,
-        color: colorToRgb(sectionStyle.bodyTextColor),
-        lineHeight: (design.typography.bodyFontSize || doc.styles.fontSize || 10.5) * design.typography.bodyLineHeight * 0.352778,
-        after: design.typography.paragraphSpacing * 0.264583,
-        background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
-        align: design.typography.textAlignment || 'left', minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
-        verticalAlign: design.typography.verticalAlignment || 'top'
-      });
+      const clauseX = sectionX + 4;
+      const clauseWidth = Math.max(8, sectionWidth - 4);
+      const bodySize = design.typography.bodyFontSize || doc.styles.fontSize || 10.5;
+      const bodyLineHeight = bodySize * design.typography.bodyLineHeight * 0.352778;
+      if (clause.heading?.trim()) {
+        drawWrappedText(`${clause.clauseNumber}  ${clause.heading}`, clauseX, clauseWidth, {
+          font: headingFont, style: 'bold',
+          size: design.typography.heading3Size || 12,
+          color: colorToRgb(design.colors.accent),
+          lineHeight: Math.max(4.8, (design.typography.heading3Size || 12) * 0.43),
+          after: 1.2
+        });
+        drawWrappedText(clause.content, clauseX + 5, Math.max(8, clauseWidth - 5), {
+          font: primaryFont, size: bodySize,
+          color: colorToRgb(sectionStyle.bodyTextColor),
+          lineHeight: bodyLineHeight,
+          after: design.typography.paragraphSpacing * 0.264583,
+          background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+          align: design.typography.textAlignment || 'left',
+          minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
+          verticalAlign: design.typography.verticalAlignment || 'top'
+        });
+      } else {
+        drawWrappedText(`${clause.clauseNumber}  ${clause.content}`, clauseX, clauseWidth, {
+          font: primaryFont, size: bodySize,
+          color: colorToRgb(sectionStyle.bodyTextColor),
+          lineHeight: bodyLineHeight,
+          after: design.typography.paragraphSpacing * 0.264583,
+          background: sectionStyle.background, border: sectionStyle.border, padding: sectionPadding,
+          align: design.typography.textAlignment || 'left',
+          minHeight: (design.typography.contentBoxMinHeight || 0) * 0.264583,
+          verticalAlign: design.typography.verticalAlignment || 'top'
+        });
+      }
     }
 
     for (const table of section.tables || []) drawTable(table, section);

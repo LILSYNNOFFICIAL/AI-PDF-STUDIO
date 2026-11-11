@@ -282,6 +282,71 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                     {selectedTemplate.tags.map(tag => <span key={tag} className="rounded-full border border-slate-800 bg-slate-950 px-2 py-1 text-[9px] text-slate-500">{tag}</span>)}
                   </div>
 
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Interior page preview</span>
+                      <span className="text-[8px] uppercase tracking-wider text-slate-600">Theme sample</span>
+                    </div>
+                    <div
+                      className="overflow-hidden rounded-lg border p-3 shadow-lg"
+                      style={{ background: fillToCss(selectedTheme.page.background), borderColor: selectedTheme.colors.border }}
+                    >
+                      <div className="mb-3 flex items-center justify-between border-b pb-2" style={{ borderColor: selectedTheme.colors.border }}>
+                        <span className="text-[6px] font-semibold uppercase tracking-[0.2em]" style={{ color: selectedTheme.pageFurniture.headerTextColor }}>AGREEMENT • CONFIDENTIAL</span>
+                        <span className="text-[6px]" style={{ color: selectedTheme.pageFurniture.headerTextColor }}>01 / 08</span>
+                      </div>
+                      <div
+                        className="rounded-sm px-2 py-1.5"
+                        style={{
+                          background: selectedTheme.layoutDefaults.sectionHeadingStyle === 'banner'
+                            ? selectedTheme.colors.primary
+                            : selectedTheme.layoutDefaults.sectionHeadingStyle === 'numbered-card'
+                              ? selectedTheme.colors.sectionSurface
+                              : 'transparent',
+                          borderBottom: selectedTheme.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '1px solid ' + selectedTheme.colors.accent : 'none',
+                          borderLeft: selectedTheme.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? '2px solid ' + selectedTheme.colors.accent : 'none'
+                        }}
+                      >
+                        <div
+                          className="text-[9px] font-bold leading-tight"
+                          style={{
+                            color: selectedTheme.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : selectedTheme.colors.headingText,
+                            fontFamily: selectedTheme.typography.headingFontFamily
+                          }}
+                        >
+                          01  {selectedTemplate.sectionTitles[0] || 'Agreement terms'}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-[7px] font-semibold" style={{ color: selectedTheme.colors.accent, fontFamily: selectedTheme.typography.headingFontFamily }}>
+                        1.1  Scope and responsibilities
+                      </div>
+                      <div className="mt-1 space-y-1.5">
+                        {[100, 94, 97, 78].map((width, index) => (
+                          <div key={index} className="h-[2px] rounded-full" style={{ width: width + '%', background: selectedTheme.colors.bodyText, opacity: 0.28 }} />
+                        ))}
+                      </div>
+                      <div className="mt-3 overflow-hidden rounded-sm border" style={{ borderColor: selectedTheme.colors.border }}>
+                        <div className="grid grid-cols-3 gap-1 px-2 py-1" style={{ background: selectedTheme.colors.tableHeaderSurface }}>
+                          {[0, 1, 2].map(index => <div key={index} className="h-[3px] rounded-full" style={{ background: selectedTheme.colors.tableHeaderText, opacity: 0.65 }} />)}
+                        </div>
+                        <div className="grid grid-cols-3 gap-1 px-2 py-1.5" style={{ background: selectedTheme.colors.pageSurface }}>
+                          {[0, 1, 2].map(index => <div key={index} className="h-[2px] rounded-full" style={{ background: selectedTheme.colors.tableBodyText, opacity: 0.25 }} />)}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-between gap-3">
+                        {[0, 1].map(index => (
+                          <div key={index} className="flex-1">
+                            <div className="h-px" style={{ background: selectedTheme.colors.accent }} />
+                            <div className="mt-1 h-[2px] w-1/2 rounded-full" style={{ background: selectedTheme.colors.mutedText, opacity: 0.6 }} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 border-t pt-1.5 text-right text-[6px]" style={{ borderColor: selectedTheme.pageFurniture.dividerColor, color: selectedTheme.pageFurniture.footerTextColor }}>
+                        {selectedTheme.name} • PAGE 01
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="mt-6">
                     <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400"><FileText className="h-3.5 w-3.5" /> Included document structure</div>
                     <ol className="space-y-2">
