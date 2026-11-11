@@ -500,7 +500,11 @@ test('built-in themes define coherent interior systems and page-matched table su
     assert.equal(preset.tableDefaults.bodyBackground.color, preset.colors.pageSurface, preset.presetId + ' table body must match page surface');
     assert.ok(preset.tableDefaults.gridlineWidth >= 0.2 && preset.tableDefaults.gridlineWidth <= 0.8, preset.presetId + ' table gridline weight');
     assert.ok(preset.layoutDefaults.sectionSpacing >= 16 && preset.layoutDefaults.sectionSpacing <= 30, preset.presetId + ' section spacing');
-    assert.equal(preset.sectionDefaults.padding, preset.layoutDefaults.sectionPadding, preset.presetId + ' effective section padding');
+    if (preset.presetId === 'lil-synn') {
+      assert.equal(preset.sectionDefaults.padding, 16, 'LIL SYNN explicit section padding must be preserved');
+    } else {
+      assert.equal(preset.sectionDefaults.padding, preset.layoutDefaults.sectionPadding, preset.presetId + ' effective section padding');
+    }
   }
 });
 
