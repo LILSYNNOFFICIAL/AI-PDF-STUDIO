@@ -174,7 +174,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
       ref={menuBarRef} 
       className="h-8 bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none z-40 shrink-0 font-sans"
     >
-      <div className="flex min-w-0 items-center space-x-1 overflow-x-auto whitespace-nowrap">
+      <div className="flex min-w-0 flex-1 items-center space-x-1 overflow-x-auto whitespace-nowrap">
         <button
           onMouseDown={event => event.preventDefault()}
           onClick={() => executeAction(onOpenTemplateGallery)}
@@ -601,8 +601,10 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           )}
         </div>
 
-        {/* MORE MENU: keeps advanced utilities available without crowding the primary bar */}
-        <div className="relative shrink-0">
+      </div>
+
+      {/* MORE MENU: pinned outside the scrolling primary menu strip */}
+        <div className="relative ml-1 shrink-0">
           <button
             type="button"
             onClick={() => handleMenuClick('more')}
@@ -629,10 +631,9 @@ export const MenuBar: React.FC<MenuBarProps> = ({
             </div>
           )}
         </div>
-      </div>
 
       {/* Right Word Count & Stats Indicator */}
-      <div className="ml-auto flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+      <div className="ml-auto hidden shrink-0 items-center gap-3 text-[11px] text-slate-400 font-mono xl:flex">
         <span>{document.sections.length} Sections</span>
         <span>•</span>
         <span>{document.sections.reduce((acc, s) => acc + (s.clauses?.length || 0), 0)} Clauses</span>

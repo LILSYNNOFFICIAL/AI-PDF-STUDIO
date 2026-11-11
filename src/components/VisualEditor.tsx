@@ -948,7 +948,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               <div className="mx-auto mt-8 h-px w-24" style={{ background: documentDesign.coverPage.borderColor }} />
             </div>
             <div className="relative z-10 flex w-full flex-col items-center gap-2 pb-3 font-sans">
-              <span className="text-[10px] font-semibold tracking-[0.3em]" style={{ color: documentDesign.coverPage.detailColor }}>PREPARED BY</span>
+              <input aria-label="Cover author label" value={document.coverAuthorLabel ?? 'PREPARED BY'} onChange={event => onUpdateDocument({ ...document, coverAuthorLabel: event.target.value, updatedAt: new Date().toISOString() })} className="w-full bg-transparent text-center text-[10px] font-semibold tracking-[0.3em] outline-none" style={{ color: documentDesign.coverPage.detailColor }} />
               <input
                 aria-label="Cover document author"
                 value={document.author}
@@ -956,9 +956,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 className="w-full max-w-[420px] bg-transparent text-center text-lg font-medium outline-none"
                 style={{ color: documentDesign.coverPage.titleColor }}
               />
-              <span className="text-xs tracking-widest" style={{ color: documentDesign.coverPage.detailColor }}>
-                {new Date(document.updatedAt).toLocaleDateString()}
-              </span>
+              <input
+                aria-label="Cover date text"
+                value={document.coverDateText ?? new Date(document.updatedAt).toLocaleDateString()}
+                onChange={event => onUpdateDocument({ ...document, coverDateText: event.target.value, updatedAt: new Date().toISOString() })}
+                className="w-full bg-transparent text-center text-xs tracking-widest outline-none"
+                style={{ color: documentDesign.coverPage.detailColor }}
+              />
             </div>
           </section>
         )}
