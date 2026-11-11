@@ -22,7 +22,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 1. Open AI PDF Studio.
 2. Choose **Templates** to browse the catalog, or create a blank document / start from an AI prompt.
 3. Select a template and enter the agreement type or title.
-4. Choose a visual theme and create the document.
+4. Choose a visual theme and create the document. The LIL SYNN theme defaults music templates to **Music Agreement**; other templates retain their own editable agreement title.
 5. Replace bracketed placeholders with the actual parties, dates, amounts, scope, rights, and other deal-specific information.
 6. Use the editor to revise any wording or layout, including both left and right running-header text, the cover author label, and the cover date. Right-click a document object or blank document canvas for contextual actions. Use the **More ›** menu for secondary utilities such as metadata, the clause library, watermarks, readability, multi-document tools, source integrity, outline visibility, and the AI panel.
 7. Open the AI assistant and describe the result you want, for example:

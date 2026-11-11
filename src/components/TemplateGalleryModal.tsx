@@ -5,6 +5,7 @@ import {
   TEMPLATE_CATEGORIES,
   TEMPLATE_CATEGORY_COUNTS,
   getTemplateById,
+  getTemplateAgreementDefaults,
   loadTemplateGalleryPreferences,
   recordTemplateRecent,
   saveTemplateGalleryPreferences,
@@ -42,6 +43,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
   const [selectedTemplateId, setSelectedTemplateId] = useState('recording-artist-agreement');
   const [selectedThemeId, setSelectedThemeId] = useState('midnight-executive');
   const [agreementType, setAgreementType] = useState('');
+  const [agreementTypeTouched, setAgreementTypeTouched] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -85,7 +87,8 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     || DOCUMENT_DESIGN_PRESETS[0];
 
   useEffect(() => {
-    setAgreementType(selectedTemplate?.title || '');
+    setAgreementType(getTemplateAgreementDefaults(selectedTemplate, selectedThemeId).agreementType);
+    setAgreementTypeTouched(false);
   }, [selectedTemplate?.id]);
 
   const toggleFavorite = (templateId: string) => {
@@ -105,7 +108,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     setRecentIds(next.recents);
     const storage = getSafeStorage();
     if (storage) saveTemplateGalleryPreferences(storage, next);
-    onCreateTemplate(selectedTemplate.id, selectedThemeId, agreementType.trim() || selectedTemplate.title);
+    onCreateTemplate(selectedTemplate.id, selectedThemeId, agreementType.trim() || getTemplateAgreementDefaults(selectedTemplate, selectedThemeId).agreementType);
   };
 
   const closeOnEscape = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -299,10 +302,14 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
 
                 <div className="border-t border-slate-800 p-4">
                   <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-400" htmlFor="agreement-type-input">Agreement type / document title</label>
-                  <input id="agreement-type-input" type="text" value={agreementType} onChange={event => setAgreementType(event.target.value)} placeholder="Enter the agreement type" className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60" />
+                  <input id="agreement-type-input" type="text" value={agreementType} onChange={event => { setAgreementTypeTouched(true); setAgreementType(event.target.value); }} placeholder="Enter any agreement type or document title" className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60" />
                   <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Choose a visual theme</label>
-                  <select value={selectedThemeId} onChange={event => setSelectedThemeId(event.target.value)} className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60">
-                    {DOCUMENT_DESIGN_PRESETS.map(preset => <option key={preset.presetId} value={preset.presetId}>{preset.name}</option>)}
+                  <select value={selectedThemeId} onChange={event => {
+                    const nextThemeId = event.target.value;
+                    setSelectedThemeId(nextThemeId);
+                    if (!agreementTypeTouched) setAgreementType(getTemplateAgreementDefaults(selectedTemplate, nextThemeId).agreementType);
+                  }} className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60">
+                    {DOCUMENT_DESIGN_PRESETS.map(preset => <option key={preset.presetId} value={preset.presetId}>{preset.presetId === 'lil-synn' ? 'LIL SYNN • Music Agreement' : preset.name}</option>)}
                   </select>
                   <div className="mb-3 flex items-center gap-2">
                     {[selectedTheme.colors.primary, selectedTheme.colors.secondary, selectedTheme.colors.accent, selectedTheme.colors.border].map((color,index) => <span key={index} className="h-4 flex-1 rounded" style={{ background: color }} />)}
