@@ -86,7 +86,7 @@ const PROFILES: ProfileSeed[] = [
       ['Property Description & Included Improvements','Seller Authority & Buyer Capacity'],
       ['Inspection, Review & Objection Period','Disclosure Package & Contingency Elections'],
       ['Purchase Price, Earnest Money & Escrow Holder','Financing, Appraisal & Funds to Close'],
-      ['Title Commitment, Survey & Permitted Exceptions','Condition, Repairs & Risk of Loss'],
+      ['Title, Survey & Closing Conditions','Condition, Repairs & Risk of Loss'],
       ['Conditions Precedent & Closing Extension','Default, Cure, Termination & Deposit Disposition'],
       ['Closing Statement, Deed & Possession','Escrow Instructions, Notices & Signatures']
     ],
