@@ -13,7 +13,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 - **Create from a prompt:** Start a new document by describing the document you need and the information it should contain.
 - **Edit visually:** Update document titles, cover details, section headings, body text, clauses, tables, charts, images, and signature blocks in the editor.
 - **Ask the AI to make changes:** Describe the outcome in ordinary language. The assistant maps the request to document operations such as rewriting, formatting, adding or removing content, moving sections, adjusting page setup, and changing visual design.
-- **Choose a visual theme:** Keep document content separate from visual presentation. Apply a theme without replacing the document's wording or structure.
+- **Choose a visual theme:** Keep document content separate from visual presentation. Apply a theme without replacing the document's wording or structure. Modern Graphic covers use restrained vector geometry that is rendered in both the editor and exported PDF; LIL SYNN retains its exact brand palette with the updated graphic cover treatment.
 - **Insert signing fields:** Select labeled text such as `Date: ____`, `Name: ____`, or custom `Label: ____` lines to populate a signature block, or insert a blank block and customize its labels and values.
 - **Export and review:** Preview and export PDF, print, inspect document quality, and work with structured document data.
 
@@ -24,7 +24,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 3. Select a template and enter the agreement type or title.
 4. Choose a visual theme and create the document.
 5. Replace bracketed placeholders with the actual parties, dates, amounts, scope, rights, and other deal-specific information.
-6. Use the editor to revise any wording or layout. Right-click a document object or blank document canvas for contextual actions.
+6. Use the editor to revise any wording or layout. Right-click a document object or blank document canvas for contextual actions. Use the **More ›** menu for secondary utilities such as metadata, the clause library, watermarks, readability, multi-document tools, source integrity, outline visibility, and the AI panel.
 7. Open the AI assistant and describe the result you want, for example:
    - "Make the headings more modern and increase the whitespace."
    - "Move the payment terms directly after scope."
@@ -68,7 +68,7 @@ The assistant should ask for clarification only when the target or requested out
 
 Right-click supported objects to access actions relevant to that object. Right-clicking the document canvas exposes document-level actions, including section insertion, image insertion, signature/date insertion, page-break control, design settings, page size, orientation, page background, cover visibility, and page numbering.
 
-Use the command palette (Ctrl/Cmd+K) to search available editor commands. Undo and redo are available for document changes.
+Use the command palette (Ctrl/Cmd+K) to search available editor commands. The **Help** button opens the built-in searchable Help Center. Undo and redo are available for document changes.
 
 ## Design themes
 
