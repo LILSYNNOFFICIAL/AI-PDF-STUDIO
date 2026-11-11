@@ -311,7 +311,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                     setSelectedThemeId(nextThemeId);
                     // Visual themes never change the agreement type or document classification.
                   }} className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60">
-                    {DOCUMENT_DESIGN_PRESETS.map(preset => <option key={preset.presetId} value={preset.presetId}>{preset.presetId === 'lil-synn' ? 'LIL SYNN • Music Agreement' : preset.name}</option>)}
+                    {DOCUMENT_DESIGN_PRESETS.map(preset => <option key={preset.presetId} value={preset.presetId}>{preset.presetId === 'lil-synn' ? 'LIL SYNN • Branded Theme' : preset.name}</option>)}
                   </select>
                   <div className="mb-3 flex items-center gap-2">
                     {[selectedTheme.colors.primary, selectedTheme.colors.secondary, selectedTheme.colors.accent, selectedTheme.colors.border].map((color,index) => <span key={index} className="h-4 flex-1 rounded" style={{ background: color }} />)}

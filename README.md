@@ -24,7 +24,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 3. Select a template and enter the agreement type or title.
 4. Choose a visual theme and create the document. Only the dedicated **LIL SYNN Music Agreement** template defaults to **Music Agreement** and the `music_agreement` classification. Every other template keeps its own editable agreement title and classification, even when the LIL SYNN visual theme is selected.
 5. Replace bracketed placeholders with the actual parties, dates, amounts, scope, rights, and other deal-specific information.
-6. Use the editor to revise any wording or layout, including both left and right running-header text, the cover author label, and the cover date. Right-click a document object or blank document canvas for contextual actions. Use the **More ›** menu for secondary utilities such as metadata, the clause library, watermarks, readability, multi-document tools, source integrity, outline visibility, and the AI panel.
+6. Use the editor to revise any wording or layout, including both left and right running-header text, the cover author label and date, and the editable/removable Version, Document Type, Date, and Author fields beneath the document title. Right-click a document object or blank document canvas for contextual actions. Use the **More ›** menu for secondary utilities such as metadata, the clause library, watermarks, readability, multi-document tools, source integrity, outline visibility, and the AI panel.
 7. Open the AI assistant and describe the result you want, for example:
    - "Make the headings more modern and increase the whitespace."
    - "Move the payment terms directly after scope."
