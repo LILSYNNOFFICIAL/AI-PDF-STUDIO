@@ -120,21 +120,43 @@ function makePreset(
   result.tableDefaults.headerBackground = tableHeaderBackground;
   result.tableDefaults.headerTextColor = result.colors.tableHeaderText;
   result.tableDefaults.bodyTextColor = result.colors.tableBodyText;
+  result.tableDefaults.bodyBackground = solid(result.colors.pageSurface);
   result.tableDefaults.alternateRowBackground = solid(result.colors.tableAlternateRowSurface);
   result.tableDefaults.gridlineColor = result.colors.border;
-  const headingTreatment: DocumentDesign['layoutDefaults']['sectionHeadingStyle'] =
-    presetId === 'modern-legal' || presetId === 'contemporary-legal' || presetId === 'minimal-contemporary' || presetId === 'japandi-neutral'
-      ? 'minimal'
-      : presetId === 'art-deco' || presetId === 'dark-luxury' || presetId === 'glassmorphism' || presetId === 'modern-corporate'
-        ? 'numbered-card'
-        : presetId === 'bauhaus-modern' || presetId === 'corporate-graphite' || presetId === 'creative-studio'
-          ? 'banner'
-          : 'editorial-rule';
+
+  const headingTreatmentByPreset: Record<string, DocumentDesign['layoutDefaults']['sectionHeadingStyle']> = {
+    'modern-corporate': 'side-rule',
+    'luxury-executive': 'double-rule',
+    'creative-studio': 'banner',
+    'minimal-contemporary': 'minimal',
+    'bold-editorial': 'editorial-rule',
+    'technology-professional': 'numbered-card',
+    'contemporary-legal': 'side-rule',
+    'financial-report': 'banner',
+    'midnight-executive': 'editorial-rule',
+    'art-deco': 'numbered-card',
+    'dark-luxury': 'numbered-card',
+    'bauhaus-modern': 'banner',
+    'glassmorphism': 'side-rule',
+    'modern-legal': 'minimal',
+    'editorial-luxe': 'double-rule',
+    'corporate-graphite': 'side-rule',
+    'japandi-neutral': 'minimal',
+    'lil-synn': 'editorial-rule'
+  };
+  const headingTreatment = headingTreatmentByPreset[presetId] || 'editorial-rule';
+  const sectionSpacingByStyle = { minimal: 17, 'side-rule': 20, 'numbered-card': 22, 'editorial-rule': 24, 'double-rule': 26, banner: 18 } as const;
+  const sectionPaddingByStyle = { minimal: 5, 'side-rule': 8, 'numbered-card': 12, 'editorial-rule': 12, 'double-rule': 14, banner: 8 } as const;
+  const gridlineWidthByStyle = { minimal: 0.25, 'side-rule': 0.35, 'numbered-card': 0.55, 'editorial-rule': 0.4, 'double-rule': 0.65, banner: 0.45 } as const;
+  result.tableDefaults.gridlineWidth = gridlineWidthByStyle[headingTreatment];
   result.layoutDefaults = {
     ...result.layoutDefaults,
     sectionHeadingStyle: headingTreatment,
-    sectionSpacing: headingTreatment === 'minimal' ? 18 : headingTreatment === 'numbered-card' ? 22 : 24,
-    sectionPadding: headingTreatment === 'minimal' ? 5 : headingTreatment === 'banner' ? 8 : 12
+    sectionSpacing: sectionSpacingByStyle[headingTreatment],
+    sectionPadding: sectionPaddingByStyle[headingTreatment],
+    paragraphIndent: ['luxury-executive', 'contemporary-legal', 'modern-legal', 'art-deco', 'editorial-luxe'].includes(presetId) ? 2.5 : 0,
+    headerRule: headingTreatment !== 'minimal',
+    footerRule: true
   };
   result.coverPage = {
     ...result.coverPage,
@@ -157,6 +179,7 @@ function makePreset(
   result.pageFurniture.headerTextColor = result.colors.mutedText;
   result.pageFurniture.footerTextColor = result.colors.mutedText;
   result.pageFurniture.dividerColor = result.colors.border;
+  result.pageFurniture.dividerWidth = headingTreatment === 'double-rule' ? 0.65 : headingTreatment === 'numbered-card' ? 0.5 : headingTreatment === 'minimal' ? 0.25 : 0.4;
   return result;
 }
 
@@ -582,7 +605,7 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   for (const key of ['showFrame', 'showLogoPlaceholder', 'showOrnamentalRule'] as const) if (typeof cover[key] !== 'boolean') throw new Error('coverPage.' + key + ' must be a boolean.');
   const layout = design.layoutDefaults;
   if (!layout || typeof layout !== 'object') throw new Error('layoutDefaults must be an object.');
-  if (!['editorial-rule', 'numbered-card', 'minimal', 'banner'].includes(layout.sectionHeadingStyle)) throw new Error('layoutDefaults.sectionHeadingStyle is unsupported.');
+  if (!['editorial-rule', 'numbered-card', 'minimal', 'banner', 'side-rule', 'double-rule'].includes(layout.sectionHeadingStyle)) throw new Error('layoutDefaults.sectionHeadingStyle is unsupported.');
   for (const [key, value, maximum] of [
     ['sectionSpacing', layout.sectionSpacing, 100],
     ['paragraphIndent', layout.paragraphIndent, 30],
