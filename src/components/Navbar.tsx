@@ -11,11 +11,16 @@ import {
   Palette, 
   ShieldAlert,
   ChevronDown,
-  Plus
+  Plus,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 import { DocumentModel, AIPersona, BrandProfile } from '../types/document';
 
 interface NavbarProps {
+  appTheme: 'studio' | 'midnight' | 'graphite';
+  onAppThemeChange: (theme: 'studio' | 'midnight' | 'graphite') => void;
   document: DocumentModel;
   onUpdateTitle: (newTitle: string) => void;
   persona: AIPersona;
@@ -45,6 +50,8 @@ export const PERSONA_LABELS: Record<AIPersona, { title: string; subtitle: string
 };
 
 export const Navbar: React.FC<NavbarProps> = ({
+  appTheme,
+  onAppThemeChange,
   document,
   onUpdateTitle,
   persona,
@@ -145,6 +152,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right Action Buttons */}
       <div className="flex items-center gap-1.5 sm:gap-2">
+        <label className="app-theme-control" title="Change the application appearance">
+          {appTheme === 'studio' ? <Sun className="h-3.5 w-3.5" /> : appTheme === 'midnight' ? <Moon className="h-3.5 w-3.5" /> : <Monitor className="h-3.5 w-3.5" />}
+          <span className="sr-only">Application theme</span>
+          <select aria-label="Application theme" value={appTheme} onChange={event => onAppThemeChange(event.target.value as 'studio' | 'midnight' | 'graphite')}>
+            <option value="studio">Studio Light</option>
+            <option value="midnight">Midnight</option>
+            <option value="graphite">Graphite</option>
+          </select>
+        </label>
         {/* Undo / Redo */}
         <div className="flex items-center bg-slate-800/60 border border-slate-700/60 rounded-md p-0.5">
           <button 

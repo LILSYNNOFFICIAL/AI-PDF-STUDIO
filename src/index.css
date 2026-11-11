@@ -113,3 +113,262 @@
     left: 248px !important;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   AI PDF STUDIO VISUAL SYSTEM
+   App chrome themes are independent from the exported PDF document design.
+   -------------------------------------------------------------------------- */
+.app-root[data-app-theme="studio"] { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
+.app-root[data-app-theme="midnight"],
+.app-root[data-app-theme="graphite"] { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
+.app-root {
+  --ui-bg: #f3f6fb;
+  --ui-surface: #ffffff;
+  --ui-surface-raised: #f8faff;
+  --ui-surface-muted: #edf2f8;
+  --ui-border: #dce4ef;
+  --ui-border-strong: #c7d3e2;
+  --ui-text: #172338;
+  --ui-text-muted: #607089;
+  --ui-text-soft: #8492a6;
+  --ui-accent: #315efb;
+  --ui-accent-soft: #eaf0ff;
+  --ui-shadow: 0 8px 28px rgba(25, 45, 78, .08);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -.012em;
+}
+.app-root[data-app-theme="midnight"] {
+  --ui-bg: #090f1b;
+  --ui-surface: #111b2b;
+  --ui-surface-raised: #172438;
+  --ui-surface-muted: #1c2b40;
+  --ui-border: #26364d;
+  --ui-border-strong: #354a66;
+  --ui-text: #e8eef8;
+  --ui-text-muted: #a1b0c5;
+  --ui-text-soft: #71839d;
+  --ui-accent: #6b91ff;
+  --ui-accent-soft: #1b2b4d;
+  --ui-shadow: 0 12px 36px rgba(0, 0, 0, .28);
+}
+.app-root[data-app-theme="graphite"] {
+  --ui-bg: #17191e;
+  --ui-surface: #20242b;
+  --ui-surface-raised: #292e37;
+  --ui-surface-muted: #303640;
+  --ui-border: #3b424e;
+  --ui-border-strong: #4a5361;
+  --ui-text: #f0f2f5;
+  --ui-text-muted: #b1bac7;
+  --ui-text-soft: #8994a3;
+  --ui-accent: #8ba8ff;
+  --ui-accent-soft: #303c59;
+  --ui-shadow: 0 12px 36px rgba(0, 0, 0, .3);
+}
+
+/* Translate the existing utility-driven UI into the active design tokens. */
+[data-app-theme="studio"] .bg-slate-950,
+[data-app-theme="studio"] [class*="bg-slate-950/"] { background-color: var(--ui-bg) !important; }
+[data-app-theme="studio"] .bg-slate-900,
+[data-app-theme="studio"] [class*="bg-slate-900/"] { background-color: var(--ui-surface) !important; }
+[data-app-theme="studio"] .bg-slate-800,
+[data-app-theme="studio"] [class*="bg-slate-800/"] { background-color: var(--ui-surface-muted) !important; }
+[data-app-theme="studio"] .bg-slate-700,
+[data-app-theme="studio"] [class*="bg-slate-700/"] { background-color: #e4eaf3 !important; }
+[data-app-theme="studio"] .text-slate-100,
+[data-app-theme="studio"] .text-slate-200,
+[data-app-theme="studio"] .text-slate-300 { color: var(--ui-text) !important; }
+[data-app-theme="studio"] .text-slate-400,
+[data-app-theme="studio"] .text-slate-500 { color: var(--ui-text-muted) !important; }
+[data-app-theme="studio"] .text-slate-600,
+[data-app-theme="studio"] .text-slate-700 { color: var(--ui-text-soft) !important; }
+[data-app-theme="studio"] [class*="border-slate-"] { border-color: var(--ui-border) !important; }
+[data-app-theme="studio"] [class*="hover:bg-slate-"]:hover { background-color: #e8eef7 !important; }
+[data-app-theme="studio"] [class*="hover:text-white"]:hover { color: #172338 !important; }
+[data-app-theme="studio"] .shadow-md,
+[data-app-theme="studio"] .shadow-xl,
+[data-app-theme="studio"] .shadow-2xl { box-shadow: var(--ui-shadow) !important; }
+[data-app-theme="studio"] input:not([type="checkbox"]):not([type="radio"]),
+[data-app-theme="studio"] textarea,
+[data-app-theme="studio"] select { color: var(--ui-text); }
+[data-app-theme="studio"] input::placeholder,
+[data-app-theme="studio"] textarea::placeholder { color: #91a0b4 !important; }
+[data-app-theme="studio"] option { color: #172338; background: #fff; }
+[data-app-theme="studio"] .desktop-workspace > header { background: rgba(255,255,255,.92) !important; color: var(--ui-text) !important; border-color: var(--ui-border) !important; box-shadow: 0 1px 0 rgba(20,40,70,.04); }
+[data-app-theme="studio"] .desktop-workspace > div[role="toolbar"] { background: var(--ui-surface) !important; }
+[data-app-theme="studio"] .desktop-outline-panel,
+[data-app-theme="studio"] .desktop-ai-panel { background: var(--ui-surface) !important; color: var(--ui-text-muted) !important; }
+[data-app-theme="studio"] .desktop-outline-panel > div,
+[data-app-theme="studio"] .desktop-ai-panel > div { border-color: var(--ui-border) !important; }
+[data-app-theme="studio"] .desktop-outline-panel input,
+[data-app-theme="studio"] .desktop-ai-panel input,
+[data-app-theme="studio"] .desktop-ai-panel textarea { background: var(--ui-surface-raised) !important; border-color: var(--ui-border) !important; }
+[data-app-theme="studio"] .desktop-workspace button { transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease; }
+[data-app-theme="studio"] .desktop-workspace button:not(:disabled):active { transform: translateY(1px); }
+[data-app-theme="studio"] .desktop-workspace button:focus-visible,
+[data-app-theme="studio"] .desktop-workspace input:focus-visible,
+[data-app-theme="studio"] .desktop-workspace select:focus-visible,
+[data-app-theme="studio"] .desktop-workspace textarea:focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+
+/* Keep the two dark themes coherent rather than falling back to mixed slate shades. */
+[data-app-theme="midnight"] .app-root,
+[data-app-theme="graphite"] .app-root { background: var(--ui-bg); color: var(--ui-text); }
+[data-app-theme="midnight"] .bg-slate-950,
+[data-app-theme="graphite"] .bg-slate-950,
+[data-app-theme="midnight"] [class*="bg-slate-950/"],
+[data-app-theme="graphite"] [class*="bg-slate-950/"] { background-color: var(--ui-bg) !important; }
+[data-app-theme="midnight"] .bg-slate-900,
+[data-app-theme="graphite"] .bg-slate-900,
+[data-app-theme="midnight"] [class*="bg-slate-900/"],
+[data-app-theme="graphite"] [class*="bg-slate-900/"] { background-color: var(--ui-surface) !important; }
+[data-app-theme="midnight"] .bg-slate-800,
+[data-app-theme="graphite"] .bg-slate-800,
+[data-app-theme="midnight"] [class*="bg-slate-800/"],
+[data-app-theme="graphite"] [class*="bg-slate-800/"] { background-color: var(--ui-surface-muted) !important; }
+[data-app-theme="midnight"] [class*="border-slate-"],
+[data-app-theme="graphite"] [class*="border-slate-"] { border-color: var(--ui-border) !important; }
+[data-app-theme="midnight"] .text-slate-100,
+[data-app-theme="midnight"] .text-slate-200,
+[data-app-theme="midnight"] .text-slate-300,
+[data-app-theme="graphite"] .text-slate-100,
+[data-app-theme="graphite"] .text-slate-200,
+[data-app-theme="graphite"] .text-slate-300 { color: var(--ui-text) !important; }
+[data-app-theme="midnight"] .text-slate-400,
+[data-app-theme="midnight"] .text-slate-500,
+[data-app-theme="graphite"] .text-slate-400,
+[data-app-theme="graphite"] .text-slate-500 { color: var(--ui-text-muted) !important; }
+
+/* Theme control is compact, visible, and usable without opening a settings panel. */
+.app-theme-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  color: var(--ui-text-muted);
+  background: var(--ui-surface-raised);
+  font-size: 11px;
+  font-weight: 650;
+  transition: border-color .16s ease, background .16s ease, color .16s ease;
+}
+.app-theme-control:hover { border-color: var(--ui-accent); color: var(--ui-text); }
+.app-theme-control select { max-width: 112px; border: 0; outline: 0; color: inherit; background: transparent; font: inherit; cursor: pointer; }
+[data-app-theme="studio"] .app-theme-control option { color: #172338; background: #fff; }
+
+/* Mobile edition follows the same selected palette. */
+[data-app-theme="studio"] .mobile-workspace { color: var(--ui-text); background: var(--ui-bg); }
+[data-app-theme="studio"] .mobile-topbar,
+[data-app-theme="studio"] .mobile-editor-actions,
+[data-app-theme="studio"] .mobile-bottom-nav { background: var(--ui-surface); border-color: var(--ui-border); }
+[data-app-theme="studio"] .mobile-contextbar { background: var(--ui-surface-raised); border-color: var(--ui-border); }
+[data-app-theme="studio"] .mobile-brand-name,
+[data-app-theme="studio"] .mobile-template-row label { color: var(--ui-text); }
+[data-app-theme="studio"] .mobile-brand input,
+[data-app-theme="studio"] .mobile-doc-meta,
+[data-app-theme="studio"] .mobile-bottom-nav button { color: var(--ui-text-muted); }
+[data-app-theme="studio"] .mobile-top-actions button,
+[data-app-theme="studio"] .mobile-editor-actions button,
+[data-app-theme="studio"] .mobile-tools-heading button { color: var(--ui-text); background: var(--ui-surface-muted); border-color: var(--ui-border); }
+[data-app-theme="studio"] .mobile-tools-panel { background: var(--ui-bg); }
+[data-app-theme="studio"] .mobile-tool-button,
+[data-app-theme="studio"] .mobile-template-row { color: var(--ui-text); background: var(--ui-surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow); }
+[data-app-theme="studio"] .mobile-template-row select { color: var(--ui-text); background: var(--ui-surface-raised); border-color: var(--ui-border); }
+[data-app-theme="studio"] .mobile-persona { color: var(--ui-text); background: var(--ui-surface-muted); border-color: var(--ui-border); }
+[data-app-theme="studio"] .mobile-persona select { color: var(--ui-text); }
+[data-app-theme="studio"] .mobile-bottom-nav button.active { color: var(--ui-accent); }
+[data-app-theme="graphite"] .mobile-workspace { background: var(--ui-bg); color: var(--ui-text); }
+[data-app-theme="graphite"] .mobile-topbar,
+[data-app-theme="graphite"] .mobile-contextbar,
+[data-app-theme="graphite"] .mobile-editor-actions,
+[data-app-theme="graphite"] .mobile-bottom-nav { background: var(--ui-surface); border-color: var(--ui-border); }
+
+
+/* Desktop studio surfaces: deliberate hierarchy, generous rhythm, softer edges. */
+[data-app-theme="studio"] .desktop-workspace {
+  background:
+    radial-gradient(ellipse at 52% 44%, rgba(205, 219, 245, .26), transparent 58%),
+    var(--ui-bg);
+}
+[data-app-theme="studio"] .desktop-workspace > header {
+  min-height: 62px;
+  padding-inline: 20px;
+}
+[data-app-theme="studio"] .desktop-workspace > div:nth-child(2) {
+  min-height: 38px;
+  padding-inline: 14px;
+  background: rgba(255,255,255,.86) !important;
+  border-color: var(--ui-border) !important;
+  color: #52627a !important;
+  backdrop-filter: blur(16px);
+}
+[data-app-theme="studio"] .desktop-workspace > div:nth-child(3) {
+  min-height: 54px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.94) !important;
+  border-color: var(--ui-border) !important;
+  box-shadow: 0 3px 12px rgba(35,55,90,.035);
+}
+[data-app-theme="studio"] .desktop-workspace > div:nth-child(4) > .flex-1.bg-slate-950 {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(209,222,246,.42), transparent 58%),
+    linear-gradient(135deg,#f3f6fb,#eaf0f8) !important;
+}
+[data-app-theme="studio"] .desktop-outline-panel,
+[data-app-theme="studio"] .desktop-ai-panel {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+[data-app-theme="studio"] .desktop-outline-panel > div:first-child,
+[data-app-theme="studio"] .desktop-ai-panel > div:first-child {
+  min-height: 56px;
+  padding-inline: 16px;
+}
+[data-app-theme="studio"] .desktop-workspace .rounded-md,
+[data-app-theme="studio"] .desktop-workspace .rounded-lg {
+  border-radius: 9px;
+}
+[data-app-theme="studio"] .desktop-workspace .rounded-xl,
+[data-app-theme="studio"] .desktop-workspace .rounded-2xl {
+  border-radius: 14px;
+}
+[data-app-theme="studio"] .desktop-workspace .bg-blue-600 {
+  background-color: #315efb !important;
+}
+[data-app-theme="studio"] .desktop-workspace [class~="hover:bg-blue-500"]:hover {
+  background-color: #244fe4 !important;
+}
+[data-app-theme="studio"] .desktop-workspace .text-blue-400,
+[data-app-theme="studio"] .desktop-workspace .text-blue-300 {
+  color: #315efb !important;
+}
+[data-app-theme="studio"] .desktop-workspace .border-blue-500,
+[data-app-theme="studio"] .desktop-workspace .border-blue-600 {
+  border-color: #9db4ff !important;
+}
+[data-app-theme="studio"] .desktop-workspace [class~="shadow-blue-500/30"] {
+  box-shadow: 0 5px 14px rgba(49,94,251,.18) !important;
+}
+[data-app-theme="studio"] .desktop-workspace button:not(:disabled):hover {
+  filter: saturate(1.06);
+}
+[data-app-theme="studio"] .desktop-workspace input,
+[data-app-theme="studio"] .desktop-workspace select,
+[data-app-theme="studio"] .desktop-workspace textarea {
+  border-radius: 8px;
+}
+[data-app-theme="studio"] .app-theme-control { background: #f7f9fd; }
+
+[data-app-theme="midnight"] .desktop-workspace > div:nth-child(4) > .flex-1.bg-slate-950 {
+  background: radial-gradient(ellipse at 50% 30%, #15243a, #090f1b 68%) !important;
+}
+[data-app-theme="graphite"] .desktop-workspace > div:nth-child(4) > .flex-1.bg-slate-950 {
+  background: radial-gradient(ellipse at 50% 30%, #303640, #17191e 68%) !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-root .desktop-workspace button,
+  .app-root .app-theme-control { transition-duration: .16s; }
+}
