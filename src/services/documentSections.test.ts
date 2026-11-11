@@ -15,3 +15,10 @@ test('Appendix / Exhibit menu item calls a dedicated append action instead of cr
   assert.match(appendixButton, /onAddAppendix/);
   assert.doesNotMatch(appendixButton, /onNewDocument/);
 });
+
+test('App wires the appendix menu action to an append operation on the current document', () => {
+  const appSource = readFileSync(new URL('../App.tsx', import.meta.url), 'utf8');
+  assert.match(appSource, /const handleAddAppendix = \(\) =>/);
+  assert.match(appSource, /sections: \[\.\.\.document\.sections, appendix\]/);
+  assert.match(appSource, /onAddAppendix=\{handleAddAppendix\}/);
+});
