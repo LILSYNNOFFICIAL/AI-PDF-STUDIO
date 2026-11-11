@@ -61,6 +61,8 @@ import {
 
 export default function App() {
   const [document, setDocument] = useState<DocumentModel>(() => applyDocumentPreset(normalizeDocumentDesign(getInitialDocument()), 'midnight-executive'));
+  const documentRef = useRef(document);
+  React.useEffect(() => { documentRef.current = document; }, [document]);
   const [historyState, setHistoryState] = useState<DocumentHistoryState>({ snapshots: [], index: -1 });
   const history = historyState.snapshots;
   const historyIndex = historyState.index;
@@ -168,7 +170,7 @@ export default function App() {
 
   const handleEditorDocumentChange = (updatedDocument: DocumentModel) => {
     const pending = pendingManualEditRef.current;
-    const before = pending?.before ?? document;
+    const before = pending?.before ?? documentRef.current;
     if (pending) window.clearTimeout(pending.timer);
     const after: DocumentModel = {
       ...updatedDocument,
@@ -179,6 +181,7 @@ export default function App() {
       flushPendingManualEdit();
     }, 700);
     pendingManualEditRef.current = { before, after, timer };
+    documentRef.current = after;
     setDocument(after);
   };
 
@@ -189,11 +192,12 @@ export default function App() {
   // Store both sides of every committed transition so undo and redo are symmetrical.
   const pushHistory = (newDoc: DocumentModel) => {
     const pending = flushPendingManualEdit();
-    const currentDoc = pending.document ?? document;
+    const currentDoc = pending.document ?? documentRef.current;
     const profile = SAMPLE_BRAND_PROFILES.find(item => item.id === newDoc.brandProfileId);
     const normalizedDoc = syncLegacyStyleChanges(currentDoc, newDoc, profile);
     const nextHistory = appendDocumentHistory(pending.history, currentDoc, normalizedDoc);
     setHistoryState(nextHistory);
+    documentRef.current = normalizedDoc;
     setDocument(normalizedDoc);
   };
 
@@ -202,6 +206,7 @@ export default function App() {
     const transition = undoDocumentHistory(pending.history);
     if (!transition.document) return;
     setHistoryState(transition.state);
+    documentRef.current = transition.document;
     setDocument(transition.document);
     addAiMessage(`Reverted to previous document version (v${transition.document.version}).`);
     showToast(`Undo: restored v${transition.document.version}`);
@@ -289,7 +294,8 @@ export default function App() {
   // Central Natural-Language Orchestration Dispatcher
   const handleSendMessage = async (instruction: string) => {
     if (orchestrationInFlight.current) return;
-    flushPendingManualEdit();
+    const pending = flushPendingManualEdit();
+    const requestDocument = pending.document ?? documentRef.current;
     const userMsg: ChatMessage = {
       id: `usr_${Date.now()}`,
       sender: 'user',
@@ -320,7 +326,7 @@ export default function App() {
       const response = await fetch(`${apiBase}/api/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, currentDoc: { ...document, sourceText: undefined }, persona }),
+        body: JSON.stringify({ instruction, currentDoc: { ...requestDocument, sourceText: undefined }, persona }),
         signal: controller.signal
       });
 
@@ -331,11 +337,14 @@ export default function App() {
       if (!data.updatedDoc || !Array.isArray(data.updatedDoc.sections)) {
         throw new Error('The AI service did not return an updated document. No changes were applied.');
       }
+      if (documentRef.current.version !== requestDocument.version || documentRef.current.updatedAt !== requestDocument.updatedAt) {
+        throw new Error('The document changed while the AI operation was running. Its result was not applied, so your newer edits are safe. Please send the instruction again.');
+      }
 
       pushHistory({
         ...data.updatedDoc,
-        sourceText: data.updatedDoc.sourceText ?? document.sourceText,
-        sourceIntegrity: data.updatedDoc.sourceIntegrity ?? document.sourceIntegrity
+        sourceText: data.updatedDoc.sourceText ?? requestDocument.sourceText,
+        sourceIntegrity: data.updatedDoc.sourceIntegrity ?? requestDocument.sourceIntegrity
       });
       addAiMessage(
         data.summary?.operationTitle || 'Document updated',
@@ -805,7 +814,7 @@ export default function App() {
 
   const handleImportText = () => {
     const pending = flushPendingManualEdit();
-    const currentDoc = pending.document ?? document;
+    const currentDoc = pending.document ?? documentRef.current;
     const input = window.document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.md,text/plain,text/markdown';
@@ -838,7 +847,7 @@ export default function App() {
       return;
     }
     const pending = flushPendingManualEdit();
-    const currentDoc = pending.document ?? document;
+    const currentDoc = pending.document ?? documentRef.current;
     setIsRenderingSource(true);
     try {
       const parsedDocument = parseTextDocument(sourceTruthText, currentDoc, new Date().toISOString(), sourceTruthPresetId);
@@ -859,6 +868,7 @@ export default function App() {
       // which could carry the old sample document's formatting into the new render.
       const nextHistory = appendDocumentHistory(pending.history, currentDoc, rendered);
       setHistoryState(nextHistory);
+      documentRef.current = rendered;
       setDocument(rendered);
       setActiveSectionId(rendered.sections[0]?.id || null);
       setIsSourceTruthOpen(false);
