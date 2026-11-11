@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { clampContextMenuPosition, type ContextMenuItem } from '../services/contextMenu';
+import { clampContextMenuPosition, getNextEnabledContextMenuIndex, type ContextMenuItem } from '../services/contextMenu';
 
 interface DocumentContextMenuProps {
   x: number;
@@ -54,15 +54,9 @@ export const DocumentContextMenu: React.FC<DocumentContextMenuProps> = ({
     };
   }, [onClose, x, y]);
 
-  const focusItem = (nextIndex: number) => {
-    if (!items.length) return;
-    const enabled = items
-      .map((item, index) => ({ item, index }))
-      .filter(entry => !entry.item.disabled);
-    if (!enabled.length) return;
-    const next = enabled.find(entry => entry.index === nextIndex)
-      || (nextIndex < 0 ? enabled[enabled.length - 1] : enabled[0]);
-    itemRefs.current[next.index]?.focus();
+  const focusItem = (currentIndex: number, direction: 'next' | 'previous') => {
+    const nextIndex = getNextEnabledContextMenuIndex(items, currentIndex, direction);
+    if (nextIndex !== null) itemRefs.current[nextIndex]?.focus();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -72,16 +66,16 @@ export const DocumentContextMenu: React.FC<DocumentContextMenuProps> = ({
       onClose();
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
-      focusItem(currentIndex < 0 ? 0 : currentIndex + 1);
+      focusItem(currentIndex, 'next');
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      focusItem(currentIndex < 0 ? items.length - 1 : currentIndex - 1);
+      focusItem(currentIndex, 'previous');
     } else if (event.key === 'Home') {
       event.preventDefault();
-      focusItem(0);
+      focusItem(-1, 'next');
     } else if (event.key === 'End') {
       event.preventDefault();
-      focusItem(items.length - 1);
+      focusItem(-1, 'previous');
     } else if (event.key === 'Tab') {
       onClose();
     }
