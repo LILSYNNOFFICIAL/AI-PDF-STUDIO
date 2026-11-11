@@ -345,6 +345,21 @@ export function getTemplateById(id: string): DocumentTemplateDefinition | undefi
   return template ? { ...template, tags: [...template.tags], sectionTitles: [...template.sectionTitles] } : undefined;
 }
 
+export function getTemplateAgreementDefaults(
+  template: DocumentTemplateDefinition | null | undefined,
+  themeId: string
+): { agreementType: string; documentType: DocumentType | null; brandName?: string } {
+  if (!template) return { agreementType: '', documentType: null };
+  if (themeId === 'lil-synn' && template.category === 'Music & Entertainment') {
+    return {
+      agreementType: 'Music Agreement',
+      documentType: 'music_agreement',
+      brandName: 'LIL SYNN'
+    };
+  }
+  return { agreementType: template.title, documentType: template.documentType };
+}
+
 export function searchTemplates(query: string, category?: string): DocumentTemplateDefinition[] {
   const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   return DOCUMENT_TEMPLATE_CATALOG.filter(template => {

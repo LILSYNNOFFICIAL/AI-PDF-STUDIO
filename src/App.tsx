@@ -23,7 +23,7 @@ import { SourceOfTruthModal } from './components/SourceOfTruthModal';
 import { HelpCenterModal } from './components/HelpCenterModal';
 import { parseTextDocument, getSourceIntegrityReport } from './services/textDocumentImporter';
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides, applyDocumentPreset } from './services/documentDesign';
-import { buildTemplateDocument, getTemplateById } from './services/templateCatalog';
+import { buildTemplateDocument, getTemplateById, getTemplateAgreementDefaults } from './services/templateCatalog';
 import { loadBrandProfiles, saveBrandProfiles } from './services/brandProfiles';
 import { appendDocumentHistory, redoDocumentHistory, undoDocumentHistory, type DocumentHistoryState } from './services/documentHistory';
 import { 
@@ -631,10 +631,13 @@ export default function App() {
       return;
     }
     try {
+      const defaults = getTemplateAgreementDefaults(template, themeId);
       const freshDocument = buildTemplateDocument(templateId, agreementType);
       const themedDocument = applyDocumentPreset(freshDocument, themeId);
       const documentWithArtwork: DocumentModel = {
         ...themedDocument,
+        type: defaults.documentType ?? themedDocument.type,
+        ...(defaults.brandName ? { brandName: defaults.brandName } : {}),
         design: themedDocument.design ? {
           ...themedDocument.design,
           coverPage: {

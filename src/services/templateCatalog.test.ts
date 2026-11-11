@@ -163,3 +163,35 @@ test('standard music-category templates use a neutral legal type and accept a us
   assert.equal(fallback.title, 'Recording Artist Agreement');
   assert.notEqual(fallback.type, 'music_agreement');
 });
+
+
+test('only the LIL SYNN music theme defaults a music template to Music Agreement', async () => {
+  const api = await import('./templateCatalog') as unknown as {
+    getTemplateById: (id: string) => { title: string; category: string; documentType: string } | undefined;
+    getTemplateAgreementDefaults: (
+      template: { title: string; category: string; documentType: string } | null,
+      themeId: string
+    ) => { agreementType: string; documentType: string | null; brandName?: string };
+  };
+  assert.equal(typeof api.getTemplateAgreementDefaults, 'function');
+  const musicTemplate = api.getTemplateById('recording-artist-agreement')!;
+  const businessTemplate = api.getTemplateById('master-services-agreement')!;
+
+  assert.deepEqual(api.getTemplateAgreementDefaults(musicTemplate, 'lil-synn'), {
+    agreementType: 'Music Agreement',
+    documentType: 'music_agreement',
+    brandName: 'LIL SYNN'
+  });
+  assert.deepEqual(api.getTemplateAgreementDefaults(musicTemplate, 'midnight-executive'), {
+    agreementType: musicTemplate.title,
+    documentType: musicTemplate.documentType
+  });
+  assert.deepEqual(api.getTemplateAgreementDefaults(businessTemplate, 'lil-synn'), {
+    agreementType: businessTemplate.title,
+    documentType: businessTemplate.documentType
+  });
+  assert.deepEqual(api.getTemplateAgreementDefaults(null, 'lil-synn'), {
+    agreementType: '',
+    documentType: null
+  });
+});
