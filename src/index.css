@@ -286,3 +286,89 @@
 [data-app-theme="graphite"] .mobile-contextbar,
 [data-app-theme="graphite"] .mobile-editor-actions,
 [data-app-theme="graphite"] .mobile-bottom-nav { background: var(--ui-surface); border-color: var(--ui-border); }
+
+
+/* Desktop studio surfaces: deliberate hierarchy, generous rhythm, softer edges. */
+[data-app-theme="studio"] .desktop-workspace {
+  background:
+    radial-gradient(ellipse at 52% 44%, rgba(205, 219, 245, .26), transparent 58%),
+    var(--ui-bg);
+}
+[data-app-theme="studio"] .desktop-workspace > header {
+  min-height: 62px;
+  padding-inline: 20px;
+}
+[data-app-theme="studio"] .desktop-workspace > div:nth-child(2) {
+  min-height: 38px;
+  padding-inline: 14px;
+  background: rgba(255,255,255,.86) !important;
+  border-color: var(--ui-border) !important;
+  color: #52627a !important;
+  backdrop-filter: blur(16px);
+}
+[data-app-theme="studio"] .desktop-workspace > div:nth-child(3) {
+  min-height: 54px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,.94) !important;
+  border-color: var(--ui-border) !important;
+  box-shadow: 0 3px 12px rgba(35,55,90,.035);
+}
+[data-app-theme="studio"] .desktop-workspace > div:nth-child(4) > .flex-1.bg-slate-950 {
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(209,222,246,.42), transparent 58%),
+    linear-gradient(135deg,#f3f6fb,#eaf0f8) !important;
+}
+[data-app-theme="studio"] .desktop-outline-panel,
+[data-app-theme="studio"] .desktop-ai-panel {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+}
+[data-app-theme="studio"] .desktop-outline-panel > div:first-child,
+[data-app-theme="studio"] .desktop-ai-panel > div:first-child {
+  min-height: 56px;
+  padding-inline: 16px;
+}
+[data-app-theme="studio"] .desktop-workspace .rounded-md,
+[data-app-theme="studio"] .desktop-workspace .rounded-lg {
+  border-radius: 9px;
+}
+[data-app-theme="studio"] .desktop-workspace .rounded-xl,
+[data-app-theme="studio"] .desktop-workspace .rounded-2xl {
+  border-radius: 14px;
+}
+[data-app-theme="studio"] .desktop-workspace .bg-blue-600 {
+  background-color: #315efb !important;
+}
+[data-app-theme="studio"] .desktop-workspace .hover\\:bg-blue-500:hover {
+  background-color: #244fe4 !important;
+}
+[data-app-theme="studio"] .desktop-workspace .text-blue-400,
+[data-app-theme="studio"] .desktop-workspace .text-blue-300 {
+  color: #315efb !important;
+}
+[data-app-theme="studio"] .desktop-workspace .border-blue-500,
+[data-app-theme="studio"] .desktop-workspace .border-blue-600 {
+  border-color: #9db4ff !important;
+}
+[data-app-theme="studio"] .desktop-workspace .shadow-blue-500\\/30 {
+  box-shadow: 0 5px 14px rgba(49,94,251,.18) !important;
+}
+[data-app-theme="studio"] .desktop-workspace button:not(:disabled):hover {
+  filter: saturate(1.06);
+}
+[data-app-theme="studio"] .desktop-workspace input,
+[data-app-theme="studio"] .desktop-workspace select,
+[data-app-theme="studio"] .desktop-workspace textarea {
+  border-radius: 8px;
+}
+[data-app-theme="studio"] .app-theme-control { background: #f7f9fd; }
+
+[data-app-theme="midnight"] .desktop-workspace > div:nth-child(4) > .flex-1.bg-slate-950 {
+  background: radial-gradient(ellipse at 50% 30%, #15243a, #090f1b 68%) !important;
+}
+[data-app-theme="graphite"] .desktop-workspace > div:nth-child(4) > .flex-1.bg-slate-950 {
+  background: radial-gradient(ellipse at 50% 30%, #303640, #17191e 68%) !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .app-root .desktop-workspace button,
+  .app-root .app-theme-control { transition-duration: .16s; }
+}
