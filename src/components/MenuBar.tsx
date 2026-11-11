@@ -51,6 +51,7 @@ interface MenuBarProps {
   onNewBlankDocument: () => void;
   onOpenTemplate: (templateName: string) => void;
   onOpenTemplateGallery: () => void;
+  onOpenHelp: () => void;
   onExportPdf: () => void;
   onPrint: () => void;
   onExportJson: () => void;
@@ -99,6 +100,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onNewBlankDocument,
   onOpenTemplate,
   onOpenTemplateGallery,
+  onOpenHelp,
   onExportPdf,
   onPrint,
   onExportJson,
@@ -172,9 +174,9 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   return (
     <div 
       ref={menuBarRef} 
-      className="h-8 bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none z-40 shrink-0 font-sans"
+      className="h-8 min-w-0 overflow-x-auto overflow-y-visible bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none z-40 shrink-0 font-sans [scrollbar-width:thin]"
     >
-      <div className="flex items-center space-x-1">
+      <div className="flex min-w-max items-center space-x-1">
         <button
           onMouseDown={event => event.preventDefault()}
           onClick={() => executeAction(onOpenTemplateGallery)}
@@ -637,6 +639,16 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               </button>
             </div>
           )}
+        </div>
+        <div className="relative">
+          <button type="button" aria-haspopup="menu" aria-expanded={activeMenu === 'more'} onClick={() => handleMenuClick('more')} onMouseEnter={() => handleMenuHover('more')} className={`flex items-center gap-1 rounded px-2.5 py-1 font-semibold transition-colors hover:bg-slate-800 hover:text-white ${activeMenu === 'more' ? 'bg-slate-800 text-white' : ''}`} title="More commands">&gt; More</button>
+          {activeMenu === 'more' && <div role="menu" className="absolute right-0 top-full mt-1 w-60 rounded-lg border border-slate-700 bg-slate-900 py-1 text-slate-200 shadow-2xl z-50">
+            <button role="menuitem" type="button" onClick={() => executeAction(onOpenHelp)} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-sky-600 hover:text-white"><BookOpen className="h-3.5 w-3.5 text-sky-300"/> Help &amp; Getting Started</button>
+            <div className="my-1 border-t border-slate-800" />
+            <button role="menuitem" type="button" onClick={() => executeAction(onOpenReadability)} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-blue-600 hover:text-white"><BarChart3 className="h-3.5 w-3.5"/> Reading metrics</button>
+            <button role="menuitem" type="button" onClick={() => executeAction(onOpenValidation)} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-blue-600 hover:text-white"><ShieldCheck className="h-3.5 w-3.5"/> Document quality audit</button>
+            <button role="menuitem" type="button" onClick={() => executeAction(onOpenMultiDoc)} className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-blue-600 hover:text-white"><Layers className="h-3.5 w-3.5"/> Multi-document workspace</button>
+          </div>}
         </div>
       </div>
 

@@ -620,6 +620,10 @@ export function buildDocumentEditPrompt(
   return [
     'You are the document editor inside AI PDF Studio.',
     'Execute the user instruction against the supplied document sections. You are not a summarization assistant.',
+    'Interpret intent semantically, not by exact command-word matching. Translate ordinary language, synonyms, indirect requests, and follow-up references into the correct supported document operations before editing.',
+    'Capability inventory: create, rename, edit, duplicate, delete, move, merge, split, and reorder sections; create, edit, duplicate, move, and remove clauses; edit document title and agreement metadata; insert and update tables, charts, images, and signature blocks; update page size, orientation, margins, headers, footers, page numbers, watermark, cover settings, typography, color tokens, theme presets, section styling, and table styling; perform targeted text replacement and document-wide content edits when explicitly requested.',
+    'Before acting, identify the target object(s), the requested outcome, explicit preservation constraints, and any missing information that would change the result. If a request is ambiguous, choose the least destructive interpretation and state the assumption in the operation summary. Never invent a party name, payment amount, date, ownership percentage, governing law, or other material business term.',
+    'After constructing the patch, verify every referenced ID exists or is newly created, confirm unrelated content is unchanged, confirm required arrays and nested objects remain valid, and report any operation that could not be completed rather than claiming success.'
     'Never return only a description of changes. Return executable structured document updates.',
     'Never summarize, condense, paraphrase, omit, or replace source wording unless the user explicitly requests a text rewrite.',
     'When the instruction is about formatting or organization, preserve every existing content and clause string exactly.',

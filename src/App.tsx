@@ -6,6 +6,7 @@ import { FormattingRibbon } from './components/FormattingRibbon';
 import { DocumentOutline } from './components/DocumentOutline';
 import { VisualEditor } from './components/VisualEditor';
 import { AIChatOrchestrator, ChatMessage } from './components/AIChatOrchestrator';
+import { HelpGuideModal } from './components/HelpGuideModal';
 import { PDFPreviewModal } from './components/PDFPreviewModal';
 import { ValidationReportModal } from './components/ValidationReportModal';
 import { MultiDocWorkspaceModal } from './components/MultiDocWorkspaceModal';
@@ -87,6 +88,7 @@ export default function App() {
   const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
   const [isTemplateGalleryOpen, setIsTemplateGalleryOpen] = useState(false);
   const [isBrandManagerOpen, setIsBrandManagerOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isSourceTruthOpen, setIsSourceTruthOpen] = useState(true);
   const [sourceTruthText, setSourceTruthText] = useState('');
   const [sourceTruthPresetId, setSourceTruthPresetId] = useState('contemporary-legal');
@@ -144,7 +146,7 @@ export default function App() {
     {
       id: 'msg_welcome',
       sender: 'ai',
-      text: `Welcome to AI PDF Studio. I am your Document Control & Orchestration Engine acting as the Music Industry Specialist.\n\nI have complete operational control over this document: you can instruct me in natural language to merge sections, split provisions, reorganize the structure, apply global legal typography, manage royalty tables, or regenerate verified PDFs.`,
+      text: `Welcome to AI PDF Studio. I am your general-purpose document assistant.\n\nDescribe the result you want in everyday language. I can help draft and revise document content, reorganize sections, manage clauses and tables, adjust visual design, prepare signature fields, and guide document review and PDF export. I will preserve unrelated content and report what changed.`,
       timestamp: 'Just now'
     }
   ]);
@@ -972,6 +974,7 @@ export default function App() {
         onNewBlankDocument={handleNewBlankDocument}
         onOpenTemplate={handleOpenTemplate}
         onOpenTemplateGallery={() => setIsTemplateGalleryOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
         onExportPdf={() => setIsPdfPreviewOpen(true)}
         onPrint={handlePrint}
         onExportJson={handleExportJson}
@@ -1250,6 +1253,7 @@ export default function App() {
         isOpen={isMetadataOpen}
         onClose={() => setIsMetadataOpen(false)}
         onExportJson={handleExportJson}
+        onUpdateAgreementType={(agreementType) => pushHistory({ ...document, agreementType, version: document.version + 1, updatedAt: new Date().toISOString() })}
       />
 
       <ClauseLibraryModal
@@ -1302,6 +1306,8 @@ export default function App() {
         onClose={() => setIsTemplateGalleryOpen(false)}
         onCreateTemplate={handleCreateGalleryTemplate}
       />
+
+      <HelpGuideModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
 
       <DocumentDesignModal
         document={document}

@@ -730,3 +730,12 @@ test('structural executor applies generic JSON Patch operations returned by Gemi
   assert.equal(result.updatedDoc.sections.at(-1)?.content, created.content);
   assert.ok(result.summary.verifications.every(check => check.passed));
 });
+
+
+test('AI prompt maps natural-language intent to the document capability inventory', () => {
+  const doc = makeDocument();
+  const prompt = buildDocumentEditPrompt('Make this look polished and add signing lines without changing the wording.', doc, 'auto_architect', doc.sections);
+  assert.match(prompt, /Interpret intent semantically/);
+  assert.match(prompt, /Capability inventory/);
+  assert.match(prompt, /Never invent a party name/);
+});

@@ -521,6 +521,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('add-section', 'Add document section', () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: 'Click to edit this section.', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() })),
         item('insert-image', 'Insert image into document', () => canvasImageInputRef.current?.click()),
+        item('insert-signature', 'Insert signature / date fields', () => {
+          const targetId = activeSectionId || document.sections[0]?.id;
+          const targetSection = document.sections.find(entry => entry.id === targetId);
+          if (targetId && targetSection) onInsertSignatureAtSelection?.({ sectionId: targetId, start: (targetSection.content || '').length, end: (targetSection.content || '').length, selectedText: '' });
+        }, { disabled: !document.sections.length }),
+        item('toggle-page-break', 'Toggle page break before active section', () => {
+          const target = document.sections.find(entry => entry.id === activeSectionId);
+          if (target) onUpdateSection({ ...target, forcePageBreakBefore: !target.forcePageBreakBefore });
+        }, { disabled: !document.sections.some(entry => entry.id === activeSectionId) }),
+        item('set-watermark', 'Set or clear page watermark…', () => {
+          const value = window.prompt('Watermark text. Leave blank to clear it.', document.pageConfig.watermarkText || '');
+          if (value !== null) onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, watermarkText: value.trim() || undefined }, updatedAt: new Date().toISOString() });
+        }),
         item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || '')),
         item('toggle-page-numbers', document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() })),
         item('toggle-cover-page', documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() })),
