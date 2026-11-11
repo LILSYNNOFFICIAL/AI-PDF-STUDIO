@@ -60,6 +60,18 @@ import {
 } from './orchestrator/orchestrator';
 
 export default function App() {
+  type AppTheme = 'studio' | 'midnight' | 'graphite';
+  const [appTheme, setAppTheme] = useState<AppTheme>(() => {
+    try {
+      const saved = window.localStorage.getItem('ai-pdf-studio:app-theme');
+      return saved === 'midnight' || saved === 'graphite' || saved === 'studio' ? saved : 'studio';
+    } catch {
+      return 'studio';
+    }
+  });
+  React.useEffect(() => {
+    try { window.localStorage.setItem('ai-pdf-studio:app-theme', appTheme); } catch { /* storage may be unavailable */ }
+  }, [appTheme]);
   const [document, setDocument] = useState<DocumentModel>(() => applyDocumentPreset(normalizeDocumentDesign(getInitialDocument()), 'midnight-executive'));
   const documentRef = useRef(document);
   React.useEffect(() => { documentRef.current = document; }, [document]);
@@ -1038,7 +1050,7 @@ export default function App() {
   };
 
   return (
-    <div className="app-root flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100 relative">
+    <div data-app-theme={appTheme} className="app-root flex flex-col h-screen w-screen overflow-hidden bg-slate-950 font-sans text-slate-100 relative">
       <div className="desktop-workspace">
       {/* 1. Top Navbar */}
       <Navbar
@@ -1058,6 +1070,8 @@ export default function App() {
         onOpenMultiDoc={() => setIsMultiDocOpen(true)}
         onOpenBrandModal={() => setIsBrandManagerOpen(true)}
         onNewDocument={handleNewDocument}
+        appTheme={appTheme}
+        onAppThemeChange={setAppTheme}
       />
 
       {/* 2. Menu Bar (File, Edit, Insert, Format, Tools, View) */}
