@@ -331,3 +331,12 @@ test('PDF cover artwork renders safely for every template category and LIL SYNN'
     assert.ok(outputText(pdf).length > 1000, 'Expected PDF content for ' + artworkCategory);
   }
 });
+
+
+test('exports the editable right-side running header label', () => {
+  const doc = buildDocumentFromPrompt('Editable running header').updatedDoc;
+  doc.pageConfig.headerRightText = 'INTERNAL DRAFT';
+  const text = outputText(generatePdfDocument(doc));
+  assert.ok(text.includes('INTERNAL DRAFT'));
+  assert.ok(!text.includes('CONFIDENTIAL'));
+});
