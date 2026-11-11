@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { buildDocumentFromPrompt } from '../orchestrator/orchestrator';
 import {
   DOCUMENT_DESIGN_PRESETS,
+  filterDocumentDesignPresets,
+  getDocumentDesignPresetCategory,
   applyDocumentPreset,
   clearDesignOverrides,
   listSavedThemes,
@@ -46,6 +48,14 @@ test('all eighteen built-in themes contain valid semantic tokens', () => {
   assert.equal(lilSynn.colors.border, '#d99a32');
   assert.equal(lilSynn.tableDefaults.bodyBackground.type, 'solid');
   assert.equal(lilSynn.tableDefaults.bodyBackground.color, '#050505');
+});
+
+test('visual theme gallery categories and search return the expected document presets', () => {
+  assert.equal(getDocumentDesignPresetCategory(DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'lil-synn')!), 'Dark');
+  assert.equal(getDocumentDesignPresetCategory(DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'modern-legal')!), 'Legal');
+  assert.equal(filterDocumentDesignPresets(DOCUMENT_DESIGN_PRESETS, 'legal').length, 2);
+  assert.ok(filterDocumentDesignPresets(DOCUMENT_DESIGN_PRESETS, '', 'Editorial').length >= 3);
+  assert.deepEqual(filterDocumentDesignPresets(DOCUMENT_DESIGN_PRESETS, 'no-such-theme'), []);
 });
 
 test('legacy design migration preserves all document content and structure', () => {
