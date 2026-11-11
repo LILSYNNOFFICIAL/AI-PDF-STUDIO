@@ -5,10 +5,9 @@ import { readFileSync } from 'node:fs';
 const menuSource = readFileSync(new URL('./MenuBar.tsx', import.meta.url), 'utf8');
 
 test('desktop menu dropdowns are not clipped by the primary menu strip', () => {
-  assert.match(menuSource, /className="[^"]*menu-primary-strip/);
-  const stripRule = stylesheet.match(/\.menu-primary-strip\s*\{([^}]*)\}/)?.[1] ?? '';
-  assert.match(stripRule, /overflow\s*:\s*visible\s*;/);
-  assert.doesNotMatch(stripRule, /overflow(?:-x|-y)?\s*:\s*(?:auto|hidden|clip)\s*;/);
+  const stripClass = menuSource.match(/className="(flex min-w-0 flex-1 items-center[^"]*)"/)?.[1] ?? '';
+  assert.match(stripClass, /overflow-visible/);
+  assert.doesNotMatch(stripClass, /overflow-x-auto|overflow-hidden|overflow-clip/);
 });
 
 test('the menu bar establishes a top-level stacking layer above the editor canvas', () => {
