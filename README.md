@@ -8,7 +8,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 
 ## What it does
 
-- **Create from templates:** Browse a searchable catalog of 100 structured templates across music and entertainment, business, real estate, creative work, employment, corporate/legal, finance, technology, marketing, and general use.
+- **Create from templates:** Browse a searchable catalog of 101 structured templates across music and entertainment, business, real estate, creative work, employment, corporate/legal, finance, technology, marketing, and general use.
 - **Name the agreement:** Standard templates let you enter the agreement type or document title before creation. The LIL SYNN legacy template keeps its own branded agreement identity.
 - **Create from a prompt:** Start a new document by describing the document you need and the information it should contain.
 - **Edit visually:** Update document titles, cover details, section headings, body text, clauses, tables, charts, images, and signature blocks in the editor.
@@ -35,7 +35,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 
 ## Templates and agreement types
 
-The template catalog contains 100 editable template definitions in 10 categories. A template provides document-specific structure and starter wording. A design theme provides colors, typography, cover treatment, page furniture, section appearance, tables, and signature styling.
+The template catalog contains 101 editable template definitions in 10 categories. A template provides document-specific structure and starter wording. A design theme provides colors, typography, cover treatment, page furniture, section appearance, tables, and signature styling.
 
 These are deliberately separate: changing a theme should not silently rewrite the agreement.
 

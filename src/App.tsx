@@ -663,7 +663,7 @@ export default function App() {
       return;
     }
     try {
-      const defaults = getTemplateAgreementDefaults(template, themeId);
+      const defaults = getTemplateAgreementDefaults(template);
       const freshDocument = buildTemplateDocument(templateId, agreementType);
       const themedDocument = applyDocumentPreset(freshDocument, themeId);
       const documentWithArtwork: DocumentModel = {

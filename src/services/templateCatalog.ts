@@ -34,6 +34,8 @@ type TemplateSeed = [
   deliverable: string
 ];
 
+export const LIL_SYNN_TEMPLATE_ID = 'lil-synn-music-agreement';
+
 export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
   'Music & Entertainment',
   'Business & Commercial',
@@ -48,7 +50,8 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
 ];
 
 const TEMPLATE_SEEDS: TemplateSeed[] = [
-  // Music & Entertainment (20)
+  // Music & Entertainment (21)
+  [LIL_SYNN_TEMPLATE_ID,'LIL SYNN Music Agreement','Music & Entertainment','Branded agreement covering artist collaboration, master recording ownership, release responsibilities, credits and music-rights schedules.','LIL SYNN;music agreement;master recording;artist collaboration;release','the music collaboration, master recording ownership, artist services and release obligations between LIL SYNN and the named contributors','approved masters, split schedules, credits, artwork permissions, release assets and distribution-ready metadata'],
   ['recording-artist-agreement','Recording Artist Agreement','Music & Entertainment','Structures an artist engagement, recording commitment, release obligations and master participation.','recording artist;record deal;master;royalty','the recording artist engagement, featured recordings, release schedule and master exploitation rights','completed vocal and instrumental masters, approved revisions, credits and release-ready metadata'],
   ['music-producer-agreement','Music Producer Agreement','Music & Entertainment','Defines producer services, recording deliverables, credit, compensation and master-use permissions.','producer;beatmaker;production;royalty','the production of specified compositions and master recordings by an independent music producer','instrumental sessions, stems, final mixes, revisions and production metadata'],
   ['beat-license-agreement','Beat License Agreement','Music & Entertainment','Documents a non-exclusive or exclusive instrumental license, permitted uses, limitations and fees.','beat license;instrumental;lease;exclusive','the grant of defined rights to use an identified instrumental composition and its associated files','licensed instrumental files, permitted recording uses and delivery of the resulting release information'],
@@ -346,11 +349,10 @@ export function getTemplateById(id: string): DocumentTemplateDefinition | undefi
 }
 
 export function getTemplateAgreementDefaults(
-  template: DocumentTemplateDefinition | null | undefined,
-  themeId: string
+  template: DocumentTemplateDefinition | null | undefined
 ): { agreementType: string; documentType: DocumentType | null; brandName?: string } {
   if (!template) return { agreementType: '', documentType: null };
-  if (themeId === 'lil-synn' && template.category === 'Music & Entertainment') {
+  if (template.id === LIL_SYNN_TEMPLATE_ID) {
     return {
       agreementType: 'Music Agreement',
       documentType: 'music_agreement',
@@ -396,7 +398,7 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
   const template = getTemplateById(templateId);
   if (!template) throw new Error('Unknown document template: ' + templateId);
   const blueprint = CATEGORY_BLUEPRINTS[template.category];
-  const resolvedAgreementType = agreementType?.trim() || template.title;
+  const resolvedAgreementType = agreementType?.trim() || (template.id === LIL_SYNN_TEMPLATE_ID ? 'Music Agreement' : template.title);
   const parties = [
     {
       id: makeId('party'),
@@ -480,7 +482,7 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
   return {
     id: makeId('document'),
     title: resolvedAgreementType,
-    type: template.documentType,
+    type: template.id === LIL_SYNN_TEMPLATE_ID ? 'music_agreement' : template.documentType,
     version: 1,
     createdAt: now,
     updatedAt: now,
