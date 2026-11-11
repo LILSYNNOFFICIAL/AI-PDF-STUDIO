@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { getDocumentHeaderFields } from './documentHeaderMetadata';
 import { ColorFill, BorderConfig, DocumentModel, Section, TableBlock, TableCell, InlineSignatureBlock } from '../types/document';
 import {
   resolveDocumentDesign,
@@ -695,11 +696,18 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       color: colorToRgb(design.colors.headingText), lineHeight: 8, after: 2, align: 'center'
     });
 
-    drawWrappedText(
-      `Version ${doc.version} | Last Updated: ${new Date(doc.updatedAt).toLocaleDateString()} | Author: ${doc.author}`,
-      margins.left, contentWidth,
-      { font: primaryFont, style: 'italic', size: 9, color: colorToRgb(design.colors.mutedText), lineHeight: 4.5, after: 2, align: 'center' }
-    );
+    const metadataText = getDocumentHeaderFields(doc)
+      .map(field => field.label && field.value
+        ? `${field.label}: ${field.value}`
+        : field.label || field.value)
+      .filter(Boolean)
+      .join(' | ');
+    if (metadataText) {
+      drawWrappedText(metadataText, margins.left, contentWidth, {
+        font: primaryFont, style: 'italic', size: 9, color: colorToRgb(design.colors.mutedText),
+        lineHeight: 4.5, after: 2, align: 'center'
+      });
+    }
 
     ensureSpace(5);
     pdf.setDrawColor(...colorToRgb(design.pageFurniture.dividerColor));

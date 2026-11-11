@@ -24,6 +24,12 @@ import {
 import { DocumentModel, Section, Clause, TableBlock, ChartBlock, SignatureParty, ImageBlock, InlineSignatureBlock } from '../types/document';
 import { calculateImageResizeWidth } from '../services/imageResize';
 import {
+  getDocumentHeaderFields,
+  updateDocumentHeaderField,
+  removeDocumentHeaderField,
+  restoreDocumentHeaderField
+} from '../services/documentHeaderMetadata';
+import {
   resolveDocumentDesign,
   resolveSectionDesign,
   resolveTableDesign,
@@ -94,6 +100,19 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   }, []);
 
   const documentDesign = resolveDocumentDesign(document);
+  const headerMetadataFields = getDocumentHeaderFields(document);
+  const visibleHeaderMetadataIds = new Set(headerMetadataFields.map(field => field.id));
+  const hiddenHeaderMetadataIds = (['version', 'documentType', 'date', 'author'] as const)
+    .filter(id => !visibleHeaderMetadataIds.has(id));
+  const handleHeaderMetadataChange = (id: 'version' | 'documentType' | 'date' | 'author', patch: { label?: string; value?: string }) => {
+    onUpdateDocument(updateDocumentHeaderField(document, id, patch));
+  };
+  const handleHeaderMetadataRemove = (id: 'version' | 'documentType' | 'date' | 'author') => {
+    onUpdateDocument(removeDocumentHeaderField(document, id));
+  };
+  const handleHeaderMetadataRestore = (id: 'version' | 'documentType' | 'date' | 'author') => {
+    onUpdateDocument(restoreDocumentHeaderField(document, id));
+  };
 
   const readImageFiles = async (files: FileList | null): Promise<ImageBlock[]> => {
     if (!files?.length) return [];
@@ -1066,7 +1085,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Document Title Header. A dedicated cover replaces this repeated title block in the body. */}
           {!documentDesign.coverPage.enabled && (
-          <div className="text-center pb-8 mb-8" style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
+          <div className={`text-center ${headerMetadataFields.length ? 'pb-8 mb-8' : 'pb-4 mb-4'}`} style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
             <h1
               contentEditable
               suppressContentEditableWarning
@@ -1087,15 +1106,55 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   ? document.title.toLowerCase().replace(/\b\p{L}/gu, character => character.toUpperCase())
                   : document.title}
             </h1>
-            <div className="text-xs font-sans flex items-center justify-center gap-3" style={{ color: documentDesign.colors.mutedText }}>
-              <span>Version {document.version}</span>
-              <span>•</span>
-              <span>Document Type: {document.type.replace('_', ' ').toUpperCase()}</span>
-              <span>•</span>
-              <span>Date: {new Date(document.updatedAt).toLocaleDateString()}</span>
-              <span>Author:</span>
-              <input aria-label="Document author" value={document.author} onChange={event => onUpdateDocument({ ...document, author: event.target.value })} className="w-28 bg-transparent text-center outline-none" />
-            </div>
+            {(headerMetadataFields.length > 0 || hiddenHeaderMetadataIds.length > 0) && (
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-sans" style={{ color: documentDesign.colors.mutedText }}>
+                {headerMetadataFields.map(field => (
+                  <div key={field.id} className="group flex items-center gap-1 rounded px-1 py-0.5 hover:bg-slate-100/70">
+                    <input
+                      aria-label={`Document ${field.id} label`}
+                      value={field.label}
+                      size={Math.max(1, Math.min(24, field.label.length || 7))}
+                      onChange={event => handleHeaderMetadataChange(field.id, { label: event.target.value })}
+                      className="max-w-40 min-w-[2ch] bg-transparent text-right font-medium outline-none"
+                      title={`Edit ${field.label || field.id} label`}
+                    />
+                    {field.label && <span aria-hidden="true">:</span>}
+                    <input
+                      aria-label={`Document ${field.id} value`}
+                      value={field.value}
+                      size={Math.max(1, Math.min(32, field.value.length || 5))}
+                      onChange={event => handleHeaderMetadataChange(field.id, { value: event.target.value })}
+                      className="max-w-48 min-w-[2ch] bg-transparent outline-none"
+                      title={`Edit ${field.label || field.id} value`}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Delete ${field.label || field.id} field`}
+                      title={`Remove ${field.label || field.id} from the document header`}
+                      onClick={() => handleHeaderMetadataRemove(field.id)}
+                      className="ml-0.5 rounded p-0.5 text-slate-400 opacity-0 transition-opacity hover:bg-rose-100 hover:text-rose-600 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-rose-400 group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {hiddenHeaderMetadataIds.length > 0 && (
+                  <select
+                    aria-label="Restore document header field"
+                    value=""
+                    onChange={event => {
+                      if (event.target.value) handleHeaderMetadataRestore(event.target.value as 'version' | 'documentType' | 'date' | 'author');
+                    }}
+                    className="rounded border border-slate-200 bg-transparent px-1 py-0.5 text-[10px] text-slate-500 outline-none"
+                  >
+                    <option value="">+ Add field</option>
+                    {hiddenHeaderMetadataIds.map(id => (
+                      <option key={id} value={id}>{({ version: 'Version', documentType: 'Document Type', date: 'Date', author: 'Author' })[id]}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
           </div>
           )}
 
