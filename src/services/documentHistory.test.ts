@@ -62,3 +62,24 @@ test('undo and redo are safe at their respective history boundaries', () => {
   assert.equal(undoDocumentHistory(state).document, null);
   assert.equal(redoDocumentHistory(state).document, null);
 });
+
+
+test('version rollback lookup never crosses document boundaries', async () => {
+  const api = await import('./documentHistory') as unknown as {
+    findDocumentVersionSnapshot: (
+      snapshots: DocumentModel[],
+      documentId: string,
+      version: number
+    ) => DocumentModel | null;
+  };
+  assert.equal(typeof api.findDocumentVersionSnapshot, 'function');
+  const previousDocument = doc('previous-document', 'Old document');
+  const currentVersionOne = doc('current-document', 'Current version one');
+  const otherDocumentVersionOne = doc('other-document', 'Other version one');
+  const currentVersionTwo = doc('current-document', 'Current version two');
+  const snapshots = [previousDocument, currentVersionOne, otherDocumentVersionOne, currentVersionTwo];
+
+  assert.equal(api.findDocumentVersionSnapshot(snapshots, 'current-document', 1), currentVersionOne);
+  assert.equal(api.findDocumentVersionSnapshot(snapshots, 'current-document', 2), currentVersionTwo);
+  assert.equal(api.findDocumentVersionSnapshot(snapshots, 'missing-document', 1), null);
+});
