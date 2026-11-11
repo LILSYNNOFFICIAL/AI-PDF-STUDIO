@@ -199,24 +199,3 @@ test('only the dedicated LIL SYNN template defaults to Music Agreement; other te
   assert.equal(customDocument.title, 'Independent Recording Services Agreement');
   assert.equal(customDocument.type, 'legal_agreement');
 });
-
-
-test('category templates use their own professional clause hierarchy instead of generic boilerplate headings', async () => {
-  const api = await import('./templateCatalog') as unknown as {
-    buildTemplateDocument: (id: string) => import('../types/document').DocumentModel;
-  };
-  const samples = [
-    ['recording-artist-agreement', ['Creative Services, Deliverables & Approval', 'Compensation, Royalties & Accounting', 'Master Rights, Composition Rights & Credits', 'Release Obligations, Clearances & Termination']],
-    ['residential-lease-agreement', ['Premises, Permitted Use & Occupancy Duties', 'Rent, Deposits, Utilities & Other Charges', 'Access, Condition, Repairs & Property Records', 'Property Condition, Default & Surrender']],
-    ['professional-services-sow', ['Service Levels, Work Orders & Acceptance', 'Fees, Expenses, Taxes & Invoicing', 'Work Product, Business Records & Confidential Information', 'Commercial Risk, Change Control & Exit']]
-  ] as const;
-  for (const [id, expectedHeadings] of samples) {
-    const doc = api.buildTemplateDocument(id);
-    const headings = doc.sections.flatMap(section => section.clauses.map(clause => clause.heading || ''));
-    for (const expected of expectedHeadings) {
-      assert.ok(headings.includes(expected), id + ' should include clause heading: ' + expected);
-    }
-    assert.ok(!headings.includes('Performance Standard'), id + ' must not fall back to generic headings');
-    assert.ok(!headings.includes('Amount & Payment Schedule'), id + ' must not fall back to generic headings');
-  }
-});

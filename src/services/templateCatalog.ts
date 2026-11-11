@@ -427,8 +427,8 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       template.sectionTitles[0],
       template.description + '\n\nDrafting fields: [EFFECTIVE DATE] • [PROJECT / PROPERTY / ACCOUNT IDENTIFIER] • [AUTHORIZED TERRITORY OR LOCATION].',
       [
-        ['Purpose of Arrangement', 'The parties enter this ' + template.title + ' to address ' + template.focus + '. The full legal names, capacities and notice details of each party must be completed before execution.'],
-        ['Covered Subject Matter', 'The scope includes ' + template.focus + '. The parties shall identify all excluded activities, assets, locations, accounts or services in an attached schedule.']
+        ['Transaction Purpose & Parties', 'The parties enter this ' + template.title + ' to address ' + template.focus + '. The full legal names, capacities and notice details of each party must be completed before execution.'],
+        ['Scope, Assets & Exclusions', 'The scope includes ' + template.focus + '. The parties shall identify all excluded activities, assets, locations, accounts or services in an attached schedule.']
       ]
     ),
     buildSection(
@@ -436,8 +436,8 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       template.sectionTitles[1],
       'This section allocates the operational duties associated with ' + template.focus + '. All deliverables and material dependencies should be entered in the schedule before work begins.',
       [
-        ['Performance Standard', template.deliverable + '. Each party shall provide the cooperation, access, approvals and information reasonably required for the agreed work or transaction.'],
-        ['Review, Acceptance & Change Control', 'The parties shall document milestones, review periods, acceptance criteria, correction requests and any approved change in scope, quantity, timing or specification. Silence should not constitute acceptance unless expressly selected in the completed schedule.']
+        [blueprint.performanceHeading, template.deliverable + '. Each party shall provide the cooperation, access, approvals and information reasonably required for the agreed work or transaction.'],
+        ['Milestones, Review & Change Control', 'The parties shall document milestones, review periods, acceptance criteria, correction requests and any approved change in scope, quantity, timing or specification. Silence should not constitute acceptance unless expressly selected in the completed schedule.']
       ]
     ),
     buildSection(
@@ -445,8 +445,8 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       template.sectionTitles[2],
       blueprint.moneyLead,
       [
-        ['Amount & Payment Schedule', '[CURRENCY] [TOTAL AMOUNT OR RATE] • [DEPOSIT / ADVANCE] • [MILESTONE OR INSTALLMENT DATES] • [PAYMENT METHOD].'],
-        ['Records & Reconciliation', 'The responsible party shall maintain complete supporting invoices, receipts, statements and calculation records. Any reconciliation period, audit right or objection deadline must be expressly stated.']
+        [blueprint.moneyHeading, '[CURRENCY] [TOTAL AMOUNT OR RATE] • [DEPOSIT / ADVANCE] • [MILESTONE OR INSTALLMENT DATES] • [PAYMENT METHOD].'],
+        ['Statements, Records & Reconciliation', 'The responsible party shall maintain complete supporting invoices, receipts, statements and calculation records. Any reconciliation period, audit right or objection deadline must be expressly stated.']
       ]
     ),
     buildSection(
@@ -454,8 +454,8 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       template.sectionTitles[3],
       blueprint.rightsLead + ' The rights schedule shall specify any retained rights, permitted uses, restrictions, required notices and record-retention period.',
       [
-        ['Allocation & Permitted Use', 'The parties shall identify the owner of each asset, work product, data set or property interest and the precise rights granted, retained, transferred or excluded.'],
-        ['Information & Recordkeeping', 'Each party shall use protected information only for the stated purpose, limit access to authorized persons and retain evidence of approvals, delivery, payment and compliance.']
+        [blueprint.rightsHeading, 'The parties shall identify the owner of each asset, work product, data set or property interest and the precise rights granted, retained, transferred or excluded.'],
+        ['Ownership, Access & Recordkeeping', 'Each party shall use protected information only for the stated purpose, limit access to authorized persons and retain evidence of approvals, delivery, payment and compliance.']
       ]
     ),
     buildSection(
@@ -464,7 +464,7 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       blueprint.riskLead,
       [
         ['Term, Renewal & Completion', '[START DATE] • [INITIAL TERM] • [RENEWAL METHOD AND NOTICE WINDOW] • [COMPLETION OR MATURITY DATE]. The parties shall state any conditions required for renewal or final completion.'],
-        ['Default, Remedies & Transition', 'The parties shall describe material defaults, written notice addresses, cure periods, available remedies, responsibility for loss, permitted suspension, termination effects and any transition or handover assistance.']
+        [blueprint.riskHeading, 'The parties shall describe material defaults, written notice addresses, cure periods, available remedies, responsibility for loss, permitted suspension, termination effects and any transition or handover assistance.']
       ]
     ),
     buildSection(
@@ -472,8 +472,8 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       template.sectionTitles[5],
       'All schedules, exhibits, technical requirements, property details, deliverable inventories and approved changes should be attached and identified by version. Notices shall be sent using the contact details completed below.',
       [
-        ['Governing Terms & Review', '[GOVERNING LAW] • [VENUE / DISPUTE PROCESS] • [REQUIRED APPROVALS]. The parties should confirm all mandatory consumer, employment, tenancy, privacy, licensing and sector-specific requirements that apply to this transaction.'],
-        ['Signature & Counterparts', 'The persons signing below confirm that they have reviewed the completed schedules and are authorized to sign for the stated party. Electronic and counterpart execution should be used only as permitted by applicable law and the parties’ agreed process.']
+        ['Governing Terms, Compliance & Disputes', '[GOVERNING LAW] • [VENUE / DISPUTE PROCESS] • [REQUIRED APPROVALS]. The parties should confirm all mandatory consumer, employment, tenancy, privacy, licensing and sector-specific requirements that apply to this transaction.'],
+        ['Execution, Counterparts & Schedules', 'The persons signing below confirm that they have reviewed the completed schedules and are authorized to sign for the stated party. Electronic and counterpart execution should be used only as permitted by applicable law and the parties’ agreed process.']
       ]
     )
   ];
