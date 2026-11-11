@@ -38,3 +38,20 @@ export function redoDocumentHistory(state: DocumentHistoryState): DocumentHistor
   const index = state.index + 1;
   return { state: { ...state, index }, document: state.snapshots[index] };
 }
+
+
+/**
+ * Find a version snapshot only within the requested document.
+ * The history may also contain snapshots from documents opened earlier.
+ */
+export function findDocumentVersionSnapshot(
+  snapshots: DocumentModel[],
+  documentId: string,
+  version: number
+): DocumentModel | null {
+  for (let index = snapshots.length - 1; index >= 0; index -= 1) {
+    const snapshot = snapshots[index];
+    if (snapshot.id === documentId && snapshot.version === version) return snapshot;
+  }
+  return null;
+}
