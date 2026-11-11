@@ -421,7 +421,7 @@ test('clause headings render as a separate display-font hierarchy above body cop
     images: []
   }];
   const pdf = generatePdfDocument(doc);
-  const pageContent = ((pdf as any).internal.pages as string[][]).slice(1).flat().join('');
+  const pageContent = outputText(pdf);
   const headingIndex = pageContent.indexOf('(VISUAL CLAUSE HEADING)');
   assert.ok(headingIndex >= 0, 'Expected clause heading in PDF text stream');
   const headingPrefix = pageContent.slice(Math.max(0, headingIndex - 180), headingIndex);
