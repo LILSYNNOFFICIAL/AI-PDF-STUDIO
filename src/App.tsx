@@ -1223,6 +1223,7 @@ export default function App() {
         document={document}
         activeSectionId={activeSectionId}
         onOpenDesign={() => setIsDesignModalOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
         onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         persona={persona}
         messages={messages}
@@ -1247,6 +1248,7 @@ export default function App() {
         onOpenTemplateGallery={() => setIsTemplateGalleryOpen(true)}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
+        onImportText={handleImportText}
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
         onCopyDocumentText={handleCopyDocumentText}
@@ -1255,6 +1257,8 @@ export default function App() {
         onRedaction={() => setIsRedactionOpen(true)}
         onInsertTable={() => { setInsertObjectTab('table'); setIsInsertObjectOpen(true); }}
         onInsertImage={() => { setInsertObjectTab('image'); setIsInsertObjectOpen(true); }}
+        onInsertSignature={handleOpenInsertSignature}
+        onAddAppendix={handleAddAppendix}
         onMetadata={() => setIsMetadataOpen(true)}
         onClauseLibrary={() => setIsClauseLibraryOpen(true)}
         onWatermark={() => setIsWatermarkCustomizerOpen(true)}

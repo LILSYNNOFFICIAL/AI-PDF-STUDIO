@@ -3,7 +3,7 @@ import {
   FileText, MessageSquare, ListTree, Wrench, Plus, Undo2, Redo2,
   FileDown, ShieldCheck, X, Search, Table2, Image, FileJson,
   FilePlus2, Scissors, BookOpen, Stamp, ClipboardCheck, Layers,
-  Printer, ChevronDown, Sparkles, Palette
+  Printer, ChevronDown, Sparkles, Palette, PenTool
 } from 'lucide-react';
 import { DocumentModel, AIPersona, Section } from '../types/document';
 import { VisualEditor } from './VisualEditor';
@@ -14,7 +14,7 @@ import { PERSONA_LABELS } from './Navbar';
 
 type MobileTab = 'editor' | 'ai' | 'outline' | 'tools';
 
-interface MobileWorkspaceProps {
+export interface MobileWorkspaceProps {
   document: DocumentModel;
   activeSectionId: string | null;
   persona: AIPersona;
@@ -29,6 +29,7 @@ interface MobileWorkspaceProps {
   onRedo: () => void;
   onOpenPdfPreview: () => void;
   onOpenDesign: () => void;
+  onOpenHelp: () => void;
   onOpenSourceTruth: () => void;
   onUpdateStyles: (styles: Partial<DocumentModel['styles']>) => void;
   onUpdatePageConfig: (config: Partial<DocumentModel['pageConfig']>) => void;
@@ -42,6 +43,7 @@ interface MobileWorkspaceProps {
   onOpenTemplateGallery: () => void;
   onExportJson: () => void;
   onImportJson: () => void;
+  onImportText: () => void;
   onExportMarkdown: () => void;
   onExportPlainText: () => void;
   onCopyDocumentText: () => void;
@@ -50,6 +52,8 @@ interface MobileWorkspaceProps {
   onRedaction: () => void;
   onInsertTable: () => void;
   onInsertImage: () => void;
+  onInsertSignature: () => void;
+  onAddAppendix: () => void;
   onMetadata: () => void;
   onClauseLibrary: () => void;
   onWatermark: () => void;
@@ -67,6 +71,42 @@ interface MobileWorkspaceProps {
   onSendMessage: (instruction: string) => void;
   onRollbackToVersion: (version: number) => void;
   onRunAudit: () => void;
+}
+
+export interface MobileToolAction {
+  label: string;
+  icon: React.ReactNode;
+  action: () => void;
+}
+
+export function getMobileToolActions(props: MobileWorkspaceProps): MobileToolAction[] {
+  return [
+    { label: 'Help center', icon: <BookOpen size={20}/>, action: props.onOpenHelp },
+    { label: 'Source of Truth / Render', icon: <FileText size={20}/>, action: props.onOpenSourceTruth },
+    { label: 'Document design', icon: <Palette size={20}/>, action: props.onOpenDesign },
+    { label: 'Template gallery', icon: <FileText size={20}/>, action: props.onOpenTemplateGallery },
+    { label: 'New document', icon: <FilePlus2 size={20}/>, action: props.onNewDocument },
+    { label: 'Blank document', icon: <FileText size={20}/>, action: props.onNewBlankDocument },
+    { label: 'Find & replace', icon: <Search size={20}/>, action: props.onFindReplace },
+    { label: 'Redact text', icon: <Scissors size={20}/>, action: props.onRedaction },
+    { label: 'Insert table', icon: <Table2 size={20}/>, action: props.onInsertTable },
+    { label: 'Insert image', icon: <Image size={20}/>, action: props.onInsertImage },
+    { label: 'Insert chart', icon: <Layers size={20}/>, action: props.onInsertChart },
+    { label: 'Insert signature', icon: <PenTool size={20}/>, action: props.onInsertSignature },
+    { label: 'Add appendix / exhibit', icon: <FilePlus2 size={20}/>, action: props.onAddAppendix },
+    { label: 'Clause library', icon: <BookOpen size={20}/>, action: props.onClauseLibrary },
+    { label: 'Watermark', icon: <Stamp size={20}/>, action: props.onWatermark },
+    { label: 'Readability', icon: <ClipboardCheck size={20}/>, action: props.onReadability },
+    { label: 'Document metadata', icon: <FileJson size={20}/>, action: props.onMetadata },
+    { label: 'Multi-document', icon: <Layers size={20}/>, action: props.onOpenMultiDoc },
+    { label: 'Print', icon: <Printer size={20}/>, action: props.onPrint },
+    { label: 'Export JSON', icon: <FileJson size={20}/>, action: props.onExportJson },
+    { label: 'Import JSON', icon: <FileDown size={20}/>, action: props.onImportJson },
+    { label: 'Import text / Markdown', icon: <FileText size={20}/>, action: props.onImportText },
+    { label: 'Export Markdown', icon: <FileText size={20}/>, action: props.onExportMarkdown },
+    { label: 'Export text', icon: <FileText size={20}/>, action: props.onExportPlainText },
+    { label: 'Copy document', icon: <FileText size={20}/>, action: props.onCopyDocumentText }
+  ];
 }
 
 export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
@@ -181,27 +221,7 @@ export const MobileWorkspace: React.FC<MobileWorkspaceProps> = (props) => {
               <button aria-label="Close tools" onClick={() => selectTab('editor')}><X size={19}/></button>
             </div>
             <div className="mobile-tools-grid">
-              {tool('Source of Truth / Render', <FileText size={20}/>, props.onOpenSourceTruth)}
-              {tool('Document design', <Palette size={20}/>, props.onOpenDesign)}
-              {tool('Template gallery', <FileText size={20}/>, props.onOpenTemplateGallery)}
-              {tool('New document', <FilePlus2 size={20}/>, props.onNewDocument)}
-              {tool('Blank document', <FileText size={20}/>, props.onNewBlankDocument)}
-              {tool('Find & replace', <Search size={20}/>, props.onFindReplace)}
-              {tool('Redact text', <Scissors size={20}/>, props.onRedaction)}
-              {tool('Insert table', <Table2 size={20}/>, props.onInsertTable)}
-              {tool('Insert image', <Image size={20}/>, props.onInsertImage)}
-              {tool('Insert chart', <Layers size={20}/>, props.onInsertChart)}
-              {tool('Clause library', <BookOpen size={20}/>, props.onClauseLibrary)}
-              {tool('Watermark', <Stamp size={20}/>, props.onWatermark)}
-              {tool('Readability', <ClipboardCheck size={20}/>, props.onReadability)}
-              {tool('Document metadata', <FileJson size={20}/>, props.onMetadata)}
-              {tool('Multi-document', <Layers size={20}/>, props.onOpenMultiDoc)}
-              {tool('Print', <Printer size={20}/>, props.onPrint)}
-              {tool('Export JSON', <FileJson size={20}/>, props.onExportJson)}
-              {tool('Import JSON', <FileDown size={20}/>, props.onImportJson)}
-              {tool('Export Markdown', <FileText size={20}/>, props.onExportMarkdown)}
-              {tool('Export text', <FileText size={20}/>, props.onExportPlainText)}
-              {tool('Copy document', <FileText size={20}/>, props.onCopyDocumentText)}
+              {getMobileToolActions(props).map(({ label, icon, action }) => tool(label, icon, action))}
             </div>
             <div className="mobile-template-row">
               <label htmlFor="mobile-template">Legacy starter templates</label>
