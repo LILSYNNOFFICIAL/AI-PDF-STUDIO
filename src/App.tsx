@@ -473,6 +473,38 @@ export default function App() {
     addAiMessage('Created and appended new section "ADDITIONAL SPECIAL COVENANTS".');
   };
 
+
+  const handleAddAppendix = () => {
+    const suffix = Date.now();
+    const appendix: Section = {
+      id: `sec_appendix_${suffix}`,
+      sectionNumber: '',
+      title: 'APPENDIX B: SCHEDULE OF INTELLECTUAL PROPERTY',
+      content: 'Detailed schedule of registered sound recordings and musical works. Complete each item and attach supporting registration or ownership records.',
+      clauses: [
+        {
+          id: `cl_appendix_${suffix}`,
+          clauseNumber: '',
+          heading: 'Master Recording Details',
+          content: 'Title: [RECORDING TITLE] • Primary Artist(s): [ARTIST NAME(S)] • Featured Artist(s): [FEATURED ARTIST(S)] • ISRC: [ISRC] • Producer(s): [PRODUCER CREDIT(S)] • Ownership / Split: [PERCENTAGE ALLOCATION].',
+          orderIndex: 1
+        }
+      ],
+      orderIndex: document.sections.length + 1,
+      isAppendix: true,
+      forcePageBreakBefore: true
+    };
+    const updated = recalculateNumbering({
+      ...document,
+      sections: [...document.sections, appendix],
+      version: document.version + 1
+    });
+    pushHistory(updated);
+    setActiveSectionId(appendix.id);
+    addAiMessage('Added an editable Appendix B schedule of intellectual property to the current document.');
+    showToast('Appendix / Exhibit added');
+  };
+
   const handleAddClause = () => {
     const targetSecId = activeSectionId || document.sections[0]?.id;
     if (!targetSecId) return;
@@ -1053,6 +1085,7 @@ export default function App() {
         onOpenRedaction={() => setIsRedactionOpen(true)}
         onOpenDesign={() => setIsDesignModalOpen(true)}
         onAddSection={handleAddSection}
+        onAddAppendix={handleAddAppendix}
         onOpenInsertTable={() => {
           setInsertObjectTab('table');
           setIsInsertObjectOpen(true);

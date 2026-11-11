@@ -67,6 +67,7 @@ interface MenuBarProps {
   onOpenRedaction: () => void;
   onOpenDesign: () => void;
   onAddSection: () => void;
+  onAddAppendix: () => void;
   onOpenInsertTable: () => void;
   onOpenInsertChart: () => void;
   onOpenInsertImage: () => void;
@@ -116,6 +117,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onOpenRedaction,
   onOpenDesign,
   onAddSection,
+  onAddAppendix,
   onOpenInsertTable,
   onOpenInsertChart,
   onOpenInsertImage,
@@ -378,33 +380,8 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               </button>
 
               <div className="border-t border-slate-800 my-1" />
-              <button 
-                onClick={() => executeAction(() => {
-                  const newDoc = {
-                    ...document,
-                    sections: [
-                      ...document.sections,
-                      {
-                        id: `sec_app_${Date.now()}`,
-                        sectionNumber: '',
-                        title: 'APPENDIX B: SCHEDULE OF INTELLECTUAL PROPERTY',
-                        content: 'Detailed schedule of registered sound recordings and musical works.',
-                        clauses: [
-                          {
-                            id: `cl_app_b_1`,
-                            clauseNumber: 'B.1',
-                            content: 'Master Recording metadata: Title, Artists, ISRC, Producer credits.',
-                            orderIndex: 1
-                          }
-                        ],
-                        orderIndex: document.sections.length + 1,
-                        isAppendix: true,
-                        forcePageBreakBefore: true
-                      }
-                    ]
-                  };
-                  onNewDocument();
-                })}
+              <button
+                onClick={() => executeAction(onAddAppendix)}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
               >
                 <FileCheck className="w-3.5 h-3.5 text-indigo-400" /> Appendix / Exhibit
