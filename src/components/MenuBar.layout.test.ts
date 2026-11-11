@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const menuSource = readFileSync(new URL('./MenuBar.tsx', import.meta.url), 'utf8');
-const stylesheet = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 
 test('desktop menu dropdowns are not clipped by the primary menu strip', () => {
   assert.match(menuSource, /className="[^"]*menu-primary-strip/);
