@@ -1085,7 +1085,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Document Title Header. A dedicated cover replaces this repeated title block in the body. */}
           {!documentDesign.coverPage.enabled && (
-          <div className={`text-center ${headerMetadataFields.length ? 'pb-8 mb-8' : 'pb-4 mb-4'}`} style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
+          <div className={`relative text-center ${headerMetadataFields.length ? 'pb-8 mb-8' : 'pb-4 mb-4'}`} style={{ borderBottom: `${Math.max(1, documentDesign.pageFurniture.dividerWidth * 2)}px solid ${documentDesign.pageFurniture.dividerColor}` }}>
             <h1
               contentEditable
               suppressContentEditableWarning
@@ -1106,7 +1106,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   ? document.title.toLowerCase().replace(/\b\p{L}/gu, character => character.toUpperCase())
                   : document.title}
             </h1>
-            {(headerMetadataFields.length > 0 || hiddenHeaderMetadataIds.length > 0) && (
+            {headerMetadataFields.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-sans" style={{ color: documentDesign.colors.mutedText }}>
                 {headerMetadataFields.map(field => (
                   <div key={field.id} className="group flex items-center gap-1 rounded px-1 py-0.5 hover:bg-slate-100/70">
@@ -1132,7 +1132,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                       aria-label={`Delete ${field.label || field.id} field`}
                       title={`Remove ${field.label || field.id} from the document header`}
                       onClick={() => handleHeaderMetadataRemove(field.id)}
-                      className="ml-0.5 rounded p-0.5 text-slate-400 opacity-0 transition-opacity hover:bg-rose-100 hover:text-rose-600 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-rose-400 group-hover:opacity-100"
+                      className="ml-0.5 rounded p-0.5 text-slate-400 opacity-70 transition-opacity hover:bg-rose-100 hover:text-rose-600 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-rose-400 group-hover:opacity-100"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -1154,6 +1154,22 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                   </select>
                 )}
               </div>
+            )}
+            {headerMetadataFields.length === 0 && hiddenHeaderMetadataIds.length > 0 && (
+              <select
+                aria-label="Restore document header field"
+                value=""
+                onChange={event => {
+                  if (event.target.value) handleHeaderMetadataRestore(event.target.value as 'version' | 'documentType' | 'date' | 'author');
+                }}
+                className="absolute right-0 top-0 rounded border border-slate-200 bg-white/80 px-1 py-0.5 text-[10px] text-slate-400 opacity-0 transition-opacity hover:opacity-100 focus:opacity-100"
+                title="Restore a removed document detail"
+              >
+                <option value="">+</option>
+                {hiddenHeaderMetadataIds.map(id => (
+                  <option key={id} value={id}>{({ version: 'Version', documentType: 'Document Type', date: 'Date', author: 'Author' })[id]}</option>
+                ))}
+              </select>
             )}
           </div>
           )}
