@@ -16,7 +16,8 @@ test('the menu bar establishes a top-level stacking layer above the editor canva
   assert.match(root, /z-\[?\d+\]?/);
 });
 
-test('More menu hover does not pre-toggle and close its click action', () => {
-  assert.match(menuSource, /onMouseEnter=\{\(\) => handleMenuHover\('more'\)\}/);
-  assert.doesNotMatch(menuSource, /onMouseEnter=\{\(\) => setActiveMenu\('more'\)\}/);
+test('menu buttons switch only on explicit clicks, avoiding hover-then-click toggle closure', () => {
+  assert.doesNotMatch(menuSource, /handleMenuHover|onMouseEnter=\{\(\) => setActiveMenu/);
+  assert.match(menuSource, /onClick=\{\(\) => handleMenuClick\('file'\)\}/);
+  assert.match(menuSource, /onClick=\{\(\) => handleMenuClick\('more'\)\}/);
 });
