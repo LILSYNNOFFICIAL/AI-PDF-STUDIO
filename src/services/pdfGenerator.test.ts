@@ -369,7 +369,7 @@ test('exports customizable labels for each signatory detail field', () => {
 
 
 test('cover page exports user-editable author label and date text', () => {
-  const doc = normalizeDocumentDesign(buildDocumentFromPrompt('Editable cover metadata').updatedDoc);
+  const doc = applyDocumentPreset(buildDocumentFromPrompt('Editable cover metadata').updatedDoc, 'midnight-executive');
   doc.design = {
     ...doc.design!,
     coverPage: { ...doc.design!.coverPage, enabled: true }
