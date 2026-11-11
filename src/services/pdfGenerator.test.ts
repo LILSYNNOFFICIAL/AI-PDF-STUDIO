@@ -425,6 +425,6 @@ test('clause headings render as a separate display-font hierarchy above body cop
   const headingIndex = pageContent.indexOf('(VISUAL CLAUSE HEADING)');
   assert.ok(headingIndex >= 0, 'Expected clause heading in PDF text stream');
   const headingPrefix = pageContent.slice(Math.max(0, headingIndex - 180), headingIndex);
-  assert.match(headingPrefix, /\\/F\\d+\\s+12(?:\\.0+)?\\s+Tf/, 'Clause heading should use the 12pt display hierarchy, not body typography');
+  assert.match(headingPrefix, /\/F\d+\s+12(?:\.0+)?\s+Tf/, 'Clause heading should use the 12pt display hierarchy, not body typography');
   assert.ok(pageContent.includes('(VISUAL CLAUSE BODY COPY MUST REMAIN SELECTABLE.)'));
 });
