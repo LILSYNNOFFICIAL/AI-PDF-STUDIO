@@ -1728,7 +1728,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                     <div className="text-xs space-y-1.5" style={{ color: documentDesign.colors.bodyText }}>
                       <div className="flex items-center gap-1.5">
-                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>By:</strong>
+                        <input aria-label="Signatory name label" value={party.nameLabel ?? 'By'} onChange={event => handleUpdateParty(idx, 'nameLabel', event.target.value)} className="w-14 shrink-0 bg-transparent text-xs font-semibold outline-none" style={{ color: documentDesign.colors.headingText }} /><span>:</span>
                         <input
                           type="text"
                           value={party.name}
@@ -1738,7 +1738,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>Title:</strong>
+                        <input aria-label="Signatory title label" value={party.titleLabel ?? 'Title'} onChange={event => handleUpdateParty(idx, 'titleLabel', event.target.value)} className="w-14 shrink-0 bg-transparent text-xs font-semibold outline-none" style={{ color: documentDesign.colors.headingText }} /><span>:</span>
                         <input
                           type="text"
                           value={party.title || ''}
@@ -1748,7 +1748,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>Company:</strong>
+                        <input aria-label="Signatory company label" value={party.companyLabel ?? 'Company'} onChange={event => handleUpdateParty(idx, 'companyLabel', event.target.value)} className="w-20 shrink-0 bg-transparent text-xs font-semibold outline-none" style={{ color: documentDesign.colors.headingText }} /><span>:</span>
                         <input
                           type="text"
                           value={party.company || ''}
@@ -1758,7 +1758,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <strong className="shrink-0" style={{ color: documentDesign.colors.headingText }}>Date:</strong>
+                        <input aria-label="Signatory date label" value={party.dateLabel ?? 'Date'} onChange={event => handleUpdateParty(idx, 'dateLabel', event.target.value)} className="w-14 shrink-0 bg-transparent text-xs font-semibold outline-none" style={{ color: documentDesign.colors.headingText }} /><span>:</span>
                         <input
                           type="text"
                           value={party.date || ''}
