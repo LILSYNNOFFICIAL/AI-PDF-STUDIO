@@ -102,3 +102,28 @@ test('uses a selected bare label as a customizable field instead of falling back
   assert.equal(fields[0].label, 'Effective Date');
   assert.equal(fields[0].kind, 'date');
 });
+
+
+test('duplicates a signature field immediately after the source with an independent ID', async () => {
+  const { duplicateSignatureField } = await import('./signatureBlocks');
+  const source = createDefaultSignatureFields();
+  source[1].value = 'Alex Example';
+  const duplicated = duplicateSignatureField(source, source[1].id, 'signature-field-copy-1');
+  assert.equal(duplicated.length, source.length + 1);
+  assert.deepEqual(duplicated.slice(1, 3).map(field => field.label), ['Name', 'Name (copy)']);
+  assert.equal(duplicated[2].value, 'Alex Example');
+  assert.notEqual(duplicated[2].id, duplicated[1].id);
+  assert.equal(source.length, 5, 'The original field list must not be mutated');
+});
+
+test('moves signature fields up and down without mutating the original list', async () => {
+  const { moveSignatureField } = await import('./signatureBlocks');
+  const source = createDefaultSignatureFields();
+  const movedUp = moveSignatureField(source, source[2].id, 'up');
+  assert.deepEqual(movedUp.map(field => field.label), ['Date', 'Extra field 1', 'Name', 'Extra field 2', 'Signature']);
+  const movedDown = moveSignatureField(movedUp, movedUp[1].id, 'down');
+  assert.deepEqual(movedDown.map(field => field.label), ['Date', 'Name', 'Extra field 1', 'Extra field 2', 'Signature']);
+  assert.deepEqual(source.map(field => field.label), ['Date', 'Name', 'Extra field 1', 'Extra field 2', 'Signature']);
+  assert.equal(moveSignatureField(source, source[0].id, 'up')[0].label, 'Date');
+  assert.equal(moveSignatureField(source, source[4].id, 'down')[4].label, 'Signature');
+});
