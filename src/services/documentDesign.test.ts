@@ -302,9 +302,10 @@ test('LIL SYNN theme preserves its exact palette and uses a professional framed 
     }
   );
   const cover = (preset as any).coverPage;
+  assert.equal(cover.style, 'modern-graphic');
   assert.deepEqual(cover, {
     enabled: true,
-    style: 'art-deco',
+    style: 'modern-graphic',
     background: { type: 'solid', color: '#050505', opacity: 1 },
     titleColor: '#ff4fa3',
     detailColor: '#c5c5c5',
@@ -328,7 +329,7 @@ test('legacy document design normalization supplies cover and layout defaults', 
 
   assert.deepEqual(cover, {
     enabled: false,
-    style: 'midnight-executive',
+    style: 'modern-graphic',
     background: { type: 'solid', color: '#0b0d12', opacity: 1 },
     titleColor: '#f8fafc',
     detailColor: '#94a3b8',

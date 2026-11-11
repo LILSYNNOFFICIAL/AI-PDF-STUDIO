@@ -16,7 +16,6 @@ import {
   Plus, 
   FilePlus, 
   Scissors, 
-  Layers, 
   ShieldCheck, 
   Wrench, 
   Sparkles, 
@@ -25,6 +24,7 @@ import {
   ZoomOut, 
   Maximize2,
   ChevronDown,
+  ChevronRight,
   Check,
   Type,
   AlignLeft,
@@ -37,8 +37,6 @@ import {
   Copy,
   FileCode,
   BookOpen,
-  Droplets,
-  BarChart3,
   CaseUpper
 } from 'lucide-react';
 import { DocumentModel, AIPersona, BrandProfile } from '../types/document';
@@ -51,6 +49,7 @@ interface MenuBarProps {
   onNewBlankDocument: () => void;
   onOpenTemplate: (templateName: string) => void;
   onOpenTemplateGallery: () => void;
+  onOpenHelp: () => void;
   onExportPdf: () => void;
   onPrint: () => void;
   onExportJson: () => void;
@@ -99,6 +98,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   onNewBlankDocument,
   onOpenTemplate,
   onOpenTemplateGallery,
+  onOpenHelp,
   onExportPdf,
   onPrint,
   onExportJson,
@@ -174,7 +174,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
       ref={menuBarRef} 
       className="h-8 bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none z-40 shrink-0 font-sans"
     >
-      <div className="flex items-center space-x-1">
+      <div className="flex min-w-0 items-center space-x-1 overflow-x-auto whitespace-nowrap">
         <button
           onMouseDown={event => event.preventDefault()}
           onClick={() => executeAction(onOpenTemplateGallery)}
@@ -182,6 +182,9 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           title="Browse the professional document template gallery"
         >
           <FileText className="h-3.5 w-3.5" /> Templates
+        </button>
+        <button type="button" onMouseDown={event => event.preventDefault()} onClick={() => executeAction(onOpenHelp)} className="flex items-center gap-1.5 rounded px-2.5 py-1 font-medium text-slate-300 transition-colors hover:bg-slate-800 hover:text-white" title="Open the built-in beginner-friendly help center">
+          <BookOpen className="h-3.5 w-3.5" /> Help
         </button>
         {/* FILE MENU */}
         <div className="relative">
@@ -526,25 +529,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           </button>
           {activeMenu === 'tools' && (
             <div className="absolute left-0 top-full mt-1 w-64 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
-              <button 
-                onClick={() => executeAction(onOpenClauseLibrary)}
-                className="w-full text-left px-3 py-1.5 hover:bg-emerald-600 hover:text-white flex items-center gap-2"
-              >
-                <BookOpen className="w-3.5 h-3.5 text-emerald-400" /> Clause Library &amp; Boilerplate Inserter
-              </button>
-              <button 
-                onClick={() => executeAction(onOpenWatermarkCustomizer)}
-                className="w-full text-left px-3 py-1.5 hover:bg-amber-600 hover:text-white flex items-center gap-2"
-              >
-                <Droplets className="w-3.5 h-3.5 text-amber-400" /> Watermark &amp; Margins Customizer
-              </button>
-              <button 
-                onClick={() => executeAction(onOpenReadability)}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-blue-400" /> Reading Time &amp; Metrics Inspector
-              </button>
-
               <div className="border-t border-slate-800 my-1" />
               <button 
                 onClick={() => executeAction(() => onTransformHeadingsCase('uppercase'))}
@@ -565,12 +549,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
                 className="w-full text-left px-3 py-1.5 hover:bg-emerald-600 hover:text-white flex items-center gap-2"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> QA Integrity &amp; Quality Audit
-              </button>
-              <button 
-                onClick={() => executeAction(onOpenMultiDoc)}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
-              >
-                <Layers className="w-3.5 h-3.5 text-blue-400" /> Multi-Document Workspace
               </button>
               <button 
                 onClick={() => executeAction(onOpenFindReplace)}
@@ -602,22 +580,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           {activeMenu === 'view' && (
             <div className="absolute left-0 top-full mt-1 w-52 max-h-[75vh] overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-md shadow-2xl py-1 z-50 text-slate-200">
               <button 
-                onClick={() => executeAction(toggleOutline)}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-              >
-                <span>Document Outline</span>
-                {isOutlineVisible && <Check className="w-3 h-3 text-blue-400" />}
-              </button>
-              <button 
-                onClick={() => executeAction(toggleAI)}
-                className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center justify-between"
-              >
-                <span>AI Orchestrator Panel</span>
-                {isAIVisible && <Check className="w-3 h-3 text-blue-400" />}
-              </button>
-
-              <div className="border-t border-slate-800 my-1" />
-              <button 
                 onClick={() => executeAction(() => setZoomLevel(prev => Math.min(150, prev + 10)))}
                 className="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"
               >
@@ -635,6 +597,35 @@ export const MenuBar: React.FC<MenuBarProps> = ({
               >
                 <Maximize2 className="w-3.5 h-3.5" /> Reset Zoom (100%)
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* MORE MENU: keeps advanced utilities available without crowding the primary bar */}
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => handleMenuClick('more')}
+            onMouseEnter={() => setActiveMenu('more')}
+            aria-haspopup="menu"
+            aria-expanded={activeMenu === 'more'}
+            className={`flex items-center gap-1 rounded px-2.5 py-1 font-semibold transition-colors hover:bg-slate-800 hover:text-white ${activeMenu === 'more' ? 'bg-slate-800 text-white' : 'text-slate-300'}`}
+            title="More tools and workspace options"
+          >
+            More <ChevronRight className="h-3 w-3" />
+          </button>
+          {activeMenu === 'more' && (
+            <div role="menu" className="absolute right-0 top-full mt-1 w-64 max-h-[75vh] overflow-y-auto rounded-md border border-slate-700/80 bg-slate-900 py-1 text-slate-200 shadow-2xl z-50">
+              <button onClick={() => executeAction(onOpenMetadata)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Document metadata &amp; properties</button>
+              <button onClick={() => executeAction(onOpenClauseLibrary)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Clause library &amp; boilerplate</button>
+              <button onClick={() => executeAction(onOpenWatermarkCustomizer)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Watermark &amp; margins</button>
+              <button onClick={() => executeAction(onOpenReadability)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Readability &amp; document metrics</button>
+              <button onClick={() => executeAction(onOpenMultiDoc)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Multi-document workspace</button>
+              <button onClick={() => executeAction(onOpenSourceTruth)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Source of truth &amp; integrity</button>
+              <div className="my-1 border-t border-slate-800" />
+              <button onClick={() => executeAction(toggleOutline)} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white"><span>Document outline</span>{isOutlineVisible && <Check className="h-3 w-3" />}</button>
+              <button onClick={() => executeAction(toggleAI)} className="flex w-full items-center justify-between px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white"><span>AI assistant panel</span>{isAIVisible && <Check className="h-3 w-3" />}</button>
+              <button onClick={() => executeAction(onOpenHelp)} className="w-full px-3 py-2 text-left text-xs hover:bg-blue-600 hover:text-white">Help center</button>
             </div>
           )}
         </div>

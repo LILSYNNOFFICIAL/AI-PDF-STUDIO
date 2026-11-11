@@ -74,7 +74,7 @@ const BASE_DESIGN: DocumentDesign = {
   },
   coverPage: {
     enabled: false,
-    style: 'midnight-executive',
+    style: 'modern-graphic',
     background: solid('#0b0d12'),
     titleColor: '#f8fafc',
     detailColor: '#94a3b8',
@@ -129,7 +129,7 @@ function makePreset(
       : presetId === 'dark-luxury' ? 'dark-luxury'
         : presetId === 'minimal-contemporary' || presetId === 'modern-legal' ? 'minimal'
           : presetId === 'bold-editorial' || presetId === 'editorial-luxe' ? 'editorial'
-            : 'midnight-executive',
+            : 'modern-graphic',
     background: solid('#0b0d12'),
     titleColor: '#f8fafc',
     detailColor: '#cbd5e1',
@@ -212,7 +212,7 @@ lilSynnPreset.pageFurniture.dividerColor = '#d99a32';
 lilSynnPreset.pageFurniture.dividerWidth = 0.8;
 lilSynnPreset.coverPage = {
   enabled: true,
-  style: 'art-deco',
+  style: 'modern-graphic',
   background: solid('#050505'),
   titleColor: '#ff4fa3',
   detailColor: '#c5c5c5',
@@ -280,7 +280,7 @@ DOCUMENT_DESIGN_PRESETS.push(
 
 const midnightPreset = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === 'midnight-executive')!;
 midnightPreset.coverPage = {
-  enabled: true, style: 'midnight-executive', background: solid('#0b0d12'),
+  enabled: true, style: 'modern-graphic', background: solid('#0b0d12'),
   titleColor: '#f8f4ea', detailColor: '#c7b58e', borderColor: '#b08a45',
   eyebrow: 'AGREEMENT', brandLine: '', showFrame: true, showLogoPlaceholder: false, showOrnamentalRule: true
 };
@@ -452,7 +452,7 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   const cover = design.coverPage;
   if (!cover || typeof cover !== 'object') throw new Error('coverPage must be an object.');
   if (typeof cover.enabled !== 'boolean') throw new Error('coverPage.enabled must be a boolean.');
-  if (!['midnight-executive', 'art-deco', 'dark-luxury', 'editorial', 'minimal'].includes(cover.style)) throw new Error('coverPage.style is unsupported.');
+  if (!['midnight-executive', 'modern-graphic', 'art-deco', 'dark-luxury', 'editorial', 'minimal'].includes(cover.style)) throw new Error('coverPage.style is unsupported.');
   validateFill(cover.background, 'coverPage.background');
   validateColor(cover.titleColor, 'coverPage.titleColor');
   validateColor(cover.detailColor, 'coverPage.detailColor');

@@ -4,6 +4,7 @@ import { buildDocumentFromPrompt } from './orchestrator';
 import {
   applyDocumentEditResponse,
   buildDocumentEditPrompt,
+  buildStructuralEditPrompt,
   executeAiDocumentEdit,
   prepareLongInstruction,
   type DocumentEditResponse
@@ -98,7 +99,19 @@ test('AI prompt requires actual document operations and forbids unsolicited summ
   assert.match(prompt, /execute.*instruction.*document/i);
   assert.match(prompt, /never summarize|do not summarize/i);
   assert.match(prompt, /sectionUpdates/);
+  assert.match(prompt, /Interpret intent semantically, not by exact command wording/i);
+  assert.match(prompt, /Available document capabilities include/i);
+  assert.match(prompt, /signature\/date insertion/i);
   assert.match(prompt, /SOURCE-BEGIN/);
+});
+
+test('structural AI prompt maps colloquial intent to the correct operation families', () => {
+  const doc = makeDocument();
+  const prompt = buildStructuralEditPrompt('Get rid of the unused clause and move the signatures to the end.', doc, 'auto_architect');
+  assert.match(prompt, /Infer the user’s intended outcome from natural language/i);
+  assert.match(prompt, /add\/create.*JSON Patch add/i);
+  assert.match(prompt, /signature\/date fields -> signature block operations/i);
+  assert.match(prompt, /Do not confuse “make this editable” with “delete this”/i);
 });
 
 test('executor sends real section content to Gemini and applies returned edits', async () => {

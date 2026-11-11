@@ -16,7 +16,7 @@ import { DOCUMENT_DESIGN_PRESETS, fillToCss } from '../services/documentDesign';
 interface TemplateGalleryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTemplate: (templateId: string, themeId: string) => void;
+  onCreateTemplate: (templateId: string, themeId: string, agreementType: string) => void;
 }
 
 type GalleryView = 'all' | 'favorites' | 'recent';
@@ -40,6 +40,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
   const [view, setView] = useState<GalleryView>('all');
   const [selectedTemplateId, setSelectedTemplateId] = useState('recording-artist-agreement');
   const [selectedThemeId, setSelectedThemeId] = useState('midnight-executive');
+  const [agreementType, setAgreementType] = useState('');
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -82,6 +83,10 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
   const selectedTheme = DOCUMENT_DESIGN_PRESETS.find(preset => preset.presetId === selectedThemeId)
     || DOCUMENT_DESIGN_PRESETS[0];
 
+  useEffect(() => {
+    setAgreementType(selectedTemplate?.title || '');
+  }, [selectedTemplate?.id]);
+
   const toggleFavorite = (templateId: string) => {
     setFavoriteIds(current => current.includes(templateId)
       ? current.filter(id => id !== templateId)
@@ -99,7 +104,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     setRecentIds(next.recents);
     const storage = getSafeStorage();
     if (storage) saveTemplateGalleryPreferences(storage, next);
-    onCreateTemplate(selectedTemplate.id, selectedThemeId);
+    onCreateTemplate(selectedTemplate.id, selectedThemeId, agreementType.trim() || selectedTemplate.title);
   };
 
   const closeOnEscape = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -290,6 +295,8 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                 </div>
 
                 <div className="border-t border-slate-800 p-4">
+                  <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-400" htmlFor="agreement-type-input">Agreement type / document title</label>
+                  <input id="agreement-type-input" type="text" value={agreementType} onChange={event => setAgreementType(event.target.value)} placeholder="Enter the agreement type" className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60" />
                   <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Choose a visual theme</label>
                   <select value={selectedThemeId} onChange={event => setSelectedThemeId(event.target.value)} className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60">
                     {DOCUMENT_DESIGN_PRESETS.map(preset => <option key={preset.presetId} value={preset.presetId}>{preset.name}</option>)}

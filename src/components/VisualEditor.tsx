@@ -521,6 +521,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
       return [
         item('add-section', 'Add document section', () => onUpdateDocument({ ...document, sections: [...document.sections, { id: 'sec_' + Date.now(), sectionNumber: (document.sections.length + 1) + '.0', title: 'New Section', content: 'Click to edit this section.', clauses: [], orderIndex: document.sections.length + 1 }], updatedAt: new Date().toISOString() })),
         item('insert-image', 'Insert image into document', () => canvasImageInputRef.current?.click()),
+        item('insert-signature', 'Insert signature / date fields', () => {
+          const targetSection = document.sections.find(entry => entry.id === activeSectionId) || document.sections[0];
+          if (!targetSection) return;
+          const end = (targetSection.content || '').length;
+          onInsertSignatureAtSelection?.({ sectionId: targetSection.id, start: end, end, selectedText: '' });
+        }),
+        item('toggle-page-break', activeSection?.forcePageBreakBefore ? 'Remove page break before active section' : 'Add page break before active section', () => {
+          if (activeSection) handleTogglePageBreak(activeSection);
+        }, { disabled: !activeSection }),
         item('document-design', 'Customize document design', () => onOpenDesign?.(activeSectionId || document.sections[0]?.id || '')),
         item('toggle-page-numbers', document.pageConfig.showPageNumbers ? 'Hide page numbers' : 'Show page numbers', () => onUpdateDocument({ ...document, pageConfig: { ...document.pageConfig, showPageNumbers: !document.pageConfig.showPageNumbers }, updatedAt: new Date().toISOString() })),
         item('toggle-cover-page', documentDesign.coverPage.enabled ? 'Hide cover page' : 'Show cover page', () => onUpdateDocument({ ...document, design: { ...documentDesign, coverPage: { ...documentDesign.coverPage, enabled: !documentDesign.coverPage.enabled } }, updatedAt: new Date().toISOString() })),
@@ -835,10 +844,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               border: documentDesign.coverPage.showFrame ? `1px solid ${documentDesign.coverPage.borderColor}` : '1px solid transparent'
             }}
           >
+            {documentDesign.coverPage.style === 'modern-graphic' && (
+              <svg aria-hidden="true" viewBox="0 0 160 160" className="pointer-events-none absolute right-12 top-12 z-0 h-44 w-44 opacity-60">
+                <circle cx="80" cy="80" r="68" fill="none" stroke={documentDesign.coverPage.borderColor} strokeWidth="1.1" />
+                <circle cx="80" cy="80" r="51" fill="none" stroke={documentDesign.coverPage.detailColor} strokeWidth="0.8" opacity="0.7" />
+                <circle cx="80" cy="80" r="34" fill="none" stroke={documentDesign.coverPage.borderColor} strokeWidth="0.8" opacity="0.8" />
+                <path d="M12 80h136 M80 12v136" fill="none" stroke={documentDesign.coverPage.detailColor} strokeWidth="0.65" opacity="0.45" />
+                <circle cx="80" cy="80" r="4" fill={documentDesign.coverPage.titleColor} />
+              </svg>
+            )}
             {documentDesign.coverPage.showFrame && (
               <>
                 <div className="pointer-events-none absolute inset-4 border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.9 }} />
-                <div className="pointer-events-none absolute inset-[22px] border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.45 }} />
+                {(documentDesign.coverPage.style === 'art-deco' || documentDesign.coverPage.style === 'dark-luxury') && (
+                  <div className="pointer-events-none absolute inset-[22px] border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.45 }} />
+                )}
                 {documentDesign.coverPage.style === 'art-deco' && (
                   <div className="pointer-events-none absolute inset-9 border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.28 }} />
                 )}

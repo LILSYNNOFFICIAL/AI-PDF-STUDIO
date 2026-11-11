@@ -2,11 +2,11 @@ import type { SignatureField } from '../types/document';
 
 export function createDefaultSignatureFields(): SignatureField[] {
   return [
-    { id: 'signature-field-legal-name', label: 'Legal name', kind: 'text', value: '' },
-    { id: 'signature-field-artist-name', label: 'Artist name', kind: 'text', value: '' },
-    { id: 'signature-field-label', label: 'Label', kind: 'text', value: '' },
-    { id: 'signature-field-signature', label: 'Signature', kind: 'signature', value: '' },
-    { id: 'signature-field-date', label: 'Date', kind: 'date', value: '' }
+    { id: 'signature-field-date', label: 'Date', kind: 'date', value: '' },
+    { id: 'signature-field-name', label: 'Name', kind: 'text', value: '' },
+    { id: 'signature-field-extra-1', label: 'Extra field 1', kind: 'text', value: '' },
+    { id: 'signature-field-extra-2', label: 'Extra field 2', kind: 'text', value: '' },
+    { id: 'signature-field-signature', label: 'Signature', kind: 'signature', value: '' }
   ];
 }
 

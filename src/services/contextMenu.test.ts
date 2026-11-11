@@ -34,7 +34,7 @@ test('context menu action registry exposes only actions relevant to each documen
 
 test('canvas and cover context menus expose direct editing actions', () => {
   assert.deepEqual(getContextMenuActionIds('document'), [
-    'add-section', 'insert-image', 'document-design', 'toggle-page-numbers', 'toggle-cover-page', 'change-page-size', 'change-page-orientation', 'change-page-background'
+    'add-section', 'insert-image', 'insert-signature', 'toggle-page-break', 'document-design', 'toggle-page-numbers', 'toggle-cover-page', 'change-page-size', 'change-page-orientation', 'change-page-background'
   ]);
   assert.deepEqual(getContextMenuActionIds('cover-logo'), [
     'upload-logo', 'edit-brand-name', 'increase-logo-size', 'decrease-logo-size',
