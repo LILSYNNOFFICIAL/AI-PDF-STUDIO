@@ -43,7 +43,7 @@ const PROFILES: ProfileSeed[] = [
     clauseHeadings: [
       ['Work Identification & Version Control','Contributor Roles & Capacity'],
       ['Writer Contributions & Composition Shares','Unfinished Material, Revisions & Approval'],
-      ['Writer Shares & Publisher Splits','Collection, Statements & Reconciliation'],
+      ['Writer Shares & Publisher Splits','Publisher Splits & Registration Duties'],
       ['Composition Ownership & Administration Rights','Samples, Interpolations & Third-Party Material'],
       ['Publisher / PRO Registration Duties','Disputed Shares, Corrections & Amendments'],
       ['Split Schedule & Contact Details','Confirmation of Shares & Execution']
