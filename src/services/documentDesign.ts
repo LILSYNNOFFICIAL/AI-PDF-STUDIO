@@ -147,6 +147,7 @@ function makePreset(
   const headingTreatment = headingTreatmentByPreset[presetId] || 'editorial-rule';
   const sectionSpacingByStyle = { minimal: 17, 'side-rule': 20, 'numbered-card': 22, 'editorial-rule': 24, 'double-rule': 26, banner: 18 } as const;
   const sectionPaddingByStyle = { minimal: 5, 'side-rule': 8, 'numbered-card': 12, 'editorial-rule': 12, 'double-rule': 14, banner: 8 } as const;
+  result.sectionDefaults.padding = sectionPaddingByStyle[headingTreatment];
   const gridlineWidthByStyle = { minimal: 0.25, 'side-rule': 0.35, 'numbered-card': 0.55, 'editorial-rule': 0.4, 'double-rule': 0.65, banner: 0.45 } as const;
   result.tableDefaults.gridlineWidth = gridlineWidthByStyle[headingTreatment];
   result.layoutDefaults = {
