@@ -335,15 +335,116 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     if (cover.style === 'modern-graphic') {
       const motifX = pageWidth - frameInset - 31;
       const motifY = frameInset + 34;
-      pdf.setDrawColor(...colorToRgb(cover.borderColor));
-      pdf.setLineWidth(0.35);
-      [25, 18, 11].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
-      pdf.setDrawColor(...colorToRgb(cover.detailColor));
-      pdf.setLineWidth(0.22);
-      pdf.line(motifX - 29, motifY, motifX + 29, motifY);
-      pdf.line(motifX, motifY - 29, motifX, motifY + 29);
-      pdf.setFillColor(...colorToRgb(cover.titleColor));
-      pdf.circle(motifX, motifY, 1.5, 'F');
+      const category = String(cover.artworkCategory || '').toLowerCase();
+      const accent = colorToRgb(cover.borderColor);
+      const highlight = colorToRgb(cover.titleColor);
+      const detail = colorToRgb(cover.detailColor);
+      pdf.setLineWidth(0.38);
+      if (category.includes('music')) {
+        pdf.setDrawColor(...accent);
+        for (let wave = 0; wave < 2; wave += 1) {
+          for (let step = 0; step < 15; step += 1) {
+            const x1 = motifX - 27 + step * 3.8;
+            const x2 = x1 + 3.8;
+            const y1 = motifY + Math.sin(step * 0.72 + wave * 0.7) * (wave ? 8 : 14);
+            const y2 = motifY + Math.sin((step + 1) * 0.72 + wave * 0.7) * (wave ? 8 : 14);
+            pdf.line(x1, y1, x2, y2);
+          }
+        }
+        pdf.setDrawColor(...detail);
+        [8, 14, 20].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
+      } else if (category.includes('business')) {
+        const points = [[motifX - 25, motifY + 17], [motifX - 9, motifY + 7], [motifX + 5, motifY + 11], [motifX + 25, motifY - 17]];
+        pdf.setDrawColor(...accent);
+        for (let i = 0; i < points.length - 1; i += 1) pdf.line(points[i][0], points[i][1], points[i + 1][0], points[i + 1][1]);
+        pdf.setFillColor(...highlight);
+        points.forEach(point => pdf.circle(point[0], point[1], 1.8, 'F'));
+        pdf.setDrawColor(...detail);
+        pdf.line(motifX - 28, motifY + 24, motifX + 28, motifY + 24);
+      } else if (category.includes('real estate')) {
+        pdf.setDrawColor(...accent);
+        pdf.rect(motifX - 26, motifY - 2, 14, 27, 'S');
+        pdf.rect(motifX - 8, motifY - 15, 17, 40, 'S');
+        pdf.rect(motifX + 13, motifY + 4, 13, 21, 'S');
+        pdf.line(motifX - 10, motifY - 15, motifX + 0.5, motifY - 25);
+        pdf.line(motifX + 0.5, motifY - 25, motifX + 11, motifY - 15);
+        pdf.setDrawColor(...detail);
+        pdf.line(motifX - 21, motifY + 8, motifX - 21, motifY + 15);
+        pdf.line(motifX - 3, motifY - 7, motifX - 3, motifY + 2);
+        pdf.line(motifX + 18, motifY + 11, motifX + 18, motifY + 17);
+      } else if (category.includes('creative')) {
+        pdf.setDrawColor(...accent);
+        [25, 18, 11].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
+        pdf.setDrawColor(...detail);
+        pdf.line(motifX - 28, motifY + 26, motifX + 28, motifY - 26);
+        pdf.line(motifX - 28, motifY - 26, motifX + 28, motifY + 26);
+        pdf.setFillColor(...highlight);
+        pdf.circle(motifX, motifY, 2, 'F');
+      } else if (category.includes('employment')) {
+        pdf.setDrawColor(...accent);
+        pdf.roundedRect(motifX - 25, motifY - 25, 50, 50, 3, 3, 'S');
+        pdf.line(motifX - 15, motifY - 11, motifX + 14, motifY - 11);
+        pdf.line(motifX - 15, motifY - 2, motifX + 8, motifY - 2);
+        pdf.line(motifX - 15, motifY + 7, motifX + 1, motifY + 7);
+        pdf.setDrawColor(...highlight);
+        pdf.setLineWidth(1.2);
+        pdf.line(motifX + 5, motifY + 13, motifX + 11, motifY + 19);
+        pdf.line(motifX + 11, motifY + 19, motifX + 22, motifY + 5);
+      } else if (category.includes('legal') || category.includes('corporate')) {
+        pdf.setDrawColor(...accent);
+        pdf.line(motifX, motifY - 26, motifX, motifY + 23);
+        pdf.line(motifX - 23, motifY - 14, motifX + 23, motifY - 14);
+        pdf.line(motifX - 16, motifY - 14, motifX - 22, motifY + 2);
+        pdf.line(motifX - 16, motifY - 14, motifX - 10, motifY + 2);
+        pdf.line(motifX + 16, motifY - 14, motifX + 10, motifY + 2);
+        pdf.line(motifX + 16, motifY - 14, motifX + 22, motifY + 2);
+        pdf.line(motifX - 25, motifY + 3, motifX - 7, motifY + 3);
+        pdf.line(motifX + 7, motifY + 3, motifX + 25, motifY + 3);
+        pdf.line(motifX - 13, motifY + 23, motifX + 13, motifY + 23);
+        pdf.setDrawColor(...detail);
+        pdf.circle(motifX, motifY - 25, 2, 'S');
+      } else if (category.includes('finance')) {
+        pdf.setDrawColor(...accent);
+        pdf.rect(motifX - 25, motifY + 5, 9, 20, 'S');
+        pdf.rect(motifX - 10, motifY - 4, 9, 29, 'S');
+        pdf.rect(motifX + 5, motifY - 14, 9, 39, 'S');
+        pdf.rect(motifX + 20, motifY - 24, 7, 49, 'S');
+        pdf.setDrawColor(...highlight);
+        pdf.line(motifX - 27, motifY + 1, motifX - 8, motifY - 9);
+        pdf.line(motifX - 8, motifY - 9, motifX + 9, motifY - 4);
+        pdf.line(motifX + 9, motifY - 4, motifX + 27, motifY - 27);
+      } else if (category.includes('technology')) {
+        const nodes = [[motifX - 23, motifY - 15], [motifX + 18, motifY - 21], [motifX + 25, motifY + 17], [motifX - 15, motifY + 23], [motifX, motifY]];
+        const links = [[0, 1], [1, 2], [2, 4], [4, 3], [3, 0], [0, 4], [1, 4]];
+        pdf.setDrawColor(...accent);
+        links.forEach(([a, b]) => pdf.line(nodes[a][0], nodes[a][1], nodes[b][0], nodes[b][1]));
+        pdf.setFillColor(...highlight);
+        nodes.forEach(point => pdf.circle(point[0], point[1], 2.4, 'F'));
+      } else if (category.includes('marketing')) {
+        pdf.setDrawColor(...accent);
+        [25, 18, 11, 4].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
+        for (let angle = 0; angle < 360; angle += 45) {
+          const radians = angle * Math.PI / 180;
+          pdf.line(motifX + Math.cos(radians) * 27, motifY + Math.sin(radians) * 27, motifX + Math.cos(radians) * 32, motifY + Math.sin(radians) * 32);
+        }
+      } else if (category.includes('lil-synn')) {
+        pdf.setDrawColor(...highlight);
+        [26, 19, 12].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
+        pdf.setDrawColor(...accent);
+        pdf.line(motifX - 27, motifY + 22, motifX + 27, motifY - 22);
+        pdf.line(motifX - 27, motifY - 22, motifX + 27, motifY + 22);
+        pdf.setFillColor(...accent);
+        pdf.triangle(motifX, motifY - 4, motifX + 4, motifY, motifX, motifY + 4, 'F');
+        pdf.triangle(motifX, motifY - 4, motifX - 4, motifY, motifX, motifY + 4, 'F');
+      } else {
+        pdf.setDrawColor(...accent);
+        [25, 18, 11].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
+        pdf.setDrawColor(...detail);
+        pdf.line(motifX - 29, motifY, motifX + 29, motifY);
+        pdf.line(motifX, motifY - 29, motifX, motifY + 29);
+        pdf.setFillColor(...highlight);
+        pdf.circle(motifX, motifY, 1.5, 'F');
+      }
     }
 
     const centerX = pageWidth / 2;
