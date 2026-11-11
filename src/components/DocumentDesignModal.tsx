@@ -578,7 +578,11 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                   <span>{pageConfigDraft.headerText || 'DOCUMENT HEADER'}</span><span>{pageConfigDraft.headerRightText ?? 'CONFIDENTIAL'}</span>
                 </div>
                 <div
-                  className={'mb-2 flex items-center gap-2 rounded-sm px-2 py-1.5 ' + (design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'border' : '')}
+                  className={'mb-2 flex items-center gap-2 rounded-sm px-2 py-1.5 ' + (
+                    design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'border'
+                      : design.layoutDefaults.sectionHeadingStyle === 'side-rule' ? 'pl-3'
+                        : design.layoutDefaults.sectionHeadingStyle === 'double-rule' ? 'py-2' : ''
+                  )}
                   style={{
                     background: design.layoutDefaults.sectionHeadingStyle === 'banner'
                       ? design.colors.primary
@@ -586,8 +590,9 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                         ? design.colors.sectionSurface
                         : 'transparent',
                     borderColor: design.colors.border,
-                    borderBottom: design.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '1px solid ' + design.colors.accent : undefined,
-                    borderLeft: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? '3px solid ' + design.colors.accent : undefined
+                    borderBottom: ['editorial-rule', 'double-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '1px solid ' + design.colors.accent : undefined,
+                    borderTop: design.layoutDefaults.sectionHeadingStyle === 'double-rule' ? '1px solid ' + design.colors.accent : undefined,
+                    borderLeft: ['numbered-card', 'side-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '3px solid ' + design.colors.accent : undefined
                   }}
                 >
                   <span className="font-mono text-[8px] font-bold" style={{ color: design.colors.accent }}>1.0</span>
@@ -599,13 +604,16 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                   <div className="h-1.5 w-[94%] rounded" style={{ background: design.colors.bodyText, opacity: 0.55 }} />
                   <div className="h-1.5 w-[82%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
                 </div>
-                <div className="mt-4 rounded border p-2" style={{ background: fillToCss(design.sectionDefaults.background), borderColor: design.colors.border }}>
-                  <span className="text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.colors.accent }}>Table / schedule</span>
-                  <div className="mt-2 grid grid-cols-3 gap-1">
-                    {[0, 1, 2].map(index => <div key={index} className="h-1.5 rounded-sm" style={{ background: design.colors.tableHeaderSurface }} />)}
+                <div className="mt-4 overflow-hidden rounded border" style={{ borderColor: design.tableDefaults.gridlineColor }}>
+                  <div className="grid grid-cols-3" style={{ background: fillToCss(design.tableDefaults.headerBackground) }}>
+                    {['ITEM', 'DETAIL', 'VALUE'].map(label => <span key={label} className="px-1.5 py-1 text-[6px] font-bold" style={{ color: design.tableDefaults.headerTextColor }}>{label}</span>)}
                   </div>
-                  <div className="mt-1.5 h-1 w-[90%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
-                  <div className="mt-1.5 h-1 w-[65%] rounded" style={{ background: design.colors.bodyText, opacity: 0.35 }} />
+                  <div className="grid grid-cols-3 border-t" style={{ background: fillToCss(design.tableDefaults.bodyBackground), borderColor: design.tableDefaults.gridlineColor }}>
+                    {[0, 1, 2].map(index => <span key={index} className="px-1.5 py-2 text-[6px]" style={{ color: design.tableDefaults.bodyTextColor }}>Details</span>)}
+                  </div>
+                  <div className="grid grid-cols-3 border-t" style={{ background: fillToCss(design.tableDefaults.alternateRowBackground), borderColor: design.tableDefaults.gridlineColor }}>
+                    {[0, 1, 2].map(index => <span key={index} className="px-1.5 py-2 text-[6px]" style={{ color: design.tableDefaults.bodyTextColor }}>Details</span>)}
+                  </div>
                 </div>
                 <div className="mt-3 flex justify-between border-t pt-2 text-[7px]" style={{ color: design.pageFurniture.footerTextColor, borderColor: design.layoutDefaults.footerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
                   <span>{pageConfigDraft.footerText || 'DOCUMENT FOOTER'}</span><span>Page 1</span>
@@ -832,6 +840,8 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                   <select value={design.layoutDefaults.sectionHeadingStyle} onChange={event => updateLayout({ sectionHeadingStyle: event.target.value as DocumentDesign['layoutDefaults']['sectionHeadingStyle'] })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100">
                     <option value="editorial-rule">Editorial rule</option>
                     <option value="numbered-card">Numbered card</option>
+                    <option value="side-rule">Side accent rule</option>
+                    <option value="double-rule">Double rule</option>
                     <option value="minimal">Minimal</option>
                     <option value="banner">Full-width banner</option>
                   </select>
@@ -854,10 +864,18 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
               </section>
               <section className="col-span-full rounded-xl border border-slate-700 bg-slate-950/50 p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-300">Heading style preview</h3>
-                <div className={'mt-3 flex items-center gap-3 ' + (design.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded px-3 py-3' : design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded border p-2' : 'pb-2')} style={{
-                  background: design.layoutDefaults.sectionHeadingStyle === 'banner' ? design.colors.primary : 'transparent',
-                  borderBottom: design.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '1px solid ' + design.colors.border : 'none',
-                  borderColor: design.colors.border
+                <div className={'mt-3 flex items-center gap-3 ' + (
+                  design.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded px-3 py-3'
+                    : design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded border p-2'
+                      : design.layoutDefaults.sectionHeadingStyle === 'side-rule' ? 'pl-3 py-1'
+                        : design.layoutDefaults.sectionHeadingStyle === 'double-rule' ? 'py-2'
+                          : 'pb-2'
+                )} style={{
+                  background: design.layoutDefaults.sectionHeadingStyle === 'banner' ? design.colors.primary : design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.sectionSurface : 'transparent',
+                  borderBottom: ['editorial-rule', 'double-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '1px solid ' + design.colors.accent : 'none',
+                  borderTop: design.layoutDefaults.sectionHeadingStyle === 'double-rule' ? '1px solid ' + design.colors.accent : 'none',
+                  borderLeft: ['numbered-card', 'side-rule'].includes(design.layoutDefaults.sectionHeadingStyle) ? '3px solid ' + design.colors.accent : 'none',
+                  borderColor: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.border : design.colors.accent
                 }}>
                   <span className="rounded px-2 py-1 font-mono text-xs font-bold" style={{ color: design.colors.accent, background: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? design.colors.sectionSurface : 'transparent' }}>1.0</span>
                   <span className="text-lg font-semibold" style={{ color: design.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>Professional Section Heading</span>
