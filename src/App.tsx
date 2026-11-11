@@ -804,6 +804,8 @@ export default function App() {
   };
 
   const handleImportText = () => {
+    const pending = flushPendingManualEdit();
+    const currentDoc = pending.document ?? document;
     const input = window.document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.md,text/plain,text/markdown';
@@ -814,7 +816,7 @@ export default function App() {
       reader.onload = (event) => {
         try {
           const source = String(event.target?.result || '');
-          const imported = parseTextDocument(source, document);
+          const imported = parseTextDocument(source, currentDoc);
           pushHistory(imported);
           setActiveSectionId(imported.sections[0]?.id || null);
           addAiMessage(`Imported "${imported.title}" with ${imported.sections.length} sections. Source text, nested headings, lists, URLs, and signature text were retained. The AI editor will now operate on this imported document, not the sample template.`);
@@ -835,9 +837,11 @@ export default function App() {
       showToast('Paste your complete document before rendering');
       return;
     }
+    const pending = flushPendingManualEdit();
+    const currentDoc = pending.document ?? document;
     setIsRenderingSource(true);
     try {
-      const parsedDocument = parseTextDocument(sourceTruthText, document, new Date().toISOString(), sourceTruthPresetId);
+      const parsedDocument = parseTextDocument(sourceTruthText, currentDoc, new Date().toISOString(), sourceTruthPresetId);
       const rendered = {
         ...parsedDocument,
         sections: parsedDocument.sections.map(section => section.scrollableContent !== undefined ? {
@@ -853,8 +857,6 @@ export default function App() {
       };
       // Commit directly rather than passing through legacy style synchronization,
       // which could carry the old sample document's formatting into the new render.
-      const pending = flushPendingManualEdit();
-      const currentDoc = pending.document ?? document;
       const nextHistory = appendDocumentHistory(pending.history, currentDoc, rendered);
       setHistoryState(nextHistory);
       setDocument(rendered);
@@ -1180,7 +1182,7 @@ export default function App() {
         isOrchestrating={isOrchestrating}
         canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
-        onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
+        onUpdateTitle={(title) => handleEditorDocumentChange({ ...document, title })}
         onUpdateDocument={handleEditorDocumentChange}
         onSelectPersona={setPersona}
         onUndo={handleUndo}
@@ -1217,7 +1219,7 @@ export default function App() {
         }}
         onUpdateSection={(updatedSection) => {
           const sections = document.sections.map(s => s.id === updatedSection.id ? updatedSection : s);
-          setDocument(prev => ({ ...prev, sections, updatedAt: new Date().toISOString() }));
+          handleEditorDocumentChange({ ...document, sections });
         }}
         onDeleteSection={handleDeleteSection}
         onDuplicateSection={handleDuplicateSection}
