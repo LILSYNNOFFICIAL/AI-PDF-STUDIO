@@ -2,11 +2,11 @@ import type { SignatureField } from '../types/document';
 
 export function createDefaultSignatureFields(): SignatureField[] {
   return [
-    { id: 'signature-field-legal-name', label: 'Legal name', kind: 'text', value: '' },
-    { id: 'signature-field-artist-name', label: 'Artist name', kind: 'text', value: '' },
-    { id: 'signature-field-label', label: 'Label', kind: 'text', value: '' },
-    { id: 'signature-field-signature', label: 'Signature', kind: 'signature', value: '' },
-    { id: 'signature-field-date', label: 'Date', kind: 'date', value: '' }
+    { id: 'signature-field-legal-name', label: 'Legal name', kind: 'text', value: '', lineLength: 48 },
+    { id: 'signature-field-artist-name', label: 'Artist name', kind: 'text', value: '', lineLength: 48 },
+    { id: 'signature-field-label', label: 'Label', kind: 'text', value: '', lineLength: 48 },
+    { id: 'signature-field-signature', label: 'Signature', kind: 'signature', value: '', lineLength: 48 },
+    { id: 'signature-field-date', label: 'Date', kind: 'date', value: '', lineLength: 30 }
   ];
 }
 
@@ -20,7 +20,9 @@ export function parseSignatureFields(source: string): SignatureField[] {
 
     const label = match[1].replace(/\*+/g, '').trim();
     if (!label) continue;
-    const value = (match[2] || '').replace(/\*+/g, '').trim();
+    const rawValue = (match[2] || '').replace(/\*+/g, '').trim();
+    const lineLength = Math.max(8, (rawValue.match(/[_\-–—.]/g) || []).length || 48);
+    const value = /^[_\-–—.\s]+$/.test(rawValue) ? '' : rawValue;
     const normalized = label.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
     const kind: SignatureField['kind'] = normalized === 'signature'
       ? 'signature'
@@ -32,7 +34,8 @@ export function parseSignatureFields(source: string): SignatureField[] {
       id: 'signature-field-' + (fields.length + 1),
       label,
       kind,
-      value: /^[_\-–—.\s]+$/.test(value) ? '' : value
+      value,
+      lineLength
     });
   }
 

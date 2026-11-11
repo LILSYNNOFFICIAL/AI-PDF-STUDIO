@@ -274,6 +274,8 @@ export interface SignatureField {
   label: string;
   kind: 'text' | 'signature' | 'date';
   value?: string;
+  /** Desired blank-line length in approximate characters; PDF rendering fits it to printable width. */
+  lineLength?: number;
 }
 
 export interface InlineSignatureBlock {
@@ -348,6 +350,8 @@ export interface DocumentModel {
   id: string;
   title: string;
   type: DocumentType;
+  /** Free-form agreement label shown in document metadata. */
+  agreementType?: string;
   version: number;
   createdAt: string;
   updatedAt: string;
