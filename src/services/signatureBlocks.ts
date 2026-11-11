@@ -40,3 +40,26 @@ export function parseSignatureFields(source: string): SignatureField[] {
 
   return fields;
 }
+
+
+export function duplicateSignatureField(fields: SignatureField[], fieldId: string, requestedId: string): SignatureField[] {
+  const index = fields.findIndex(field => field.id === fieldId);
+  if (index < 0) return fields;
+  let id = requestedId;
+  let suffix = 1;
+  while (fields.some(field => field.id === id)) id = requestedId + '-copy-' + suffix++;
+  const source = fields[index];
+  const duplicate: SignatureField = { ...source, id, label: source.label ? source.label + ' (copy)' : 'Field copy' };
+  const next = [...fields];
+  next.splice(index + 1, 0, duplicate);
+  return next;
+}
+
+export function moveSignatureField(fields: SignatureField[], fieldId: string, direction: 'up' | 'down'): SignatureField[] {
+  const index = fields.findIndex(field => field.id === fieldId);
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (index < 0 || targetIndex < 0 || targetIndex >= fields.length) return fields;
+  const next = [...fields];
+  [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+  return next;
+}

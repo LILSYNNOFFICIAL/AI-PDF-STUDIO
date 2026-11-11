@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Table as TableIcon, PieChart, Image as ImageIcon, PenTool, X, Plus, Trash2, Check } from 'lucide-react';
+import { Table as TableIcon, PieChart, Image as ImageIcon, PenTool, X, Plus, Trash2, Check, Copy, ChevronUp, ChevronDown } from 'lucide-react';
 import { DocumentModel, InlineSignatureBlock, SignatureField } from '../types/document';
-import { createDefaultSignatureFields, parseSignatureFields } from '../services/signatureBlocks';
+import { createDefaultSignatureFields, duplicateSignatureField, moveSignatureField, parseSignatureFields } from '../services/signatureBlocks';
 import { insertTableBlock, insertChartBlock } from '../orchestrator/orchestrator';
 
 export interface SignatureInsertionTarget {
@@ -545,7 +545,7 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
                 </p>
               </div>
               <div className="space-y-2">
-                {signatureFields.map(field => (
+                {signatureFields.map((field, fieldIndex) => (
                   <div key={field.id} className="grid grid-cols-[minmax(82px,1fr)_82px_82px_minmax(90px,1.2fr)_auto] items-center gap-1.5">
                     <input
                       aria-label="Signature field label"
@@ -570,7 +570,12 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
                         className="min-w-0 rounded border border-slate-700 bg-slate-950 px-2 py-2 text-[11px] text-slate-200"
                       />
                     )}
-                    <button type="button" onClick={() => setSignatureFields(current => current.filter(item => item.id !== field.id))} aria-label={'Remove ' + field.label} className="rounded px-2 py-1 text-slate-500 hover:bg-rose-950/50 hover:text-rose-300">×</button>
+                    <div className="flex items-center justify-end gap-0.5">
+                      <button type="button" disabled={fieldIndex === 0} onClick={() => setSignatureFields(current => moveSignatureField(current, field.id, 'up'))} aria-label={'Move ' + field.label + ' up'} title="Move field up" className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-25"><ChevronUp className="h-3.5 w-3.5" /></button>
+                      <button type="button" disabled={fieldIndex === signatureFields.length - 1} onClick={() => setSignatureFields(current => moveSignatureField(current, field.id, 'down'))} aria-label={'Move ' + field.label + ' down'} title="Move field down" className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-25"><ChevronDown className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => setSignatureFields(current => duplicateSignatureField(current, field.id, 'signature-field-copy-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)))} aria-label={'Duplicate ' + field.label} title="Duplicate field" className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-blue-300"><Copy className="h-3.5 w-3.5" /></button>
+                      <button type="button" onClick={() => setSignatureFields(current => current.filter(item => item.id !== field.id))} aria-label={'Remove ' + field.label} title="Remove field" className="rounded p-1 text-slate-500 hover:bg-rose-950/50 hover:text-rose-300"><X className="h-3.5 w-3.5" /></button>
+                    </div>
                   </div>
                 ))}
                 <button
