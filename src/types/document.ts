@@ -95,7 +95,7 @@ export interface CoverPageDesign {
 }
 
 export interface DocumentLayoutDefaults {
-  sectionHeadingStyle: 'editorial-rule' | 'numbered-card' | 'minimal' | 'banner';
+  sectionHeadingStyle: 'editorial-rule' | 'numbered-card' | 'minimal' | 'banner' | 'side-rule' | 'double-rule';
   sectionSpacing: number;
   headerRule: boolean;
   footerRule: boolean;
