@@ -137,7 +137,7 @@ const PROFILES: ProfileSeed[] = [
       'Summarize the primary responsibilities, expected work location, schedule, travel and reporting arrangements. Detailed duties may be maintained in a separate job description.',
       'State compensation, pay frequency, exempt/non-exempt classification where applicable, incentive eligibility, benefits eligibility and expense reimbursement rules.',
       'Reference applicable confidentiality, information-security, invention-assignment and company-property policies. Do not imply that a separate policy has been signed unless it is attached.',
-      'Describe the employment duration and separation terms consistent with applicable law and the employer's actual policy. Avoid inserting a waiver of non-waivable rights.',
+      'Describe the employment duration and separation terms consistent with applicable law and the actual employer policy. Avoid inserting a waiver of non-waivable rights.',
       'List incorporated policies, eligibility documents and required attachments. Provide a clear acceptance deadline and signature area for both the employer and candidate.'
     ]
   },
