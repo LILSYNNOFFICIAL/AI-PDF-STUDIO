@@ -19,10 +19,10 @@ test('every template category and the LIL SYNN identity have a bundled, well-for
     const assetUrl = new URL('../../public' + getTemplateArtworkPath(category), import.meta.url);
     assert.ok(existsSync(assetUrl), 'Missing local artwork for ' + category);
     const svg = readFileSync(assetUrl, 'utf8');
-    assert.match(svg, /^<svg\\b/);
-    assert.match(svg, /<\\/svg>\\s*$/);
+    assert.match(svg, /^<svg\b/);
+    assert.match(svg, /<\/svg>\s*$/);
   }
   const lilSynnUrl = new URL('../../public' + getLilSynnArtworkPath(), import.meta.url);
   assert.ok(existsSync(lilSynnUrl), 'Missing dedicated LIL SYNN artwork');
-  assert.match(readFileSync(lilSynnUrl, 'utf8'), /^<svg\\b/);
+  assert.match(readFileSync(lilSynnUrl, 'utf8'), /^<svg\b/);
 });
