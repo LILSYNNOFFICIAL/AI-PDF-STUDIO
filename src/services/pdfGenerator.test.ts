@@ -339,3 +339,29 @@ test('exports the editable right-side running header label', () => {
   const text = outputText(generatePdfDocument(doc));
   assert.ok(text.includes('INTERNAL DRAFT'));
 });
+
+
+test('exports customizable labels for each signatory detail field', () => {
+  const doc = buildDocumentFromPrompt('Custom signatory labels').updatedDoc;
+  doc.signatures = {
+    title: 'EXECUTION',
+    executionText: 'The parties sign below.',
+    parties: [{
+      id: 'custom-label-party',
+      role: 'AUTHORIZED SIGNATORY',
+      name: 'Alex Example',
+      nameLabel: 'Signer',
+      title: 'Chief Executive Officer',
+      titleLabel: 'Position',
+      company: 'Example Corporation',
+      companyLabel: 'Organization',
+      date: '2026-11-11',
+      dateLabel: 'Signed on'
+    }]
+  };
+  const text = outputText(generatePdfDocument(doc));
+  assert.ok(text.includes('Signer: Alex Example'));
+  assert.ok(text.includes('Position: Chief Executive Officer'));
+  assert.ok(text.includes('Organization: Example Corporation'));
+  assert.ok(text.includes('Signed on: 2026-11-11'));
+});
