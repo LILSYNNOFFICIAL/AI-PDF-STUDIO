@@ -147,6 +147,7 @@ function makePreset(
   const headingTreatment = headingTreatmentByPreset[presetId] || 'editorial-rule';
   const sectionSpacingByStyle = { minimal: 17, 'side-rule': 20, 'numbered-card': 22, 'editorial-rule': 24, 'double-rule': 26, banner: 18 } as const;
   const sectionPaddingByStyle = { minimal: 5, 'side-rule': 8, 'numbered-card': 12, 'editorial-rule': 12, 'double-rule': 14, banner: 8 } as const;
+  if (presetId !== 'lil-synn') result.sectionDefaults.padding = sectionPaddingByStyle[headingTreatment];
   const gridlineWidthByStyle = { minimal: 0.25, 'side-rule': 0.35, 'numbered-card': 0.55, 'editorial-rule': 0.4, 'double-rule': 0.65, banner: 0.45 } as const;
   result.tableDefaults.gridlineWidth = gridlineWidthByStyle[headingTreatment];
   result.layoutDefaults = {
@@ -552,6 +553,21 @@ export function validateTableDesign(design: TableDesign): void {
   if (design.gridlineWidth !== undefined && (!Number.isFinite(design.gridlineWidth) || design.gridlineWidth < 0 || design.gridlineWidth > 10)) {
     throw new Error('table.gridlineWidth must be between 0 and 10.');
   }
+}
+
+
+export function getSectionHeadingBorderStyles(
+  style: DocumentDesign['layoutDefaults']['sectionHeadingStyle'],
+  accent: string,
+  border: string
+): { borderTop: string; borderBottom: string; borderLeft: string; borderColor: string } {
+  const isDoubleRule = style === 'double-rule';
+  return {
+    borderTop: isDoubleRule ? `3px double ${accent}` : 'none',
+    borderBottom: style === 'editorial-rule' ? `1px solid ${accent}` : isDoubleRule ? `3px double ${accent}` : 'none',
+    borderLeft: style === 'numbered-card' || style === 'side-rule' ? `3px solid ${accent}` : 'none',
+    borderColor: style === 'numbered-card' ? border : accent
+  };
 }
 
 export function validateDocumentDesign(design: DocumentDesign): void {
