@@ -332,6 +332,20 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       }
     }
 
+    if (cover.style === 'modern-graphic') {
+      const motifX = pageWidth - frameInset - 31;
+      const motifY = frameInset + 34;
+      pdf.setDrawColor(...colorToRgb(cover.borderColor));
+      pdf.setLineWidth(0.35);
+      [25, 18, 11].forEach(radius => pdf.circle(motifX, motifY, radius, 'S'));
+      pdf.setDrawColor(...colorToRgb(cover.detailColor));
+      pdf.setLineWidth(0.22);
+      pdf.line(motifX - 29, motifY, motifX + 29, motifY);
+      pdf.line(motifX, motifY - 29, motifX, motifY + 29);
+      pdf.setFillColor(...colorToRgb(cover.titleColor));
+      pdf.circle(motifX, motifY, 1.5, 'F');
+    }
+
     const centerX = pageWidth / 2;
     const innerWidth = pageWidth - margins.left - margins.right - 28;
     const titleText = applyHeadingCase(doc.title);
