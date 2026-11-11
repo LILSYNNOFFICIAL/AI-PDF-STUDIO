@@ -160,12 +160,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
     setActiveMenu(prev => prev === menu ? null : menu);
   };
 
-  const handleMenuHover = (menu: string) => {
-    if (activeMenu !== null) {
-      setActiveMenu(menu);
-    }
-  };
-
   const executeAction = (action: () => void) => {
     action();
     setActiveMenu(null);
@@ -192,7 +186,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         <div className="relative">
           <button
             onClick={() => handleMenuClick('file')}
-            onMouseEnter={() => handleMenuHover('file')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
               activeMenu === 'file' ? 'bg-slate-800 text-white' : ''
             }`}
@@ -288,7 +281,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         <div className="relative">
           <button
             onClick={() => handleMenuClick('edit')}
-            onMouseEnter={() => handleMenuHover('edit')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
               activeMenu === 'edit' ? 'bg-slate-800 text-white' : ''
             }`}
@@ -337,7 +329,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           <button
             onMouseDown={event => event.preventDefault()}
             onClick={() => handleMenuClick('insert')}
-            onMouseEnter={() => handleMenuHover('insert')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
               activeMenu === 'insert' ? 'bg-slate-800 text-white' : ''
             }`}
@@ -394,7 +385,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         <div className="relative">
           <button
             onClick={() => handleMenuClick('format')}
-            onMouseEnter={() => handleMenuHover('format')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
               activeMenu === 'format' ? 'bg-slate-800 text-white' : ''
             }`}
@@ -497,7 +487,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         <div className="relative">
           <button
             onClick={() => handleMenuClick('tools')}
-            onMouseEnter={() => handleMenuHover('tools')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
               activeMenu === 'tools' ? 'bg-slate-800 text-white' : ''
             }`}
@@ -547,7 +536,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
         <div className="relative">
           <button
             onClick={() => handleMenuClick('view')}
-            onMouseEnter={() => handleMenuHover('view')}
             className={`px-2.5 py-1 rounded hover:bg-slate-800 hover:text-white transition-colors ${
               activeMenu === 'view' ? 'bg-slate-800 text-white' : ''
             }`}
@@ -585,7 +573,6 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           <button
             type="button"
             onClick={() => handleMenuClick('more')}
-            onMouseEnter={() => handleMenuHover('more')}
             aria-haspopup="menu"
             aria-expanded={activeMenu === 'more'}
             className={`flex items-center gap-1 rounded px-2.5 py-1 font-semibold transition-colors hover:bg-slate-800 hover:text-white ${activeMenu === 'more' ? 'bg-slate-800 text-white' : 'text-slate-300'}`}
