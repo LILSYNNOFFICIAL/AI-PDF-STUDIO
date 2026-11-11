@@ -23,6 +23,8 @@ import {
   serializeDocumentTheme,
   parseDocumentTheme,
   duplicateSavedTheme,
+  filterDocumentDesignPresets,
+  getDocumentDesignPresetCategory,
   type SavedDocumentTheme
 } from '../services/documentDesign';
 
@@ -278,6 +280,10 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
   const [savedThemes, setSavedThemes] = useState<SavedDocumentTheme[]>([]);
   const [themeName, setThemeName] = useState('');
   const [storageMessage, setStorageMessage] = useState('');
+  const [presetQuery, setPresetQuery] = useState('');
+  const [presetCategory, setPresetCategory] = useState('All');
+
+  const presetCategoryLabel = (presetId: string) => { const preset = DOCUMENT_DESIGN_PRESETS.find(item => item.presetId === presetId); return preset ? getDocumentDesignPresetCategory(preset) + ' collection' : 'Custom collection'; };
 
   const selectedSection = useMemo(
     () => document.sections.find(section => section.id === sectionId) || document.sections[0],
@@ -609,21 +615,75 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
           </section>
 
           {tab === 'presets' && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {DOCUMENT_DESIGN_PRESETS.map(preset => (
-                <button key={preset.presetId} onClick={() => setDesign(deepCloneDesign(preset))} className={'rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-xl ' + (design.presetId === preset.presetId ? 'border-blue-500 bg-blue-950/30 shadow-lg shadow-blue-950/30' : 'border-slate-700 bg-slate-950 hover:border-slate-500')}>
-                  <div className="mb-3 flex h-32 items-center justify-center overflow-hidden rounded-lg border p-2" style={{ background: fillToCss(preset.coverPage.background), borderColor: preset.coverPage.borderColor }}>
-                    <div className="flex h-full w-full flex-col items-center justify-center border px-2 text-center" style={{ borderColor: preset.coverPage.showFrame ? preset.coverPage.borderColor : 'transparent' }}>
-                      <span className="text-[6px] font-semibold tracking-[0.2em]" style={{ color: preset.coverPage.detailColor }}>{preset.coverPage.eyebrow}</span>
-                      <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight" style={{ color: preset.coverPage.titleColor, fontFamily: preset.typography.headingFontFamily }}>{document.title}</span>
-                      {preset.coverPage.showOrnamentalRule && <span className="mt-2 h-px w-9" style={{ background: preset.coverPage.borderColor }} />}
-                      <div className="mt-auto flex gap-1.5 pb-1">{[preset.colors.primary, preset.colors.secondary, preset.colors.accent, preset.colors.border].map((color, index) => <span key={index} className="h-2 w-2 rounded-full" style={{ background: color }} />)}</div>
-                    </div>
-                  </div>
-                  <span className="block text-xs font-semibold">{preset.name}</span>
-                  <span className="mt-1 block text-[10px] text-slate-500">{preset.coverPage.enabled ? 'Cover + interior theme' : 'Interior theme'}</span>
-                </button>
-              ))}
+            <div className="space-y-5">
+              <div className="flex flex-col gap-3 rounded-2xl border border-slate-700/80 bg-slate-950/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-100">Find your document style</p>
+                  <p className="mt-1 text-[11px] text-slate-400">Explore {DOCUMENT_DESIGN_PRESETS.length} complete visual systems. Each preview shows cover design, page typography, and table styling.</p>
+                </div>
+                <label className="w-full sm:max-w-xs">
+                  <span className="sr-only">Search visual themes</span>
+                  <input value={presetQuery} onChange={event => setPresetQuery(event.target.value)} placeholder="Search themes..." className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-xs text-slate-100 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {['All', 'Business', 'Editorial', 'Creative', 'Legal', 'Technology', 'Finance', 'Minimal', 'Dark'].map(category => (
+                  <button key={category} onClick={() => setPresetCategory(category)} aria-pressed={presetCategory === category} className={'rounded-full border px-3 py-1.5 text-[10px] font-semibold transition ' + (presetCategory === category ? 'border-blue-400 bg-blue-500/15 text-blue-200' : 'border-slate-700 bg-slate-900/70 text-slate-400 hover:border-slate-500 hover:text-slate-200')}>{category}</button>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filterDocumentDesignPresets(DOCUMENT_DESIGN_PRESETS, presetQuery, presetCategory).map(preset => {
+                  const selected = design.presetId === preset.presetId;
+                  const pageBg = preset.colors.pageSurface;
+                  const heading = preset.colors.headingText;
+                  const body = preset.colors.bodyText;
+                  const accent = preset.colors.accent;
+                  return (
+                    <button key={preset.presetId} onClick={() => setDesign(deepCloneDesign(preset))} aria-pressed={selected} className={'group overflow-hidden rounded-2xl border text-left transition duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ' + (selected ? 'border-blue-400 bg-blue-950/20 shadow-lg shadow-blue-950/20' : 'border-slate-700/80 bg-slate-950/70 hover:border-slate-500')}>
+                      <div className="grid grid-cols-[0.82fr_1fr] gap-2 bg-slate-900/80 p-3">
+                        <div className="relative flex aspect-[3/4] min-h-[142px] flex-col items-center justify-center overflow-hidden rounded-lg border px-2 py-3 text-center shadow-lg" style={{ background: fillToCss(preset.coverPage.background), borderColor: preset.coverPage.borderColor }}>
+                          {preset.coverPage.showFrame && <div className="pointer-events-none absolute inset-2 border opacity-70" style={{ borderColor: preset.coverPage.borderColor }} />}
+                          <span className="relative text-[5px] font-bold tracking-[0.18em]" style={{ color: preset.coverPage.detailColor }}>{preset.coverPage.eyebrow || 'DOCUMENT SERIES'}</span>
+                          <span className="relative mt-3 line-clamp-3 text-[11px] font-bold leading-tight" style={{ color: preset.coverPage.titleColor, fontFamily: preset.typography.headingFontFamily }}>{document.title || 'Document Title'}</span>
+                          {preset.coverPage.showOrnamentalRule && <span className="relative mt-3 h-[2px] w-8" style={{ background: preset.coverPage.borderColor }} />}
+                          <span className="relative mt-auto text-[5px] tracking-wider" style={{ color: preset.coverPage.detailColor }}>{preset.name.toUpperCase()}</span>
+                        </div>
+                        <div className="flex aspect-[3/4] min-h-[142px] flex-col rounded-lg border p-2.5 shadow-lg" style={{ background: pageBg, borderColor: preset.colors.border }}>
+                          <div className="border-b pb-2" style={{ borderColor: preset.layoutDefaults.headerRule ? preset.colors.border : 'transparent' }}>
+                            <div className="h-1 w-8 rounded-full" style={{ background: accent }} />
+                            <div className="mt-2 text-[9px] font-bold leading-tight" style={{ color: heading, fontFamily: preset.typography.headingFontFamily }}>01. Overview</div>
+                            <div className="mt-1 h-1 w-10/12 rounded-full" style={{ background: body, opacity: 0.55 }} />
+                          </div>
+                          <div className="mt-2 space-y-1.5">
+                            <div className="h-1 w-full rounded-full" style={{ background: body, opacity: 0.42 }} />
+                            <div className="h-1 w-11/12 rounded-full" style={{ background: body, opacity: 0.3 }} />
+                            <div className="h-1 w-9/12 rounded-full" style={{ background: body, opacity: 0.3 }} />
+                          </div>
+                          <div className="mt-3 overflow-hidden rounded-sm border" style={{ borderColor: preset.colors.border }}>
+                            <div className="h-3" style={{ background: fillToCss(preset.tableDefaults.headerBackground) }} />
+                            <div className="grid grid-cols-2 gap-1 p-1" style={{ background: fillToCss(preset.tableDefaults.bodyBackground) }}>
+                              {[0,1,2,3].map(i => <span key={i} className="h-1 rounded-full" style={{ background: preset.tableDefaults.bodyTextColor, opacity: i % 2 ? 0.35 : 0.55 }} />)}
+                            </div>
+                          </div>
+                          <div className="mt-auto flex items-center justify-between border-t pt-2" style={{ borderColor: preset.colors.border }}>
+                            <span className="h-1 w-8 rounded-full" style={{ background: preset.colors.mutedText, opacity: 0.7 }} />
+                            <span className="text-[6px]" style={{ color: preset.colors.mutedText }}>01 / 08</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-start justify-between gap-2 px-3 pb-3 pt-2.5">
+                        <div className="min-w-0">
+                          <span className="block text-xs font-semibold text-slate-100">{preset.name}</span>
+                          <span className="mt-1 block text-[10px] text-slate-400">{preset.coverPage.enabled ? 'Cover + interior system' : 'Interior design system'}</span>
+                          <span className="mt-2 inline-flex rounded-full px-2 py-1 text-[9px] font-semibold" style={{ color: accent, backgroundColor: accent + '18' }}>{presetCategoryLabel(preset.presetId)}</span>
+                        </div>
+                        <span className={'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs ' + (selected ? 'border-blue-400 bg-blue-500 text-white' : 'border-slate-700 text-transparent group-hover:border-slate-500')}>✓</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {filterDocumentDesignPresets(DOCUMENT_DESIGN_PRESETS, presetQuery, presetCategory).length === 0 && <div className="rounded-xl border border-dashed border-slate-700 py-12 text-center text-xs text-slate-400">No visual themes match that search. Try another name or category.</div>}
             </div>
           )}
 
