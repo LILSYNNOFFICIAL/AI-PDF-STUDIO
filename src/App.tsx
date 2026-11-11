@@ -589,11 +589,21 @@ export default function App() {
     try {
       const freshDocument = buildTemplateDocument(templateId, agreementType);
       const themedDocument = applyDocumentPreset(freshDocument, themeId);
-      pushHistory(themedDocument);
-      setActiveSectionId(themedDocument.sections[0]?.id || null);
+      const documentWithArtwork: DocumentModel = {
+        ...themedDocument,
+        design: themedDocument.design ? {
+          ...themedDocument.design,
+          coverPage: {
+            ...themedDocument.design.coverPage,
+            artworkCategory: themeId === 'lil-synn' ? 'lil-synn' : template.category
+          }
+        } : themedDocument.design
+      };
+      pushHistory(documentWithArtwork);
+      setActiveSectionId(documentWithArtwork.sections[0]?.id || null);
       setIsTemplateGalleryOpen(false);
-      addAiMessage('Created a fresh ' + themedDocument.title + ' document from the ' + template.title + ' template using the ' + (themedDocument.design?.name || themeId) + ' theme. The template content and visual theme remain independent.');
-      showToast('Created ' + themedDocument.title);
+      addAiMessage('Created a fresh ' + documentWithArtwork.title + ' document from the ' + template.title + ' template using the ' + (documentWithArtwork.design?.name || themeId) + ' theme. The template content and visual theme remain independent.');
+      showToast('Created ' + documentWithArtwork.title);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to create the selected template.');
     }

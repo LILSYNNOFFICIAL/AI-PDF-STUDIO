@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildDocumentFromPrompt } from '../orchestrator/orchestrator';
 import { generatePdfDocument } from './pdfGenerator';
+import { applyDocumentPreset } from './documentDesign';
 
 function outputText(pdf: ReturnType<typeof generatePdfDocument>): string {
   return pdf.output();
@@ -306,4 +307,27 @@ test('cover page embeds the selected brand logo instead of printing a static BRA
 
   assert.match(output, /\/Subtype \/Image/);
   assert.ok(!output.includes('(BRAND)'));
+});
+
+
+test('PDF cover artwork renders safely for every template category and LIL SYNN', () => {
+  const categories = [
+    'Music & Entertainment', 'Business & Commercial', 'Real Estate & Rentals',
+    'Creative & Freelance', 'Employment & HR', 'Corporate & Legal',
+    'Finance & Investment', 'Technology & Data', 'Marketing & Partnerships',
+    'Personal & General', 'lil-synn'
+  ];
+  for (const artworkCategory of categories) {
+    const base = applyDocumentPreset(buildDocumentFromPrompt('Cover artwork verification').updatedDoc, 'midnight-executive');
+    const document = {
+      ...base,
+      design: {
+        ...base.design!,
+        coverPage: { ...base.design!.coverPage, enabled: true, style: 'modern-graphic' as const, artworkCategory }
+      }
+    };
+    const pdf = generatePdfDocument(document);
+    assert.ok(pdf.getNumberOfPages() >= 2, 'Expected cover plus document pages for ' + artworkCategory);
+    assert.ok(outputText(pdf).length > 1000, 'Expected PDF content for ' + artworkCategory);
+  }
 });

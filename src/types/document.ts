@@ -90,6 +90,8 @@ export interface CoverPageDesign {
   showFrame: boolean;
   showLogoPlaceholder: boolean;
   showOrnamentalRule: boolean;
+  /** Optional template-category motif used by the PDF cover renderer. */
+  artworkCategory?: string;
 }
 
 export interface DocumentLayoutDefaults {
