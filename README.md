@@ -8,7 +8,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 
 ## What it does
 
-- **Create from templates:** Browse a searchable catalog of 100 structured templates across music and entertainment, business, real estate, creative work, employment, corporate/legal, finance, technology, marketing, and general use.
+- **Create from templates:** Browse a searchable catalog of 101 structured templates across music and entertainment, business, real estate, creative work, employment, corporate/legal, finance, technology, marketing, and general use.
 - **Name the agreement:** Standard templates let you enter the agreement type or document title before creation. The LIL SYNN legacy template keeps its own branded agreement identity.
 - **Create from a prompt:** Start a new document by describing the document you need and the information it should contain.
 - **Edit visually:** Update document titles, cover details, section headings, body text, clauses, tables, charts, images, and signature blocks in the editor.
@@ -22,7 +22,7 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 1. Open AI PDF Studio.
 2. Choose **Templates** to browse the catalog, or create a blank document / start from an AI prompt.
 3. Select a template and enter the agreement type or title.
-4. Choose a visual theme and create the document. The LIL SYNN theme defaults music templates to **Music Agreement**; other templates retain their own editable agreement title.
+4. Choose a visual theme and create the document. Only the dedicated **LIL SYNN Music Agreement** template defaults to **Music Agreement** and the `music_agreement` classification. Every other template keeps its own editable agreement title and classification, even when the LIL SYNN visual theme is selected.
 5. Replace bracketed placeholders with the actual parties, dates, amounts, scope, rights, and other deal-specific information.
 6. Use the editor to revise any wording or layout, including both left and right running-header text, the cover author label, and the cover date. Right-click a document object or blank document canvas for contextual actions. Use the **More ›** menu for secondary utilities such as metadata, the clause library, watermarks, readability, multi-document tools, source integrity, outline visibility, and the AI panel.
 7. Open the AI assistant and describe the result you want, for example:
@@ -35,11 +35,11 @@ AI PDF Studio helps people create professional agreements and general-purpose do
 
 ## Templates and agreement types
 
-The template catalog contains 100 editable template definitions in 10 categories. A template provides document-specific structure and starter wording. A design theme provides colors, typography, cover treatment, page furniture, section appearance, tables, and signature styling.
+The template catalog contains 101 editable template definitions in 10 categories. A template provides document-specific structure and starter wording. A design theme provides colors, typography, cover treatment, page furniture, section appearance, tables, and signature styling.
 
 These are deliberately separate: changing a theme should not silently rewrite the agreement.
 
-For standard templates, the agreement type / document title field can be customized at creation. If left unchanged, the template's title is used. Music-category templates are not automatically classified as the special LIL SYNN music agreement type.
+For standard templates, the agreement type / document title field can be customized at creation. If left unchanged, the template's title is used. Only the dedicated LIL SYNN Music Agreement template receives the special `music_agreement` classification. All other music templates default to their own title and remain freely editable, independent of the selected visual theme.
 
 ## Signature and date fields
 

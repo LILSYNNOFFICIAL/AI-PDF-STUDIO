@@ -3,6 +3,7 @@ import { ArrowRight, Clock3, FileText, Heart, Search, Sparkles, Star, X } from '
 import {
   DOCUMENT_TEMPLATE_CATALOG,
   TEMPLATE_CATEGORIES,
+  LIL_SYNN_TEMPLATE_ID,
   TEMPLATE_CATEGORY_COUNTS,
   getTemplateById,
   getTemplateAgreementDefaults,
@@ -87,8 +88,9 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     || DOCUMENT_DESIGN_PRESETS[0];
 
   useEffect(() => {
-    setAgreementType(getTemplateAgreementDefaults(selectedTemplate, selectedThemeId).agreementType);
+    setAgreementType(getTemplateAgreementDefaults(selectedTemplate).agreementType);
     setAgreementTypeTouched(false);
+    if (selectedTemplate?.id === LIL_SYNN_TEMPLATE_ID) setSelectedThemeId('lil-synn');
   }, [selectedTemplate?.id]);
 
   const toggleFavorite = (templateId: string) => {
@@ -108,7 +110,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
     setRecentIds(next.recents);
     const storage = getSafeStorage();
     if (storage) saveTemplateGalleryPreferences(storage, next);
-    onCreateTemplate(selectedTemplate.id, selectedThemeId, agreementType.trim() || getTemplateAgreementDefaults(selectedTemplate, selectedThemeId).agreementType);
+    onCreateTemplate(selectedTemplate.id, selectedThemeId, agreementType.trim() || getTemplateAgreementDefaults(selectedTemplate).agreementType);
   };
 
   const closeOnEscape = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -307,7 +309,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                   <select value={selectedThemeId} onChange={event => {
                     const nextThemeId = event.target.value;
                     setSelectedThemeId(nextThemeId);
-                    if (!agreementTypeTouched) setAgreementType(getTemplateAgreementDefaults(selectedTemplate, nextThemeId).agreementType);
+                    // Visual themes never change the agreement type or document classification.
                   }} className="mb-3 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-xs text-slate-100 outline-none focus:border-amber-500/60">
                     {DOCUMENT_DESIGN_PRESETS.map(preset => <option key={preset.presetId} value={preset.presetId}>{preset.presetId === 'lil-synn' ? 'LIL SYNN • Music Agreement' : preset.name}</option>)}
                   </select>

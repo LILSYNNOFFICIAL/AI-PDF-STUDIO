@@ -4,7 +4,7 @@ import { applyDocumentPreset } from './documentDesign';
 import { DOCUMENT_DESIGN_PRESETS } from './documentDesign';
 
 const EXPECTED_COUNTS = {
-  'Music & Entertainment': 20,
+  'Music & Entertainment': 21,
   'Business & Commercial': 12,
   'Real Estate & Rentals': 12,
   'Creative & Freelance': 10,
@@ -22,10 +22,10 @@ test('the catalog contains exactly 100 templates in the approved category counts
     TEMPLATE_CATEGORY_COUNTS: Record<string, number>;
   };
   assert.ok(Array.isArray(catalogApi.DOCUMENT_TEMPLATE_CATALOG));
-  assert.equal(catalogApi.DOCUMENT_TEMPLATE_CATALOG.length, 100);
+  assert.equal(catalogApi.DOCUMENT_TEMPLATE_CATALOG.length, 101);
   assert.deepEqual(catalogApi.TEMPLATE_CATEGORY_COUNTS, EXPECTED_COUNTS);
   const ids = catalogApi.DOCUMENT_TEMPLATE_CATALOG.map(item => item.id);
-  assert.equal(new Set(ids).size, 100, 'All 100 template IDs must be unique');
+  assert.equal(new Set(ids).size, 101, 'All 101 template IDs must be unique');
   for (const item of catalogApi.DOCUMENT_TEMPLATE_CATALOG) {
     assert.ok(item.id.trim());
     assert.ok(item.title.trim());
@@ -165,33 +165,37 @@ test('standard music-category templates use a neutral legal type and accept a us
 });
 
 
-test('only the LIL SYNN music theme defaults a music template to Music Agreement', async () => {
+test('only the dedicated LIL SYNN template defaults to Music Agreement; other templates remain freely named', async () => {
   const api = await import('./templateCatalog') as unknown as {
-    getTemplateById: (id: string) => { title: string; category: string; documentType: string } | undefined;
+    LIL_SYNN_TEMPLATE_ID: string;
+    getTemplateById: (id: string) => { id: string; title: string; category: string; documentType: string } | undefined;
     getTemplateAgreementDefaults: (
-      template: { title: string; category: string; documentType: string } | null,
-      themeId: string
+      template: { id: string; title: string; category: string; documentType: string } | null
     ) => { agreementType: string; documentType: string | null; brandName?: string };
+    buildTemplateDocument: (id: string, agreementType?: string) => import('../types/document').DocumentModel;
   };
-  assert.equal(typeof api.getTemplateAgreementDefaults, 'function');
+  const lilSynnTemplate = api.getTemplateById('lil-synn-music-agreement');
   const musicTemplate = api.getTemplateById('recording-artist-agreement')!;
   const businessTemplate = api.getTemplateById('master-services-agreement')!;
-
-  assert.deepEqual(api.getTemplateAgreementDefaults(musicTemplate, 'lil-synn'), {
+  assert.ok(lilSynnTemplate);
+  assert.equal(api.LIL_SYNN_TEMPLATE_ID, 'lil-synn-music-agreement');
+  assert.deepEqual(api.getTemplateAgreementDefaults(lilSynnTemplate!), {
     agreementType: 'Music Agreement',
     documentType: 'music_agreement',
     brandName: 'LIL SYNN'
   });
-  assert.deepEqual(api.getTemplateAgreementDefaults(musicTemplate, 'midnight-executive'), {
+  assert.deepEqual(api.getTemplateAgreementDefaults(musicTemplate), {
     agreementType: musicTemplate.title,
     documentType: musicTemplate.documentType
   });
-  assert.deepEqual(api.getTemplateAgreementDefaults(businessTemplate, 'lil-synn'), {
+  assert.deepEqual(api.getTemplateAgreementDefaults(businessTemplate), {
     agreementType: businessTemplate.title,
     documentType: businessTemplate.documentType
   });
-  assert.deepEqual(api.getTemplateAgreementDefaults(null, 'lil-synn'), {
-    agreementType: '',
-    documentType: null
-  });
+  const specialDocument = api.buildTemplateDocument('lil-synn-music-agreement');
+  assert.equal(specialDocument.title, 'Music Agreement');
+  assert.equal(specialDocument.type, 'music_agreement');
+  const customDocument = api.buildTemplateDocument('recording-artist-agreement', 'Independent Recording Services Agreement');
+  assert.equal(customDocument.title, 'Independent Recording Services Agreement');
+  assert.equal(customDocument.type, 'legal_agreement');
 });
