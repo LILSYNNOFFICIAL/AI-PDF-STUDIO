@@ -1262,10 +1262,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Section Heading */}
                    <div
-                     className={'mb-3 flex items-baseline gap-2 ' + (documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded-md px-3 py-2' : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded-md px-2 py-2' : '')}
+                     className={'mb-3 flex items-baseline gap-2 ' + (documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded-md px-3 py-2' : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded-md border px-2 py-2' : documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? 'pb-2' : '')}
                      style={{
-                       background: documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? documentDesign.colors.primary : 'transparent',
-                       borderBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? `1px solid ${documentDesign.colors.border}` : 'none',
+                       background: documentDesign.layoutDefaults.sectionHeadingStyle === 'banner'
+                         ? documentDesign.colors.primary
+                         : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card'
+                           ? documentDesign.colors.sectionSurface
+                           : 'transparent',
+                       borderBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? `1px solid ${documentDesign.colors.accent}` : 'none',
+                       borderLeft: documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? `3px solid ${documentDesign.colors.accent}` : 'none',
+                       borderColor: documentDesign.colors.border,
                        paddingBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '8px' : undefined
                      }}
                    >
@@ -1465,7 +1471,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Section Clauses */}
                   {section.clauses && section.clauses.length > 0 && (
-                    <div className="space-y-3 pl-3 border-l-2 border-slate-200 ml-1">
+                    <div className="ml-1 space-y-3 border-l-2 pl-3" style={{ borderColor: documentDesign.colors.accent }}>
                       {section.clauses.map((clause, cIdx) => (
                         <div key={clause.id} onContextMenu={event => openContextMenu(event, { type: 'clause', sectionId: section.id, clauseId: clause.id })} className="relative group/clause flex items-baseline gap-2">
                           <input aria-label="Clause number" value={clause.clauseNumber} onChange={event => { const updated = [...section.clauses]; updated[cIdx] = { ...clause, clauseNumber: event.target.value }; onUpdateSection({ ...section, clauses: updated }); }} className="w-14 shrink-0 bg-transparent font-mono text-xs font-semibold text-slate-500 outline-none" />
@@ -1482,10 +1488,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                   updated[cIdx] = { ...clause, heading: e.currentTarget.textContent || '' };
                                   onUpdateSection({ ...section, clauses: updated });
                                 }}
-                                className="font-semibold mr-1.5 outline-none hover:bg-slate-100 focus:bg-white rounded px-0.5"
-                                style={{ color: sectionStyle.headingColor, fontFamily: documentDesign.typography.headingFontFamily }}
+                                className="mb-1 block rounded px-0.5 font-semibold outline-none hover:bg-slate-100 focus:bg-white"
+                                style={{
+                                  color: documentDesign.colors.accent,
+                                  fontFamily: documentDesign.typography.headingFontFamily,
+                                  fontSize: `${documentDesign.typography.heading3Size || 12}pt`
+                                }}
                               >
-                                {clause.heading}:
+                                {clause.heading}
                               </span>
                             )}
                             <span 
@@ -1510,7 +1520,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                                 backgroundColor: document.styles.highlightColor || 'transparent',
                                 fontFamily: documentDesign.typography.bodyFontFamily
                               }}
-                              className="outline-none hover:bg-slate-100/60 focus:bg-white rounded px-1 transition-colors"
+                              className={clause.heading ? 'block pl-1 outline-none hover:bg-slate-100/60 focus:bg-white rounded px-1 transition-colors' : 'block outline-none hover:bg-slate-100/60 focus:bg-white rounded px-1 transition-colors'}
                             >
                               {clause.content}
                             </span>
