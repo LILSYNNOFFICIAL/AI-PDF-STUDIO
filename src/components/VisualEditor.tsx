@@ -35,7 +35,8 @@ import {
   resolveTableDesign,
   resolveCellFill,
   fillToCss,
-  borderToCss
+  borderToCss,
+  getSectionHeadingBorderStyles
 } from '../services/documentDesign';
 
 interface VisualEditorProps {
@@ -1276,10 +1277,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                          : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card'
                            ? documentDesign.colors.sectionSurface
                            : 'transparent',
-                       borderBottom: ['editorial-rule', 'double-rule'].includes(documentDesign.layoutDefaults.sectionHeadingStyle) ? `1px solid ${documentDesign.colors.accent}` : 'none',
-                       borderTop: documentDesign.layoutDefaults.sectionHeadingStyle === 'double-rule' ? `1px solid ${documentDesign.colors.accent}` : 'none',
-                       borderLeft: ['numbered-card', 'side-rule'].includes(documentDesign.layoutDefaults.sectionHeadingStyle) ? `3px solid ${documentDesign.colors.accent}` : 'none',
-                       borderColor: documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? documentDesign.colors.border : documentDesign.colors.accent,
+                       ...getSectionHeadingBorderStyles(documentDesign.layoutDefaults.sectionHeadingStyle, documentDesign.colors.accent, documentDesign.colors.border),
                        paddingTop: documentDesign.layoutDefaults.sectionHeadingStyle === 'double-rule' ? '8px' : undefined,
                        paddingBottom: ['editorial-rule', 'double-rule'].includes(documentDesign.layoutDefaults.sectionHeadingStyle) ? '8px' : undefined
                      }}
