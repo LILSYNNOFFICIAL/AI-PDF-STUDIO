@@ -217,6 +217,7 @@ export default function App() {
     const transition = redoDocumentHistory(pending.history);
     if (!transition.document) return;
     setHistoryState(transition.state);
+    documentRef.current = transition.document;
     setDocument(transition.document);
     addAiMessage(`Restored document version (v${transition.document.version}).`);
     showToast(`Redo: restored v${transition.document.version}`);
