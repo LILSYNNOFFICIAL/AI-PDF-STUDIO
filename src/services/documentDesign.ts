@@ -122,6 +122,20 @@ function makePreset(
   result.tableDefaults.bodyTextColor = result.colors.tableBodyText;
   result.tableDefaults.alternateRowBackground = solid(result.colors.tableAlternateRowSurface);
   result.tableDefaults.gridlineColor = result.colors.border;
+  const headingTreatment: DocumentDesign['layoutDefaults']['sectionHeadingStyle'] =
+    presetId === 'modern-legal' || presetId === 'contemporary-legal' || presetId === 'minimal-contemporary' || presetId === 'japandi-neutral'
+      ? 'minimal'
+      : presetId === 'art-deco' || presetId === 'dark-luxury' || presetId === 'glassmorphism' || presetId === 'modern-corporate'
+        ? 'numbered-card'
+        : presetId === 'bauhaus-modern' || presetId === 'corporate-graphite' || presetId === 'creative-studio'
+          ? 'banner'
+          : 'editorial-rule';
+  result.layoutDefaults = {
+    ...result.layoutDefaults,
+    sectionHeadingStyle: headingTreatment,
+    sectionSpacing: headingTreatment === 'minimal' ? 18 : headingTreatment === 'numbered-card' ? 22 : 24,
+    sectionPadding: headingTreatment === 'minimal' ? 5 : headingTreatment === 'banner' ? 8 : 12
+  };
   result.coverPage = {
     ...result.coverPage,
     enabled: true,

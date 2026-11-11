@@ -416,3 +416,18 @@ test('saved theme duplication creates an independent named copy without changing
 });
 
 type SavedTheme = ReturnType<typeof listSavedThemes>[number];
+
+
+test('premium themes define distinct interior section-heading treatments', () => {
+  const byId = new Map(DOCUMENT_DESIGN_PRESETS.map(preset => [preset.presetId, preset]));
+  assert.equal(byId.get('midnight-executive')?.layoutDefaults.sectionHeadingStyle, 'editorial-rule');
+  assert.equal(byId.get('modern-legal')?.layoutDefaults.sectionHeadingStyle, 'minimal');
+  assert.equal(byId.get('art-deco')?.layoutDefaults.sectionHeadingStyle, 'numbered-card');
+  assert.equal(byId.get('bauhaus-modern')?.layoutDefaults.sectionHeadingStyle, 'banner');
+  assert.equal(byId.get('dark-luxury')?.layoutDefaults.sectionHeadingStyle, 'numbered-card');
+  assert.equal(byId.get('lil-synn')?.layoutDefaults.sectionHeadingStyle, 'editorial-rule');
+  assert.notEqual(
+    byId.get('modern-legal')?.layoutDefaults.sectionHeadingStyle,
+    byId.get('bauhaus-modern')?.layoutDefaults.sectionHeadingStyle
+  );
+});

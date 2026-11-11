@@ -571,16 +571,34 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                 <div className="mb-3 flex items-center justify-between border-b pb-2 text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.pageFurniture.headerTextColor, borderColor: design.layoutDefaults.headerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
                   <span>{pageConfigDraft.headerText || 'DOCUMENT HEADER'}</span><span>{pageConfigDraft.headerRightText ?? 'CONFIDENTIAL'}</span>
                 </div>
-                <div className="mb-2 text-[14px] font-semibold" style={{ color: design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>1.0 {document.sections[0]?.title || 'SECTION HEADING'}</div>
-                <div className="mb-2 h-px w-full" style={{ background: design.colors.border }} />
+                <div
+                  className={'mb-2 flex items-center gap-2 rounded-sm px-2 py-1.5 ' + (design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'border' : '')}
+                  style={{
+                    background: design.layoutDefaults.sectionHeadingStyle === 'banner'
+                      ? design.colors.primary
+                      : design.layoutDefaults.sectionHeadingStyle === 'numbered-card'
+                        ? design.colors.sectionSurface
+                        : 'transparent',
+                    borderColor: design.colors.border,
+                    borderBottom: design.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '1px solid ' + design.colors.accent : undefined,
+                    borderLeft: design.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? '3px solid ' + design.colors.accent : undefined
+                  }}
+                >
+                  <span className="font-mono text-[8px] font-bold" style={{ color: design.colors.accent }}>1.0</span>
+                  <span className="text-[12px] font-semibold" style={{ color: design.layoutDefaults.sectionHeadingStyle === 'banner' ? '#ffffff' : design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>{document.sections[0]?.title || 'SECTION HEADING'}</span>
+                </div>
+                <div className="mb-1 text-[8px] font-semibold" style={{ color: design.colors.accent, fontFamily: design.typography.headingFontFamily }}>1.1  Key provision heading</div>
                 <div className="space-y-1.5">
                   <div className="h-1.5 w-full rounded" style={{ background: design.colors.bodyText, opacity: 0.65 }} />
                   <div className="h-1.5 w-[94%] rounded" style={{ background: design.colors.bodyText, opacity: 0.55 }} />
                   <div className="h-1.5 w-[82%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
                 </div>
                 <div className="mt-4 rounded border p-2" style={{ background: fillToCss(design.sectionDefaults.background), borderColor: design.colors.border }}>
-                  <span className="text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.colors.accent }}>Design detail</span>
-                  <div className="mt-2 h-1 w-[90%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
+                  <span className="text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.colors.accent }}>Table / schedule</span>
+                  <div className="mt-2 grid grid-cols-3 gap-1">
+                    {[0, 1, 2].map(index => <div key={index} className="h-1.5 rounded-sm" style={{ background: design.colors.tableHeaderSurface }} />)}
+                  </div>
+                  <div className="mt-1.5 h-1 w-[90%] rounded" style={{ background: design.colors.bodyText, opacity: 0.45 }} />
                   <div className="mt-1.5 h-1 w-[65%] rounded" style={{ background: design.colors.bodyText, opacity: 0.35 }} />
                 </div>
                 <div className="mt-3 flex justify-between border-t pt-2 text-[7px]" style={{ color: design.pageFurniture.footerTextColor, borderColor: design.layoutDefaults.footerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
