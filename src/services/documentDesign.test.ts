@@ -329,7 +329,7 @@ test('legacy document design normalization supplies cover and layout defaults', 
 
   assert.deepEqual(cover, {
     enabled: false,
-    style: 'midnight-executive',
+    style: 'modern-graphic',
     background: { type: 'solid', color: '#0b0d12', opacity: 1 },
     titleColor: '#f8fafc',
     detailColor: '#94a3b8',
