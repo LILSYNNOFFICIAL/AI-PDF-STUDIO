@@ -469,3 +469,35 @@ test('all built-in visual themes use an intentional cover system instead of the 
   ));
   assert.ok(distinctCoverSignatures.size >= 15, 'most presets should have a distinct cover visual signature');
 });
+
+
+test('built-in themes define coherent interior systems and page-matched table surfaces', () => {
+  const expectedHeadingStyles: Record<string, string> = {
+    'modern-corporate': 'side-rule',
+    'luxury-executive': 'double-rule',
+    'creative-studio': 'banner',
+    'minimal-contemporary': 'minimal',
+    'bold-editorial': 'editorial-rule',
+    'technology-professional': 'numbered-card',
+    'contemporary-legal': 'side-rule',
+    'financial-report': 'banner',
+    'midnight-executive': 'editorial-rule',
+    'art-deco': 'numbered-card',
+    'dark-luxury': 'numbered-card',
+    'bauhaus-modern': 'banner',
+    'glassmorphism': 'side-rule',
+    'modern-legal': 'minimal',
+    'editorial-luxe': 'double-rule',
+    'corporate-graphite': 'side-rule',
+    'japandi-neutral': 'minimal',
+    'lil-synn': 'editorial-rule'
+  };
+
+  for (const preset of DOCUMENT_DESIGN_PRESETS) {
+    assert.equal(preset.layoutDefaults.sectionHeadingStyle, expectedHeadingStyles[preset.presetId], preset.presetId + ' heading treatment');
+    assert.equal(preset.tableDefaults.bodyBackground.type, 'solid', preset.presetId + ' table body fill');
+    assert.equal(preset.tableDefaults.bodyBackground.color, preset.colors.pageSurface, preset.presetId + ' table body must match page surface');
+    assert.ok(preset.tableDefaults.gridlineWidth >= 0.2 && preset.tableDefaults.gridlineWidth <= 0.8, preset.presetId + ' table gridline weight');
+    assert.ok(preset.layoutDefaults.sectionSpacing >= 16 && preset.layoutDefaults.sectionSpacing <= 30, preset.presetId + ' section spacing');
+  }
+});

@@ -428,3 +428,40 @@ test('clause headings render as a separate display-font hierarchy above body cop
   assert.match(headingPrefix, /\/F\d+\s+12(?:\.0+)?\s+Tf/, 'Clause heading should use the 12pt display hierarchy, not body typography');
   assert.ok(pageContent.includes('(VISUAL CLAUSE BODY COPY MUST REMAIN SELECTABLE.)'));
 });
+
+
+test('side-rule and double-rule interior themes render styled headings and selectable table content', () => {
+  const renderTheme = (presetId: string) => {
+    const base = applyDocumentPreset(buildDocumentFromPrompt('Interior system rendering').updatedDoc, presetId);
+    const doc = {
+      ...base,
+      sections: [{
+        ...base.sections[0],
+        sectionNumber: '4.2',
+        title: 'INTERIOR SYSTEM HEADING',
+        content: 'BODY TEXT REMAINS SELECTABLE IN THE THEMED INTERIOR.',
+        clauses: [],
+        tables: [{
+          id: 'interior-theme-table',
+          headers: [{ id: 'theme-head', content: 'FIELD' }, { id: 'value-head', content: 'VALUE' }],
+          rows: [[{ id: 'theme-cell', content: 'TABLE LABEL' }, { id: 'value-cell', content: 'TABLE VALUE REMAINS SELECTABLE' }]]
+        }],
+        charts: [],
+        images: []
+      }]
+    };
+    const pdf = generatePdfDocument(doc);
+    const pages = (pdf as any).internal.pages as string[][];
+    const contentPage = pages[2].join('');
+    assert.ok(contentPage.includes('INTERIOR SYSTEM HEADING'));
+    assert.ok(contentPage.includes('BODY TEXT REMAINS SELECTABLE'));
+    assert.ok(contentPage.includes('TABLE VALUE REMAINS SELECTABLE'));
+    return contentPage;
+  };
+
+  const sideRule = renderTheme('modern-corporate');
+  const doubleRule = renderTheme('luxury-executive');
+  const glassSideRule = renderTheme('glassmorphism');
+  assert.notEqual(sideRule, doubleRule, 'side-rule and double-rule must produce distinct interior page output');
+  assert.notEqual(sideRule, glassSideRule, 'theme palette and page furniture should remain theme-specific');
+});
