@@ -25,6 +25,7 @@ import { parseTextDocument, getSourceIntegrityReport } from './services/textDocu
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides, applyDocumentPreset } from './services/documentDesign';
 import { buildTemplateDocument, getTemplateById } from './services/templateCatalog';
 import { loadBrandProfiles, saveBrandProfiles } from './services/brandProfiles';
+import { appendDocumentHistory, redoDocumentHistory, undoDocumentHistory, type DocumentHistoryState } from './services/documentHistory';
 import { 
   DocumentModel, 
   AIPersona, 
@@ -60,8 +61,12 @@ import {
 
 export default function App() {
   const [document, setDocument] = useState<DocumentModel>(() => applyDocumentPreset(normalizeDocumentDesign(getInitialDocument()), 'midnight-executive'));
-  const [history, setHistory] = useState<DocumentModel[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const documentRef = useRef(document);
+  React.useEffect(() => { documentRef.current = document; }, [document]);
+  const [historyState, setHistoryState] = useState<DocumentHistoryState>({ snapshots: [], index: -1 });
+  const history = historyState.snapshots;
+  const historyIndex = historyState.index;
+  const pendingManualEditRef = useRef<{ before: DocumentModel; after: DocumentModel; timer: number } | null>(null);
   const [activeSectionId, setActiveSectionId] = useState<string | null>('sec_1');
   const [persona, setPersona] = useState<AIPersona>('music_specialist');
   const [brandProfiles, setBrandProfiles] = useState<BrandProfile[]>(() => loadBrandProfiles());
@@ -153,35 +158,69 @@ export default function App() {
   const [isOrchestrating, setIsOrchestrating] = useState(false);
   const orchestrationInFlight = useRef(false);
 
-  // Snapshot on meaningful update
+  const flushPendingManualEdit = () => {
+    const pending = pendingManualEditRef.current;
+    if (!pending) return { history: historyState, document: null as DocumentModel | null };
+    window.clearTimeout(pending.timer);
+    pendingManualEditRef.current = null;
+    const nextHistory = appendDocumentHistory(historyState, pending.before, pending.after);
+    setHistoryState(nextHistory);
+    return { history: nextHistory, document: pending.after };
+  };
+
+  const handleEditorDocumentChange = (updatedDocument: DocumentModel) => {
+    const pending = pendingManualEditRef.current;
+    const before = pending?.before ?? documentRef.current;
+    if (pending) window.clearTimeout(pending.timer);
+    const after: DocumentModel = {
+      ...updatedDocument,
+      version: before.version + 1,
+      updatedAt: new Date().toISOString()
+    };
+    const timer = window.setTimeout(() => {
+      flushPendingManualEdit();
+    }, 700);
+    pendingManualEditRef.current = { before, after, timer };
+    documentRef.current = after;
+    setDocument(after);
+  };
+
+  React.useEffect(() => () => {
+    if (pendingManualEditRef.current) window.clearTimeout(pendingManualEditRef.current.timer);
+  }, []);
+
+  // Store both sides of every committed transition so undo and redo are symmetrical.
   const pushHistory = (newDoc: DocumentModel) => {
+    const pending = flushPendingManualEdit();
+    const currentDoc = pending.document ?? documentRef.current;
     const profile = SAMPLE_BRAND_PROFILES.find(item => item.id === newDoc.brandProfileId);
-    const normalizedDoc = syncLegacyStyleChanges(document, newDoc, profile);
-    const updatedHistory = history.slice(0, historyIndex + 1);
-    updatedHistory.push(document);
-    setHistory(updatedHistory);
-    setHistoryIndex(updatedHistory.length - 1);
+    const normalizedDoc = syncLegacyStyleChanges(currentDoc, newDoc, profile);
+    const nextHistory = appendDocumentHistory(pending.history, currentDoc, normalizedDoc);
+    setHistoryState(nextHistory);
+    documentRef.current = normalizedDoc;
     setDocument(normalizedDoc);
   };
 
   const handleUndo = () => {
-    if (historyIndex >= 0) {
-      const prevDoc = history[historyIndex];
-      setHistoryIndex(historyIndex - 1);
-      setDocument(prevDoc);
-      addAiMessage(`Reverted to previous document version (v${prevDoc.version}).`);
-      showToast(`Undo: restored v${prevDoc.version}`);
-    }
+    const pending = flushPendingManualEdit();
+    const transition = undoDocumentHistory(pending.history);
+    if (!transition.document) return;
+    setHistoryState(transition.state);
+    documentRef.current = transition.document;
+    setDocument(transition.document);
+    addAiMessage(`Reverted to previous document version (v${transition.document.version}).`);
+    showToast(`Undo: restored v${transition.document.version}`);
   };
 
   const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      const nextDoc = history[historyIndex + 1];
-      setHistoryIndex(historyIndex + 1);
-      setDocument(nextDoc);
-      addAiMessage(`Restored document version (v${nextDoc.version}).`);
-      showToast(`Redo: restored v${nextDoc.version}`);
-    }
+    const pending = flushPendingManualEdit();
+    const transition = redoDocumentHistory(pending.history);
+    if (!transition.document) return;
+    setHistoryState(transition.state);
+    documentRef.current = transition.document;
+    setDocument(transition.document);
+    addAiMessage(`Restored document version (v${transition.document.version}).`);
+    showToast(`Redo: restored v${transition.document.version}`);
   };
 
   // Global Keyboard Shortcuts
@@ -256,6 +295,8 @@ export default function App() {
   // Central Natural-Language Orchestration Dispatcher
   const handleSendMessage = async (instruction: string) => {
     if (orchestrationInFlight.current) return;
+    const pending = flushPendingManualEdit();
+    const requestDocument = pending.document ?? documentRef.current;
     const userMsg: ChatMessage = {
       id: `usr_${Date.now()}`,
       sender: 'user',
@@ -286,7 +327,7 @@ export default function App() {
       const response = await fetch(`${apiBase}/api/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instruction, currentDoc: { ...document, sourceText: undefined }, persona }),
+        body: JSON.stringify({ instruction, currentDoc: { ...requestDocument, sourceText: undefined }, persona }),
         signal: controller.signal
       });
 
@@ -297,11 +338,14 @@ export default function App() {
       if (!data.updatedDoc || !Array.isArray(data.updatedDoc.sections)) {
         throw new Error('The AI service did not return an updated document. No changes were applied.');
       }
+      if (documentRef.current.version !== requestDocument.version || documentRef.current.updatedAt !== requestDocument.updatedAt) {
+        throw new Error('The document changed while the AI operation was running. Its result was not applied, so your newer edits are safe. Please send the instruction again.');
+      }
 
       pushHistory({
         ...data.updatedDoc,
-        sourceText: data.updatedDoc.sourceText ?? document.sourceText,
-        sourceIntegrity: data.updatedDoc.sourceIntegrity ?? document.sourceIntegrity
+        sourceText: data.updatedDoc.sourceText ?? requestDocument.sourceText,
+        sourceIntegrity: data.updatedDoc.sourceIntegrity ?? requestDocument.sourceIntegrity
       });
       addAiMessage(
         data.summary?.operationTitle || 'Document updated',
@@ -770,6 +814,8 @@ export default function App() {
   };
 
   const handleImportText = () => {
+    const pending = flushPendingManualEdit();
+    const currentDoc = pending.document ?? documentRef.current;
     const input = window.document.createElement('input');
     input.type = 'file';
     input.accept = '.txt,.md,text/plain,text/markdown';
@@ -780,7 +826,7 @@ export default function App() {
       reader.onload = (event) => {
         try {
           const source = String(event.target?.result || '');
-          const imported = parseTextDocument(source, document);
+          const imported = parseTextDocument(source, currentDoc);
           pushHistory(imported);
           setActiveSectionId(imported.sections[0]?.id || null);
           addAiMessage(`Imported "${imported.title}" with ${imported.sections.length} sections. Source text, nested headings, lists, URLs, and signature text were retained. The AI editor will now operate on this imported document, not the sample template.`);
@@ -801,9 +847,11 @@ export default function App() {
       showToast('Paste your complete document before rendering');
       return;
     }
+    const pending = flushPendingManualEdit();
+    const currentDoc = pending.document ?? documentRef.current;
     setIsRenderingSource(true);
     try {
-      const parsedDocument = parseTextDocument(sourceTruthText, document, new Date().toISOString(), sourceTruthPresetId);
+      const parsedDocument = parseTextDocument(sourceTruthText, currentDoc, new Date().toISOString(), sourceTruthPresetId);
       const rendered = {
         ...parsedDocument,
         sections: parsedDocument.sections.map(section => section.scrollableContent !== undefined ? {
@@ -819,10 +867,9 @@ export default function App() {
       };
       // Commit directly rather than passing through legacy style synchronization,
       // which could carry the old sample document's formatting into the new render.
-      const nextHistory = history.slice(0, historyIndex + 1);
-      nextHistory.push(document);
-      setHistory(nextHistory);
-      setHistoryIndex(nextHistory.length - 1);
+      const nextHistory = appendDocumentHistory(pending.history, currentDoc, rendered);
+      setHistoryState(nextHistory);
+      documentRef.current = rendered;
       setDocument(rendered);
       setActiveSectionId(rendered.sections[0]?.id || null);
       setIsSourceTruthOpen(false);
@@ -961,13 +1008,13 @@ export default function App() {
       {/* 1. Top Navbar */}
       <Navbar
         document={document}
-        onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
+        onUpdateTitle={(title) => handleEditorDocumentChange({ ...document, title })}
         persona={persona}
         onSelectPersona={setPersona}
         brand={brand}
         brandProfiles={brandProfiles}
         onSelectBrand={applyBrandProfile}
-        canUndo={historyIndex >= 0}
+        canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -995,7 +1042,7 @@ export default function App() {
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
         onCopyDocumentText={handleCopyDocumentText}
-        canUndo={historyIndex >= 0}
+        canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -1042,7 +1089,7 @@ export default function App() {
         document={document}
         onUpdateStyles={handleUpdateStyles}
         onUpdatePageConfig={handleUpdatePageConfig}
-        canUndo={historyIndex >= 0}
+        canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -1095,14 +1142,12 @@ export default function App() {
           activeSectionId={activeSectionId}
           onUpdateSection={(updatedSection) => {
             const sections = document.sections.map(s => s.id === updatedSection.id ? updatedSection : s);
-            setDocument(prev => ({ ...prev, sections, updatedAt: new Date().toISOString() }));
+            handleEditorDocumentChange({ ...document, sections });
           }}
           onDeleteSection={handleDeleteSection}
           onDuplicateSection={handleDuplicateSection}
-          onUpdateSignatures={(signatures) => {
-            setDocument(prev => ({ ...prev, signatures, updatedAt: new Date().toISOString() }));
-          }}
-          onUpdateDocument={(updatedDocument) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
+          onUpdateSignatures={(signatures) => handleEditorDocumentChange({ ...document, signatures })}
+          onUpdateDocument={handleEditorDocumentChange}
           onQuickAIAction={handleQuickAIAction}
           onMoveSection={handleMoveSection}
           onOpenDesign={(sectionId) => {
@@ -1146,10 +1191,10 @@ export default function App() {
         persona={persona}
         messages={messages}
         isOrchestrating={isOrchestrating}
-        canUndo={historyIndex >= 0}
+        canUndo={historyIndex > 0}
         canRedo={historyIndex < history.length - 1}
-        onUpdateTitle={(title) => setDocument(prev => ({ ...prev, title }))}
-        onUpdateDocument={(updatedDocument: DocumentModel) => setDocument(prev => ({ ...prev, ...updatedDocument, updatedAt: new Date().toISOString() }))}
+        onUpdateTitle={(title) => handleEditorDocumentChange({ ...document, title })}
+        onUpdateDocument={handleEditorDocumentChange}
         onSelectPersona={setPersona}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -1185,7 +1230,7 @@ export default function App() {
         }}
         onUpdateSection={(updatedSection) => {
           const sections = document.sections.map(s => s.id === updatedSection.id ? updatedSection : s);
-          setDocument(prev => ({ ...prev, sections, updatedAt: new Date().toISOString() }));
+          handleEditorDocumentChange({ ...document, sections });
         }}
         onDeleteSection={handleDeleteSection}
         onDuplicateSection={handleDuplicateSection}
@@ -1194,7 +1239,7 @@ export default function App() {
         onMergeWithNext={handleMergeWithNext}
         onSplitSection={handleSplitSection}
         onAddSection={handleAddSection}
-        onUpdateSignatures={(signatures) => setDocument(prev => ({ ...prev, signatures, updatedAt: new Date().toISOString() }))}
+        onUpdateSignatures={(signatures) => handleEditorDocumentChange({ ...document, signatures })}
         onSendMessage={handleSendMessage}
         onRollbackToVersion={(v) => {
           const snapshot = history.find(h => h.version === v) || history[0];
