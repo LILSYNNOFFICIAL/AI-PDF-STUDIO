@@ -18,7 +18,7 @@ export function parseSignatureFields(source: string): SignatureField[] {
     const match = line.match(/^\s*\*{0,2}([^:*]+?)\*{0,2}\s*:\s*(.*?)\s*$/);
     const bareLabel = line.replace(/\*+/g, '').trim();
     const label = match ? match[1].replace(/\*+/g, '').trim() : bareLabel;
-    if (!label || label.length > 80 || /[.!?]/.test(label) || /^[_\-–—\s]+$/.test(label)) continue;
+    if (!label || /[.!?]/.test(label) || /^[_\-–—\s]+$/.test(label)) continue;
     const rawValue = match ? (match[2] || '').replace(/\*+/g, '').trim() : '';
     const lineLength = Math.max(1, (rawValue.match(/[_\-–—.]/g) || []).length || 48);
     const value = /^[_\-–—.\s]+$/.test(rawValue) ? '' : rawValue;
