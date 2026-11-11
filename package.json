@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/components/VisualEditor.metadata.test.ts src/services/documentHeaderMetadata.test.ts src/services/documentSections.test.ts src/components/MenuBar.layout.test.ts src/orchestrator/orchestrator.test.ts src/orchestrator/aiDocumentEditor.test.ts src/services/pdfGenerator.test.ts src/services/apiCors.test.ts src/services/textDocumentImporter.test.ts src/services/documentDesign.test.ts src/services/imageResize.test.ts src/services/pdfGenerator.imageSizing.test.ts src/services/signatureBlocks.test.ts src/services/templateCatalog.test.ts src/services/contextMenu.test.ts src/services/documentHistory.test.ts src/services/commandSearch.test.ts src/services/templateArtwork.test.ts",
+    "test": "tsx --test src/components/VisualEditor.metadata.test.ts src/components/MobileWorkspace.test.ts src/services/documentHeaderMetadata.test.ts src/services/documentSections.test.ts src/components/MenuBar.layout.test.ts src/orchestrator/orchestrator.test.ts src/orchestrator/aiDocumentEditor.test.ts src/services/pdfGenerator.test.ts src/services/apiCors.test.ts src/services/textDocumentImporter.test.ts src/services/documentDesign.test.ts src/services/imageResize.test.ts src/services/pdfGenerator.imageSizing.test.ts src/services/signatureBlocks.test.ts src/services/templateCatalog.test.ts src/services/contextMenu.test.ts src/services/documentHistory.test.ts src/services/commandSearch.test.ts src/services/templateArtwork.test.ts",
     "verify:pages": "node scripts/verify-pages-build.mjs"
   },
   "dependencies": {
