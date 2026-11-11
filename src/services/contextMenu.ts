@@ -56,3 +56,32 @@ export function clampContextMenuPosition(
     y: Math.min(maxY, Math.max(safeMargin, safeCoordinate(y)))
   };
 }
+
+
+/**
+ * Return the next enabled menu item index for keyboard navigation.
+ * Navigation wraps at either end and returns null when every item is disabled.
+ */
+export function getNextEnabledContextMenuIndex(
+  items: Array<Pick<ContextMenuItem, 'disabled'>>,
+  currentIndex: number,
+  direction: 'next' | 'previous'
+): number | null {
+  const enabledIndexes = items
+    .map((item, index) => ({ item, index }))
+    .filter(entry => !entry.item.disabled)
+    .map(entry => entry.index);
+
+  if (!enabledIndexes.length) return null;
+
+  const currentPosition = enabledIndexes.indexOf(currentIndex);
+  if (currentPosition < 0) {
+    return direction === 'next'
+      ? enabledIndexes[0]
+      : enabledIndexes[enabledIndexes.length - 1];
+  }
+
+  const offset = direction === 'next' ? 1 : -1;
+  const nextPosition = (currentPosition + offset + enabledIndexes.length) % enabledIndexes.length;
+  return enabledIndexes[nextPosition];
+}
