@@ -255,9 +255,14 @@ export interface SignatureParty {
   id: string;
   role: string; // e.g. "PRODUCER", "ARTIST", "COMPANY REPRESENTATIVE"
   name: string;
+  /** Editable labels for the generated signatory detail rows. */
+  nameLabel?: string;
   title?: string;
+  titleLabel?: string;
   company?: string;
+  companyLabel?: string;
   date?: string;
+  dateLabel?: string;
   signaturePlaceholder?: string;
   hasWitness?: boolean;
   witnessName?: string;
