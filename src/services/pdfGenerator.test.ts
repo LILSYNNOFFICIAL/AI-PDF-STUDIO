@@ -344,6 +344,7 @@ test('exports the editable right-side running header label', () => {
 test('exports customizable labels for each signatory detail field', () => {
   const doc = buildDocumentFromPrompt('Custom signatory labels').updatedDoc;
   doc.signatures = {
+    id: 'custom-label-signature-block',
     title: 'EXECUTION',
     executionText: 'The parties sign below.',
     parties: [{
