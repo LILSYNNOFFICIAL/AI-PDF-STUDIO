@@ -452,7 +452,7 @@ export function validateDocumentDesign(design: DocumentDesign): void {
   const cover = design.coverPage;
   if (!cover || typeof cover !== 'object') throw new Error('coverPage must be an object.');
   if (typeof cover.enabled !== 'boolean') throw new Error('coverPage.enabled must be a boolean.');
-  if (!['midnight-executive', 'art-deco', 'dark-luxury', 'editorial', 'minimal'].includes(cover.style)) throw new Error('coverPage.style is unsupported.');
+  if (!['midnight-executive', 'modern-graphic', 'art-deco', 'dark-luxury', 'editorial', 'minimal'].includes(cover.style)) throw new Error('coverPage.style is unsupported.');
   validateFill(cover.background, 'coverPage.background');
   validateColor(cover.titleColor, 'coverPage.titleColor');
   validateColor(cover.detailColor, 'coverPage.detailColor');
