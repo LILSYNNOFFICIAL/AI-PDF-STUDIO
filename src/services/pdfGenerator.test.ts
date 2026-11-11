@@ -383,3 +383,20 @@ test('cover page exports user-editable author label and date text', () => {
   assert.ok(text.includes('LIL SYNN'));
   assert.ok(!text.includes('PREPARED BY'));
 });
+
+
+test('PDF header exports customized metadata labels and values and omits deleted fields', async () => {
+  const { updateDocumentHeaderField, removeDocumentHeaderField } = await import('./documentHeaderMetadata');
+  let doc = buildDocumentFromPrompt('Custom PDF header').updatedDoc;
+  doc = updateDocumentHeaderField(doc, 'version', { label: 'Revision', value: 'FINAL-7' });
+  doc = updateDocumentHeaderField(doc, 'documentType', { label: 'Instrument', value: 'Publishing Terms' });
+  doc = updateDocumentHeaderField(doc, 'date', { label: 'Executed', value: 'November 11, 2026' });
+  doc = updateDocumentHeaderField(doc, 'author', { label: 'Prepared by', value: 'LIL SYNN' });
+  doc = removeDocumentHeaderField(doc, 'documentType');
+  const output = outputText(generatePdfDocument(doc));
+  assert.ok(output.includes('Revision: FINAL-7'));
+  assert.ok(!output.includes('Publishing Terms'));
+  assert.ok(output.includes('Executed: November 11, 2026'));
+  assert.ok(output.includes('Prepared by: LIL SYNN'));
+  assert.ok(!output.includes('Document Type'));
+});

@@ -33,7 +33,7 @@ test('header metadata fields can be deleted and restored, and an empty list stay
   const doc = buildDocumentFromPrompt('Header metadata delete').updatedDoc;
   const withoutDate = removeDocumentHeaderField(doc, 'date');
   assert.deepEqual(getDocumentHeaderFields(withoutDate).map(field => field.id), ['version', 'documentType', 'author']);
-  const withoutAny = ['version', 'documentType', 'author'].reduce(
+  const withoutAny = (['version', 'documentType', 'author'] as const).reduce(
     (current, id) => removeDocumentHeaderField(current, id),
     withoutDate
   );
