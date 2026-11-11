@@ -1262,17 +1262,26 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
                   {/* Section Heading */}
                    <div
-                     className={'mb-3 flex items-baseline gap-2 ' + (documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded-md px-3 py-2' : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded-md border px-2 py-2' : documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? 'pb-2' : '')}
+                     className={'mb-3 flex items-baseline gap-2 ' + (
+                       documentDesign.layoutDefaults.sectionHeadingStyle === 'banner' ? 'rounded-md px-3 py-2'
+                         : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? 'rounded-md border px-2 py-2'
+                           : documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? 'pb-2'
+                             : documentDesign.layoutDefaults.sectionHeadingStyle === 'side-rule' ? 'pl-3 py-1'
+                               : documentDesign.layoutDefaults.sectionHeadingStyle === 'double-rule' ? 'py-2'
+                                 : ''
+                     )}
                      style={{
                        background: documentDesign.layoutDefaults.sectionHeadingStyle === 'banner'
                          ? documentDesign.colors.primary
                          : documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card'
                            ? documentDesign.colors.sectionSurface
                            : 'transparent',
-                       borderBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? `1px solid ${documentDesign.colors.accent}` : 'none',
-                       borderLeft: documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? `3px solid ${documentDesign.colors.accent}` : 'none',
-                       borderColor: documentDesign.colors.border,
-                       paddingBottom: documentDesign.layoutDefaults.sectionHeadingStyle === 'editorial-rule' ? '8px' : undefined
+                       borderBottom: ['editorial-rule', 'double-rule'].includes(documentDesign.layoutDefaults.sectionHeadingStyle) ? `1px solid ${documentDesign.colors.accent}` : 'none',
+                       borderTop: documentDesign.layoutDefaults.sectionHeadingStyle === 'double-rule' ? `1px solid ${documentDesign.colors.accent}` : 'none',
+                       borderLeft: ['numbered-card', 'side-rule'].includes(documentDesign.layoutDefaults.sectionHeadingStyle) ? `3px solid ${documentDesign.colors.accent}` : 'none',
+                       borderColor: documentDesign.layoutDefaults.sectionHeadingStyle === 'numbered-card' ? documentDesign.colors.border : documentDesign.colors.accent,
+                       paddingTop: documentDesign.layoutDefaults.sectionHeadingStyle === 'double-rule' ? '8px' : undefined,
+                       paddingBottom: ['editorial-rule', 'double-rule'].includes(documentDesign.layoutDefaults.sectionHeadingStyle) ? '8px' : undefined
                      }}
                    >
                      <input
