@@ -94,3 +94,11 @@ test('PDF places an inline signature panel between the surrounding section text'
   assert.ok(allPages.indexOf(before) < allPages.indexOf('Jarred Gainer'), 'Expected the block after the preceding text');
   assert.ok(allPages.indexOf('Jarred Gainer') < allPages.indexOf(after), 'Expected the block before the following text');
 });
+
+
+test('uses a selected bare label as a customizable field instead of falling back to defaults', () => {
+  const fields = parseSignatureFields('Effective Date');
+  assert.equal(fields.length, 1);
+  assert.equal(fields[0].label, 'Effective Date');
+  assert.equal(fields[0].kind, 'date');
+});
