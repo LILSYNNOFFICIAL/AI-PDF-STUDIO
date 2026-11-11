@@ -242,3 +242,34 @@ test('specialized templates no longer reuse the same category-wide six-section o
   assert.notDeepEqual(recording.sections.map(section => section.title), beatLicense.sections.map(section => section.title));
   assert.notDeepEqual(residentialLease.sections.map(section => section.title), purchase.sections.map(section => section.title));
 });
+
+
+test('expanded template families receive their own operationally specific clause structures', async () => {
+  const api = await import('./templateCatalog') as unknown as {
+    buildTemplateDocument: (id: string) => import('../types/document').DocumentModel;
+  };
+  const expectations: Array<[string, RegExp, RegExp]> = [
+    ['recording-artist-agreement', /Recording Commitment & Delivery/i, /Master Ownership & Exploitation/i],
+    ['music-producer-agreement', /Production Brief & Deliverables/i, /Producer Fee & Royalty Participation/i],
+    ['featured-artist-agreement', /Featured Performance & Recording Scope/i, /Feature Fee, Royalty & Credit/i],
+    ['music-management-agreement', /Management Appointment & Authority/i, /Commission Base & Accounting/i],
+    ['live-performance-agreement', /Engagement, Venue & Performance/i, /Guarantee, Deposit & Settlement/i],
+    ['master-services-agreement', /Services, Deliverables & Acceptance/i, /Fees, Expenses & Invoicing/i],
+    ['confidentiality-agreement', /Protected Information & Purpose/i, /Permitted Disclosure & Safeguards/i],
+    ['commercial-property-lease', /Commercial Premises & Permitted Use/i, /Operating Costs & Tenant Charges/i],
+    ['property-management-agreement', /Property Portfolio & Management Appointment/i, /Rent Collection & Owner Accounting/i],
+    ['graphic-design-services-agreement', /Design Brief & Creative Deliverables/i, /Source Files, Usage License & Portfolio/i],
+    ['executive-employment-agreement', /Executive Appointment & Authority/i, /Compensation, Incentives & Equity/i],
+    ['shareholders-agreement', /Share Capital & Shareholder Rights/i, /Board Composition & Reserved Matters/i],
+    ['business-loan-agreement', /Facility, Borrower & Funding Conditions/i, /Interest, Repayment & Prepayment/i],
+    ['api-license-agreement', /API Products & Licensed Access/i, /Rate Limits, Availability & Support/i],
+    ['brand-sponsorship-agreement', /Sponsorship Property & Deliverables/i, /Sponsorship Fee & Performance Metrics/i],
+    ['event-services-agreement', /Event Scope, Venue & Production Plan/i, /Ticketing, Revenue & Settlement/i]
+  ];
+  for (const [id, first, second] of expectations) {
+    const doc = api.buildTemplateDocument(id);
+    const headings = doc.sections.flatMap(section => [section.title, ...section.clauses.map(clause => clause.heading)]);
+    assert.ok(headings.some(value => first.test(value)), id + ' must have a family-specific opening provision');
+    assert.ok(headings.some(value => second.test(value)), id + ' must have a family-specific commercial or operational provision');
+  }
+});
