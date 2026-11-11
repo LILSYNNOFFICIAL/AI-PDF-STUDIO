@@ -355,6 +355,17 @@ export interface RedactionRecord {
   timestamp: string;
 }
 
+export type DocumentHeaderFieldId = 'version' | 'documentType' | 'date' | 'author';
+
+export interface DocumentHeaderMetadataConfig {
+  /** Custom display labels. Empty strings intentionally hide a label. */
+  labels?: Partial<Record<DocumentHeaderFieldId, string>>;
+  /** Custom display values. Empty strings intentionally leave a value blank. */
+  values?: Partial<Record<DocumentHeaderFieldId, string>>;
+  /** Fields removed from the visible document header. */
+  hidden?: DocumentHeaderFieldId[];
+}
+
 export interface DocumentModel {
   id: string;
   title: string;
@@ -363,6 +374,8 @@ export interface DocumentModel {
   createdAt: string;
   updatedAt: string;
   author: string;
+  /** Display-only metadata overrides for the editable title-page details row. */
+  headerMetadata?: DocumentHeaderMetadataConfig;
   /** Editable label shown above the cover-page author. Defaults to PREPARED BY. */
   coverAuthorLabel?: string;
   /** Editable cover-page date text. Defaults to the document's last-updated date. */
