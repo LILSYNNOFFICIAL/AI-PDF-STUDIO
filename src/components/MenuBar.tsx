@@ -172,9 +172,9 @@ export const MenuBar: React.FC<MenuBarProps> = ({
   return (
     <div 
       ref={menuBarRef} 
-      className="h-8 bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none z-40 shrink-0 font-sans"
+      className="relative z-50 min-h-8 bg-slate-950 border-b border-slate-800 text-slate-300 text-xs flex items-center px-2 select-none shrink-0 font-sans"
     >
-      <div className="flex min-w-0 flex-1 items-center space-x-1 overflow-x-auto whitespace-nowrap">
+      <div className="flex min-w-0 flex-1 items-center space-x-1 overflow-visible whitespace-nowrap">
         <button
           onMouseDown={event => event.preventDefault()}
           onClick={() => executeAction(onOpenTemplateGallery)}
@@ -608,7 +608,7 @@ export const MenuBar: React.FC<MenuBarProps> = ({
           <button
             type="button"
             onClick={() => handleMenuClick('more')}
-            onMouseEnter={() => setActiveMenu('more')}
+            onMouseEnter={() => handleMenuHover('more')}
             aria-haspopup="menu"
             aria-expanded={activeMenu === 'more'}
             className={`flex items-center gap-1 rounded px-2.5 py-1 font-semibold transition-colors hover:bg-slate-800 hover:text-white ${activeMenu === 'more' ? 'bg-slate-800 text-white' : 'text-slate-300'}`}
