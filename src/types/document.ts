@@ -80,7 +80,7 @@ export interface DesignTableDefaults {
 
 export interface CoverPageDesign {
   enabled: boolean;
-  style: 'midnight-executive' | 'art-deco' | 'dark-luxury' | 'editorial' | 'minimal';
+  style: 'midnight-executive' | 'modern-graphic' | 'art-deco' | 'dark-luxury' | 'editorial' | 'minimal';
   background: ColorFill;
   titleColor: string;
   detailColor: string;
