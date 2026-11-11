@@ -25,7 +25,7 @@ test('the catalog contains exactly 100 templates in the approved category counts
   assert.equal(catalogApi.DOCUMENT_TEMPLATE_CATALOG.length, 101);
   assert.deepEqual(catalogApi.TEMPLATE_CATEGORY_COUNTS, EXPECTED_COUNTS);
   const ids = catalogApi.DOCUMENT_TEMPLATE_CATALOG.map(item => item.id);
-  assert.equal(new Set(ids).size, 100, 'All 100 template IDs must be unique');
+  assert.equal(new Set(ids).size, 101, 'All 101 template IDs must be unique');
   for (const item of catalogApi.DOCUMENT_TEMPLATE_CATALOG) {
     assert.ok(item.id.trim());
     assert.ok(item.title.trim());
