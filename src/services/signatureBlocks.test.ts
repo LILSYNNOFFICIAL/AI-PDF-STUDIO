@@ -36,6 +36,12 @@ test('returns no fields for text that is not a labeled signature template', () =
   assert.deepEqual(parseSignatureFields('Please sign below.\nThank you.'), []);
 });
 
+test('selected underline lengths are retained independently for each field', () => {
+  const fields = parseSignatureFields('Date: ____________________\nName: __________\nExtra: ____');
+  assert.deepEqual(fields.map(field => field.lineLength), [20, 12, 4]);
+  assert.ok(fields.every(field => field.value === ''));
+});
+
 test('provides neutral editable Date, Name and Extra fields when no text is selected', () => {
   const fields = createDefaultSignatureFields();
   assert.deepEqual(fields.map(field => [field.label, field.kind]), [
