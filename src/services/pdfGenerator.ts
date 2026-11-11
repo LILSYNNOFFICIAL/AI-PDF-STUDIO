@@ -736,7 +736,11 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       ? { style: 'solid', color: design.colors.accent, width: 0.8, sides: ['bottom'] }
       : headingStyle === 'numbered-card'
         ? { style: 'solid', color: design.colors.border, width: 0.55, sides: ['left', 'bottom'] }
-        : undefined;
+        : headingStyle === 'side-rule'
+          ? { style: 'solid', color: design.colors.accent, width: 1.1, sides: ['left'] }
+          : headingStyle === 'double-rule'
+            ? { style: 'double', color: design.colors.accent, width: 0.8, sides: ['top', 'bottom'] }
+            : undefined;
     const primaryRgb = colorToRgb(design.colors.primary);
     const primaryLuminance = (0.2126 * primaryRgb[0] + 0.7152 * primaryRgb[1] + 0.0722 * primaryRgb[2]) / 255;
     const headingTextColor = headingStyle === 'banner'
