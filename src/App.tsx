@@ -1073,7 +1073,6 @@ export default function App() {
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onImportText={handleImportText}
-        onImportText={handleImportText}
         onOpenSourceTruth={() => setIsSourceTruthOpen(true)}
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
@@ -1249,6 +1248,7 @@ export default function App() {
         onOpenTemplateGallery={() => setIsTemplateGalleryOpen(true)}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
+        onImportText={handleImportText}
         onExportMarkdown={handleExportMarkdown}
         onExportPlainText={handleExportPlainText}
         onCopyDocumentText={handleCopyDocumentText}

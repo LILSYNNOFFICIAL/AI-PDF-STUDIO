@@ -14,7 +14,7 @@ import { PERSONA_LABELS } from './Navbar';
 
 type MobileTab = 'editor' | 'ai' | 'outline' | 'tools';
 
-interface MobileWorkspaceProps {
+export interface MobileWorkspaceProps {
   document: DocumentModel;
   activeSectionId: string | null;
   persona: AIPersona;
