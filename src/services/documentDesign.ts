@@ -348,6 +348,113 @@ japandiPreset.coverPage = {
   eyebrow: 'STUDIO COLLECTION', brandLine: '', showFrame: false, showLogoPlaceholder: false, showOrnamentalRule: true
 };
 
+
+// Give every built-in preset a cover treatment that belongs to its own palette.
+// The generic dark cover is retained only as a migration/default fallback.
+const INTENTIONAL_COVER_SYSTEMS: Record<string, Partial<DocumentDesign['coverPage']>> = {
+  'modern-corporate': {
+    style: 'modern-graphic',
+    background: solid('#12243a'),
+    titleColor: '#ffffff',
+    detailColor: '#dbe6f1',
+    borderColor: '#6d91b8',
+    eyebrow: 'CORPORATE PROFILE',
+    brandLine: 'STRATEGY • OPERATIONS • PERFORMANCE',
+    showFrame: true,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: true
+  },
+  'luxury-executive': {
+    style: 'dark-luxury',
+    background: solid('#25211d'),
+    titleColor: '#f5ead8',
+    detailColor: '#c9b99e',
+    borderColor: '#b08a45',
+    eyebrow: 'EXECUTIVE EDITION',
+    brandLine: 'PRIVATE • REFINED • CONFIDENTIAL',
+    showFrame: true,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  },
+  'creative-studio': {
+    style: 'editorial',
+    background: solid('#fcf5fb'),
+    titleColor: '#24152f',
+    detailColor: '#776b80',
+    borderColor: '#d946a6',
+    eyebrow: 'CREATIVE STUDIO',
+    brandLine: 'IDEAS • DESIGN • CULTURE',
+    showFrame: false,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: true
+  },
+  'minimal-contemporary': {
+    style: 'minimal',
+    background: solid('#ffffff'),
+    titleColor: '#172033',
+    detailColor: '#64748b',
+    borderColor: '#0f766e',
+    eyebrow: 'DOCUMENT SERIES',
+    brandLine: '',
+    showFrame: false,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  },
+  'bold-editorial': {
+    style: 'editorial',
+    background: solid('#fffefa'),
+    titleColor: '#191919',
+    detailColor: '#777777',
+    borderColor: '#b42318',
+    eyebrow: 'THE EDITION',
+    brandLine: 'PERSPECTIVE • ANALYSIS • INSIGHT',
+    showFrame: false,
+    showLogoPlaceholder: false,
+    showOrnamentalRule: true
+  },
+  'technology-professional': {
+    style: 'midnight-executive',
+    background: solid('#102336'),
+    titleColor: '#f4fbff',
+    detailColor: '#b8dce6',
+    borderColor: '#0891b2',
+    eyebrow: 'TECHNOLOGY BRIEF',
+    brandLine: 'SYSTEMS • SECURITY • INNOVATION',
+    showFrame: true,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: true
+  },
+  'contemporary-legal': {
+    style: 'minimal',
+    background: solid('#16243b'),
+    titleColor: '#ffffff',
+    detailColor: '#cbd5e1',
+    borderColor: '#315d91',
+    eyebrow: 'LEGAL DOCUMENT',
+    brandLine: 'FORMAL • PRECISE • PROFESSIONAL',
+    showFrame: true,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: false
+  },
+  'financial-report': {
+    style: 'modern-graphic',
+    background: solid('#17342d'),
+    titleColor: '#ffffff',
+    detailColor: '#c8e0d3',
+    borderColor: '#54a982',
+    eyebrow: 'FINANCIAL REPORT',
+    brandLine: 'PERFORMANCE • FORECAST • ANALYSIS',
+    showFrame: true,
+    showLogoPlaceholder: true,
+    showOrnamentalRule: true
+  }
+};
+
+for (const preset of DOCUMENT_DESIGN_PRESETS) {
+  const coverSystem = INTENTIONAL_COVER_SYSTEMS[preset.presetId];
+  if (coverSystem) Object.assign(preset.coverPage, coverSystem);
+}
+
 function isHexColor(value: unknown): value is string {
   return typeof value === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
 }

@@ -441,3 +441,31 @@ test('premium themes define distinct interior section-heading treatments', () =>
     byId.get('bauhaus-modern')?.layoutDefaults.sectionHeadingStyle
   );
 });
+
+
+test('all built-in visual themes use an intentional cover system instead of the generic fallback', () => {
+  const byId = new Map(DOCUMENT_DESIGN_PRESETS.map(preset => [preset.presetId, preset]));
+  const expected = [
+    ['modern-corporate', 'modern-graphic', '#12243a'],
+    ['luxury-executive', 'dark-luxury', '#25211d'],
+    ['creative-studio', 'editorial', '#fcf5fb'],
+    ['minimal-contemporary', 'minimal', '#ffffff'],
+    ['bold-editorial', 'editorial', '#fffefa'],
+    ['technology-professional', 'midnight-executive', '#102336'],
+    ['contemporary-legal', 'minimal', '#16243b'],
+    ['financial-report', 'modern-graphic', '#17342d']
+  ] as const;
+
+  for (const [id, style, background] of expected) {
+    const preset = byId.get(id);
+    assert.ok(preset, 'missing preset ' + id);
+    assert.equal(preset.coverPage.style, style, id + ' cover style');
+    assert.equal(preset.coverPage.background.type, 'solid', id + ' cover background type');
+    assert.equal(preset.coverPage.background.color, background, id + ' cover background');
+  }
+
+  const distinctCoverSignatures = new Set(DOCUMENT_DESIGN_PRESETS.map(preset =>
+    [preset.coverPage.style, JSON.stringify(preset.coverPage.background), preset.coverPage.titleColor, preset.coverPage.borderColor].join('|')
+  ));
+  assert.ok(distinctCoverSignatures.size >= 15, 'most presets should have a distinct cover visual signature');
+});
