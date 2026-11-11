@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use the host's available task-by-task implementation workflow. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a premium document system with an expanded theme designer, 100 additional structured templates, and object-aware right-click menus.
+**Goal:** Build a premium document system with an expanded theme designer, 100 standard structured templates plus a dedicated LIL SYNN Music Agreement template, and object-aware right-click menus.
 
 **Architecture:** Keep templates as independent content definitions and DocumentDesign as an independent visual theme. A gallery composes the two at creation time; the editor and PDF renderer consume the same normalized design model. Context menus call the editor's existing mutation and history pathways rather than editing the DOM directly.
 
@@ -87,7 +87,7 @@
 
 ## Stage 2: Template Gallery and 100 New Templates
 
-### Task 4: Add an independently tested 100-item template catalog
+### Task 4: Add an independently tested catalog of 100 standard templates plus the dedicated LIL SYNN template
 
 **Files:**
 - Create: `src/services/templateCatalog.ts`
@@ -98,7 +98,7 @@
 - Produces: `DocumentTemplateDefinition`, `DOCUMENT_TEMPLATE_CATALOG`, `getTemplateById(id)`, `buildTemplateDocument(id)`.
 - Consumes: `DocumentModel`, existing section/clause types and `applyDocumentPreset` only at the gallery composition layer.
 
-- [x] **Step 1: Add failing tests** asserting exactly 100 unique stable IDs, approved category counts, non-empty summaries/tags/sections, fresh IDs on every build, no shared nested mutable arrays, and template-specific content for representative templates in every category.
+- [x] **Step 1: Add failing tests** asserting 101 unique stable IDs (100 standard templates plus one dedicated LIL SYNN template), approved category counts, non-empty summaries/tags/sections, fresh IDs on every build, no shared nested mutable arrays, and template-specific content for representative templates in every category.
 - [x] **Step 2: Verify red** with `bun test src/services/templateCatalog.test.ts`.
 - [x] **Step 3: Implement** the 100 templates using structured per-template definitions and focused category-specific provision blueprints. Every built document has a tailored title, editable placeholder data, multiple named sections and substantive clauses that reflect its purpose. Include an editable notice that state/local law and transaction facts may require review. Reuse content builders, never share mutable DocumentModel instances.
 - [x] **Step 4: Verify green** with the identical test command.
@@ -126,7 +126,7 @@
 - [ ] **Step 5b:** Complete live browser QA for the gallery, responsive layout, and end-to-end editor interactions.
 - [x] **Step 6: Commit** the verified gallery.
 
-**Stage 2 acceptance:** Exactly 100 new catalog entries appear. Search/category/filter/favorite/recent work. Each template opens with a chosen theme, can be customized afterward, and remains editable. Existing template IDs still load.
+**Stage 2 acceptance:** All 100 standard catalog entries and the dedicated LIL SYNN Music Agreement template appear (101 total). Search/category/filter/favorite/recent work. Each template opens with a chosen theme, can be customized afterward, and remains editable. Existing template IDs still load.
 
 ---
 
@@ -167,11 +167,11 @@
 - [x] Scope AI version rollback to the active document ID as well as version number.
 - [x] Keep the More menu pinned outside the scrolling primary menu strip.
 - [x] Add keyboard navigation that skips disabled context-menu items and wraps safely.
-- [x] Apply the Music Agreement default only to music templates using the LIL SYNN theme; preserve freeform titles for all other templates.
+- [x] Apply the Music Agreement default only to the dedicated LIL SYNN template; the LIL SYNN visual theme must not change the title or classification of other templates.
 
-**Implementation merge record:** PRs #39–#46 are merged into main. Main commit at this status update: ae1764e1dd67021587c4f7743fdaa2c9ed4ed44e. Main CI and GitHub Pages deployment passed.
+**Implementation merge record:** The implementation includes the earlier design/catalog/context-menu work and the recent merged fixes in PRs #48–#54. Current main commit at this status update: e90c348d112eed1cceccc109d2d19ee5ad61b263. Main CI and GitHub Pages deployment passed.
 
-**Live QA so far:** A fresh browser session loaded the deployed app, opened the 100-template gallery, selected Recording Artist Agreement with the LIL SYNN theme, verified the default title was “Music Agreement”, and created the document. The live backend health endpoint returned `status: ok` and `geminiConfigured: true`. The Source of Truth modal appeared on fresh load and was dismissed.
+**Live QA so far:** An earlier browser session loaded the deployed app and created a Recording Artist Agreement using the LIL SYNN theme. That session verified the earlier theme-driven Music Agreement behavior, which has since been corrected. The live backend health endpoint returned `status: ok` and `geminiConfigured: true`. A fresh browser interaction smoke test of the latest menu changes could not be started because the browser-automation wallet had no available balance; no latest live menu-interaction result is claimed.
 
 **Live QA still pending:** Editing the cover metadata and running header, verifying the More menu at narrow widths, blank-canvas context-menu interaction, AI edit/validation, undo/redo in the browser, and exported PDF content.
 
@@ -185,4 +185,4 @@
 - Merge each milestone only when tests, lint, build and required deployment checks are green.
 - [x] After the latest merge, verify main CI and GitHub Pages deployment.
 - [x] Run an initial live smoke test of app load, gallery selection, LIL SYNN theme and Music Agreement default.
-- [ ] Finish live browser tests for PDF cover rendering, editable metadata, context menus, AI edits, undo/redo and responsive More-menu access.
+- [ ] Finish live browser tests for PDF cover rendering, editable/removable header metadata, context menus, AI edits, undo/redo and responsive More-menu access.
