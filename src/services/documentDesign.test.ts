@@ -5,6 +5,7 @@ import {
   DOCUMENT_DESIGN_PRESETS,
   filterDocumentDesignPresets,
   getDocumentDesignPresetCategory,
+  getSectionHeadingBorderStyles,
   applyDocumentPreset,
   clearDesignOverrides,
   listSavedThemes,
@@ -500,4 +501,25 @@ test('built-in themes define coherent interior systems and page-matched table su
     assert.ok(preset.tableDefaults.gridlineWidth >= 0.2 && preset.tableDefaults.gridlineWidth <= 0.8, preset.presetId + ' table gridline weight');
     assert.ok(preset.layoutDefaults.sectionSpacing >= 16 && preset.layoutDefaults.sectionSpacing <= 30, preset.presetId + ' section spacing');
   }
+});
+
+
+test('section heading preview borders match the PDF heading treatments', () => {
+  const doubleRule = getSectionHeadingBorderStyles('double-rule', '#c49a45', '#334455');
+  assert.equal(doubleRule.borderTop, '3px double #c49a45');
+  assert.equal(doubleRule.borderBottom, '3px double #c49a45');
+  assert.equal(doubleRule.borderLeft, 'none');
+
+  const sideRule = getSectionHeadingBorderStyles('side-rule', '#c49a45', '#334455');
+  assert.equal(sideRule.borderLeft, '3px solid #c49a45');
+  assert.equal(sideRule.borderTop, 'none');
+  assert.equal(sideRule.borderBottom, 'none');
+
+  const editorial = getSectionHeadingBorderStyles('editorial-rule', '#c49a45', '#334455');
+  assert.equal(editorial.borderBottom, '1px solid #c49a45');
+  assert.equal(editorial.borderTop, 'none');
+
+  const numbered = getSectionHeadingBorderStyles('numbered-card', '#c49a45', '#334455');
+  assert.equal(numbered.borderLeft, '3px solid #c49a45');
+  assert.equal(numbered.borderColor, '#334455');
 });
