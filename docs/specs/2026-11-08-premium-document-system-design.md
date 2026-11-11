@@ -32,8 +32,8 @@ The Magnific dark-contract reference could not be fetched by the text browser, s
 
 ## Initial template inventory
 
-The first catalog release adds exactly 100 new editable templates:
-- Music & Entertainment: 20
+The first catalog release includes 100 standard editable templates plus one dedicated LIL SYNN Music Agreement template, for 101 catalog entries total. The standard category counts remain as follows; Music & Entertainment includes the additional dedicated LIL SYNN entry:
+- Music & Entertainment: 20 standard templates + 1 dedicated LIL SYNN template (21 total)
 - Business & Commercial: 12
 - Real Estate & Rentals: 12
 - Creative & Freelance: 10
@@ -86,3 +86,8 @@ Menus open on right-click or the keyboard context-menu key, are positioned withi
 - Context menus work for the supported object types with mouse and keyboard.
 - Existing documents open without migration errors or content loss.
 - Tests cover catalog count/uniqueness, document independence, theme content-preservation, preset integrity, cover rendering, context actions, and regression behavior.
+
+
+## Dedicated LIL SYNN agreement template
+
+The LIL SYNN Music Agreement is a dedicated template, not a visual theme alias. It is the only catalog template that defaults to the agreement title "Music Agreement" and the internal `music_agreement` document classification. The LIL SYNN visual theme can be applied to other templates without changing their agreement title or document classification. Every template's agreement title remains editable at creation.
