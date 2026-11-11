@@ -25,7 +25,7 @@ import { parseTextDocument, getSourceIntegrityReport } from './services/textDocu
 import { normalizeDocumentDesign, syncLegacyStyleChanges, deepCloneDesign, clearDesignOverrides, applyDocumentPreset } from './services/documentDesign';
 import { buildTemplateDocument, getTemplateById, getTemplateAgreementDefaults } from './services/templateCatalog';
 import { loadBrandProfiles, saveBrandProfiles } from './services/brandProfiles';
-import { appendDocumentHistory, redoDocumentHistory, undoDocumentHistory, type DocumentHistoryState } from './services/documentHistory';
+import { appendDocumentHistory, findDocumentVersionSnapshot, redoDocumentHistory, undoDocumentHistory, type DocumentHistoryState } from './services/documentHistory';
 import { 
   DocumentModel, 
   AIPersona, 
@@ -1173,7 +1173,7 @@ export default function App() {
             isOrchestrating={isOrchestrating}
             onSendMessage={handleSendMessage}
             onRollbackToVersion={(v) => {
-              const snapshot = history.find(h => h.version === v) || history[0];
+              const snapshot = findDocumentVersionSnapshot(history, document.id, v);
               if (snapshot) {
                 const res = rollbackDocument(document, snapshot);
                 pushHistory(res.updatedDoc);
@@ -1245,7 +1245,7 @@ export default function App() {
         onUpdateSignatures={(signatures) => handleEditorDocumentChange({ ...document, signatures })}
         onSendMessage={handleSendMessage}
         onRollbackToVersion={(v) => {
-          const snapshot = history.find(h => h.version === v) || history[0];
+          const snapshot = findDocumentVersionSnapshot(history, document.id, v);
           if (snapshot) {
             const res = rollbackDocument(document, snapshot);
             pushHistory(res.updatedDoc);
