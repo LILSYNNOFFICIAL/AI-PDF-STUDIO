@@ -338,7 +338,7 @@
 [data-app-theme="studio"] .desktop-workspace .bg-blue-600 {
   background-color: #315efb !important;
 }
-[data-app-theme="studio"] .desktop-workspace .hover\\:bg-blue-500:hover {
+[data-app-theme="studio"] .desktop-workspace [class~="hover:bg-blue-500"]:hover {
   background-color: #244fe4 !important;
 }
 [data-app-theme="studio"] .desktop-workspace .text-blue-400,
@@ -349,7 +349,7 @@
 [data-app-theme="studio"] .desktop-workspace .border-blue-600 {
   border-color: #9db4ff !important;
 }
-[data-app-theme="studio"] .desktop-workspace .shadow-blue-500\\/30 {
+[data-app-theme="studio"] .desktop-workspace [class~="shadow-blue-500/30"] {
   box-shadow: 0 5px 14px rgba(49,94,251,.18) !important;
 }
 [data-app-theme="studio"] .desktop-workspace button:not(:disabled):hover {
