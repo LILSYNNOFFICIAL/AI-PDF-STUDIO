@@ -5,7 +5,12 @@ import { readFileSync } from 'node:fs';
 const menuSource = readFileSync(new URL('../components/MenuBar.tsx', import.meta.url), 'utf8');
 
 test('Appendix / Exhibit menu item calls a dedicated append action instead of creating a new document', () => {
-  const appendixButton = menuSource.match(/<button[\s\S]*?Appendix \/ Exhibit[\s\S]*?<\/button>/)?.[0] ?? '';
+  const labelIndex = menuSource.indexOf('Appendix / Exhibit');
+  const buttonStart = menuSource.lastIndexOf('<button', labelIndex);
+  const buttonEnd = menuSource.indexOf('</button>', labelIndex) + '</button>'.length;
+  const appendixButton = buttonStart >= 0 && buttonEnd >= '</button>'.length
+    ? menuSource.slice(buttonStart, buttonEnd)
+    : '';
   assert.ok(appendixButton, 'Appendix / Exhibit menu item must exist');
   assert.match(appendixButton, /onAddAppendix/);
   assert.doesNotMatch(appendixButton, /onNewDocument/);
