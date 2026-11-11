@@ -48,7 +48,7 @@ export function getInitialDocument(): DocumentModel {
   const { updatedDoc } = buildDocumentFromPrompt(
     'Syntient Records music collaboration and master recording ownership agreement'
   );
-  return updatedDoc;
+  return { ...updatedDoc, agreementType: 'Music Agreement' };
 }
 
 // 1. Exclusive Beat License & Producer Royalty Agreement

@@ -12,6 +12,7 @@ import {
   type TemplateCategory
 } from '../services/templateCatalog';
 import { DOCUMENT_DESIGN_PRESETS, fillToCss } from '../services/documentDesign';
+import { getTemplateArtworkPath } from '../services/templateArtwork';
 
 interface TemplateGalleryModalProps {
   isOpen: boolean;
@@ -213,7 +214,9 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                             className="w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                           >
                             <div className="relative mb-3 flex h-[118px] items-center justify-center overflow-hidden rounded-lg border p-2" style={{ background: fillToCss(previewTheme.coverPage.background), borderColor: previewTheme.coverPage.borderColor }}>
-                              <div className="flex h-full w-full max-w-[180px] flex-col items-center justify-center border px-3 text-center" style={{ borderColor: previewTheme.coverPage.showFrame ? previewTheme.coverPage.borderColor : 'transparent' }}>
+                              <img src={getTemplateArtworkPath(template.category, (import.meta as any).env?.BASE_URL || '/')} alt="" aria-hidden="true" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/15 to-black/30" />
+                              <div className="relative z-10 flex h-full w-full max-w-[180px] flex-col items-center justify-center border px-3 text-center backdrop-blur-[1px]" style={{ borderColor: previewTheme.coverPage.showFrame ? previewTheme.coverPage.borderColor : 'transparent' }}>
                                 <span className="text-[6px] font-semibold tracking-[0.2em]" style={{ color: previewTheme.coverPage.detailColor }}>{previewTheme.coverPage.eyebrow}</span>
                                 <span className="mt-2 line-clamp-2 text-[11px] font-semibold leading-tight" style={{ color: previewTheme.coverPage.titleColor, fontFamily: previewTheme.typography.headingFontFamily }}>{template.title}</span>
                                 {previewTheme.coverPage.showOrnamentalRule && <span className="mt-2 h-px w-8" style={{ background: previewTheme.coverPage.borderColor }} />}

@@ -465,6 +465,7 @@ export function buildTemplateDocument(templateId: string): DocumentModel {
     id: makeId('document'),
     title: template.title,
     type: template.documentType,
+    agreementType: template.id === 'lil-synn' ? 'Music Agreement' : '',
     version: 1,
     createdAt: now,
     updatedAt: now,

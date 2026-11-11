@@ -7,15 +7,19 @@ interface DocumentMetadataModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExportJson: () => void;
+  onUpdateAgreementType: (agreementType: string) => void;
 }
 
 export const DocumentMetadataModal: React.FC<DocumentMetadataModalProps> = ({
   document,
   isOpen,
   onClose,
-  onExportJson
+  onExportJson,
+  onUpdateAgreementType
 }) => {
   const [copied, setCopied] = React.useState(false);
+  const [agreementType, setAgreementType] = React.useState(document.agreementType || '');
+  React.useEffect(() => setAgreementType(document.agreementType || ''), [document.agreementType, isOpen]);
 
   if (!isOpen) return null;
 
@@ -69,6 +73,11 @@ export const DocumentMetadataModal: React.FC<DocumentMetadataModalProps> = ({
             <div>
               <span className="text-slate-500 block text-[10px] uppercase tracking-wider">Document Type</span>
               <span className="font-mono text-blue-400">{document.type}</span>
+            </div>
+            <div className="col-span-2">
+              <label htmlFor="agreement-type" className="text-slate-500 block text-[10px] uppercase tracking-wider">Agreement Type (editable)</label>
+              <input id="agreement-type" value={agreementType} onChange={event => setAgreementType(event.target.value)} onBlur={() => { if (agreementType !== (document.agreementType || '')) onUpdateAgreementType(agreementType); }} placeholder="Enter an agreement type, or leave blank" className="mt-1 w-full rounded-md border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-slate-100 outline-none focus:border-blue-500" />
+              <span className="mt-1 block text-[9px] text-slate-500">Free-form text. This is not restricted to a predefined agreement list.</span>
             </div>
             <div>
               <span className="text-slate-500 block text-[10px] uppercase tracking-wider">Version &amp; State</span>
