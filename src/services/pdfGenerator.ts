@@ -538,7 +538,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     pdf.setFont(primaryFont, 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(...colorToRgb(cover.detailColor));
-    pdf.text('PREPARED BY', centerX, metadataY, { align: 'center' });
+    pdf.text(doc.coverAuthorLabel ?? 'PREPARED BY', centerX, metadataY, { align: 'center' });
     pdf.setFont(primaryFont, 'bold');
     pdf.setFontSize(10);
     pdf.setTextColor(...colorToRgb(cover.titleColor));
@@ -546,7 +546,7 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
     pdf.setFont(primaryFont, 'normal');
     pdf.setFontSize(7.5);
     pdf.setTextColor(...colorToRgb(cover.detailColor));
-    pdf.text(new Date(doc.updatedAt).toLocaleDateString(), centerX, metadataY + 13, { align: 'center' });
+    pdf.text(doc.coverDateText ?? new Date(doc.updatedAt).toLocaleDateString(), centerX, metadataY + 13, { align: 'center' });
 
     if (cover.style === 'art-deco' && cover.showFrame) {
       const corner = frameInset + 7;

@@ -569,7 +569,7 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
               </div>
               <div className="rounded-lg border p-4" style={{ background: fillToCss(design.page.background), borderColor: design.colors.border }}>
                 <div className="mb-3 flex items-center justify-between border-b pb-2 text-[7px] font-semibold uppercase tracking-wider" style={{ color: design.pageFurniture.headerTextColor, borderColor: design.layoutDefaults.headerRule ? design.pageFurniture.dividerColor : 'transparent' }}>
-                  <span>{pageConfigDraft.headerText || 'DOCUMENT HEADER'}</span><span>CONFIDENTIAL</span>
+                  <span>{pageConfigDraft.headerText || 'DOCUMENT HEADER'}</span><span>{pageConfigDraft.headerRightText ?? 'CONFIDENTIAL'}</span>
                 </div>
                 <div className="mb-2 text-[14px] font-semibold" style={{ color: design.colors.headingText, fontFamily: design.typography.headingFontFamily }}>1.0 {document.sections[0]?.title || 'SECTION HEADING'}</div>
                 <div className="mb-2 h-px w-full" style={{ background: design.colors.border }} />
@@ -687,9 +687,12 @@ export const DocumentDesignModal: React.FC<DocumentDesignModalProps> = ({
                     </label>
                   ))}
                 </div>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <label className="block text-[11px] text-slate-300">Running header text
                     <input value={pageConfigDraft.headerText} onChange={event => updatePageConfigDraft({ headerText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="COMPANY • AGREEMENT NAME" />
+                  </label>
+                  <label className="block text-[11px] text-slate-300">Running header right text
+                    <input value={pageConfigDraft.headerRightText ?? 'CONFIDENTIAL'} onChange={event => updatePageConfigDraft({ headerRightText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="CONFIDENTIAL" />
                   </label>
                   <label className="block text-[11px] text-slate-300">Running footer text
                     <input value={pageConfigDraft.footerText} onChange={event => updatePageConfigDraft({ footerText: event.target.value })} className="mt-1 block w-full rounded border border-slate-700 bg-slate-900 px-2 py-2 text-slate-100" placeholder="CONFIDENTIAL • DOCUMENT VERSION" />

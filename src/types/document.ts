@@ -363,6 +363,10 @@ export interface DocumentModel {
   createdAt: string;
   updatedAt: string;
   author: string;
+  /** Editable label shown above the cover-page author. Defaults to PREPARED BY. */
+  coverAuthorLabel?: string;
+  /** Editable cover-page date text. Defaults to the document's last-updated date. */
+  coverDateText?: string;
   brandProfileId?: string;
   /** Applied brand identity used by cover-page previews and PDF rendering. */
   brandName?: string;

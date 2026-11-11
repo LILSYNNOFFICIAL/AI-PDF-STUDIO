@@ -366,3 +366,20 @@ test('exports customizable labels for each signatory detail field', () => {
   assert.ok(text.includes('Organization: Example Corporation'));
   assert.ok(text.includes('Signed on: 2026-11-11'));
 });
+
+
+test('cover page exports user-editable author label and date text', () => {
+  const doc = applyDocumentPreset(buildDocumentFromPrompt('Editable cover metadata').updatedDoc, 'midnight-executive');
+  doc.design = {
+    ...doc.design!,
+    coverPage: { ...doc.design!.coverPage, enabled: true }
+  };
+  doc.author = 'LIL SYNN';
+  doc.coverAuthorLabel = 'CREATED FOR';
+  doc.coverDateText = 'CUSTOM RELEASE DATE';
+  const text = outputText(generatePdfDocument(doc));
+  assert.ok(text.includes('CREATED FOR'));
+  assert.ok(text.includes('CUSTOM RELEASE DATE'));
+  assert.ok(text.includes('LIL SYNN'));
+  assert.ok(!text.includes('PREPARED BY'));
+});
