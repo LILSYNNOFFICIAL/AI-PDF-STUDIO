@@ -249,7 +249,7 @@ test('expanded template families receive their own operationally specific clause
     buildTemplateDocument: (id: string) => import('../types/document').DocumentModel;
   };
   const expectations: Array<[string, RegExp, RegExp]> = [
-    ['recording-artist-agreement', /Recording Commitment & Delivery/i, /Master Ownership & Exploitation/i],
+    ['recording-artist-agreement', /Artist Engagement & Recording Commitment/i, /Master Ownership & Exploitation/i],
     ['music-producer-agreement', /Production Brief & Deliverables/i, /Producer Fee & Royalty Participation/i],
     ['featured-artist-agreement', /Featured Performance & Recording Scope/i, /Feature Fee, Royalty & Credit/i],
     ['music-management-agreement', /Management Appointment & Authority/i, /Commission Base & Accounting/i],
