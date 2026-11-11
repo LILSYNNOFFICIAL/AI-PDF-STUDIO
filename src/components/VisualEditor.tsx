@@ -844,10 +844,21 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
               border: documentDesign.coverPage.showFrame ? `1px solid ${documentDesign.coverPage.borderColor}` : '1px solid transparent'
             }}
           >
+            {documentDesign.coverPage.style === 'modern-graphic' && (
+              <svg aria-hidden="true" viewBox="0 0 160 160" className="pointer-events-none absolute right-12 top-12 z-0 h-44 w-44 opacity-60">
+                <circle cx="80" cy="80" r="68" fill="none" stroke={documentDesign.coverPage.borderColor} strokeWidth="1.1" />
+                <circle cx="80" cy="80" r="51" fill="none" stroke={documentDesign.coverPage.detailColor} strokeWidth="0.8" opacity="0.7" />
+                <circle cx="80" cy="80" r="34" fill="none" stroke={documentDesign.coverPage.borderColor} strokeWidth="0.8" opacity="0.8" />
+                <path d="M12 80h136 M80 12v136" fill="none" stroke={documentDesign.coverPage.detailColor} strokeWidth="0.65" opacity="0.45" />
+                <circle cx="80" cy="80" r="4" fill={documentDesign.coverPage.titleColor} />
+              </svg>
+            )}
             {documentDesign.coverPage.showFrame && (
               <>
                 <div className="pointer-events-none absolute inset-4 border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.9 }} />
-                <div className="pointer-events-none absolute inset-[22px] border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.45 }} />
+                {(documentDesign.coverPage.style === 'art-deco' || documentDesign.coverPage.style === 'dark-luxury') && (
+                  <div className="pointer-events-none absolute inset-[22px] border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.45 }} />
+                )}
                 {documentDesign.coverPage.style === 'art-deco' && (
                   <div className="pointer-events-none absolute inset-9 border" style={{ borderColor: documentDesign.coverPage.borderColor, opacity: 0.28 }} />
                 )}
