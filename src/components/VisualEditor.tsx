@@ -1162,7 +1162,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
                 onChange={event => {
                   if (event.target.value) handleHeaderMetadataRestore(event.target.value as 'version' | 'documentType' | 'date' | 'author');
                 }}
-                className="absolute right-0 top-0 rounded border border-slate-200 bg-white/80 px-1 py-0.5 text-[10px] text-slate-400 opacity-0 transition-opacity hover:opacity-100 focus:opacity-100"
+                className="absolute bottom-0 right-0 translate-y-1/2 rounded border border-slate-200 bg-white/90 px-1.5 py-0.5 text-[10px] text-slate-500 opacity-70 transition-opacity hover:opacity-100 focus:opacity-100"
                 title="Restore a removed document detail"
               >
                 <option value="">+</option>
