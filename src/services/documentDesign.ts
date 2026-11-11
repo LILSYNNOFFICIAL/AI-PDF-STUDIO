@@ -846,3 +846,29 @@ export function applySavedTheme(doc: DocumentModel, theme: SavedDocumentTheme): 
     updatedAt: new Date().toISOString()
   };
 }
+
+
+export type DocumentDesignPresetCategory =
+  | 'Business' | 'Editorial' | 'Creative' | 'Legal'
+  | 'Technology' | 'Finance' | 'Minimal' | 'Dark';
+
+export function getDocumentDesignPresetCategory(preset: DocumentDesign): DocumentDesignPresetCategory {
+  const id = preset.presetId;
+  if (id === 'lil-synn' || id === 'dark-luxury' || id === 'midnight-executive') return 'Dark';
+  if (id === 'art-deco' || id === 'bold-editorial' || id === 'editorial-luxe' || id === 'bauhaus-modern') return 'Editorial';
+  if (id === 'creative-studio') return 'Creative';
+  if (id === 'modern-legal' || id === 'contemporary-legal') return 'Legal';
+  if (id === 'technology-professional' || id === 'glassmorphism') return 'Technology';
+  if (id === 'financial-report') return 'Finance';
+  if (id === 'minimal-contemporary' || id === 'japandi-neutral') return 'Minimal';
+  return 'Business';
+}
+
+export function filterDocumentDesignPresets(presets: DocumentDesign[], query = '', category = 'All'): DocumentDesign[] {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  return presets.filter(preset => {
+    const matchesCategory = category === 'All' || getDocumentDesignPresetCategory(preset) === category;
+    const matchesQuery = !normalizedQuery || [preset.name, preset.presetId, getDocumentDesignPresetCategory(preset)].join(' ').toLocaleLowerCase().includes(normalizedQuery);
+    return matchesCategory && matchesQuery;
+  });
+}
