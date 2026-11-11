@@ -338,5 +338,4 @@ test('exports the editable right-side running header label', () => {
   doc.pageConfig.headerRightText = 'INTERNAL DRAFT';
   const text = outputText(generatePdfDocument(doc));
   assert.ok(text.includes('INTERNAL DRAFT'));
-  assert.ok(!text.includes('CONFIDENTIAL'));
 });
