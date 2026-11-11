@@ -73,3 +73,30 @@ test('context menu placement rejects non-finite coordinates and dimensions', () 
     { x: 10, y: 8 }
   );
 });
+
+
+test('keyboard navigation skips disabled context-menu items and wraps at both ends', async () => {
+  const api = await import('./contextMenu') as unknown as {
+    getNextEnabledContextMenuIndex: (
+      items: Array<{ disabled?: boolean }>,
+      currentIndex: number,
+      direction: 'next' | 'previous'
+    ) => number | null;
+  };
+  assert.equal(typeof api.getNextEnabledContextMenuIndex, 'function');
+  const items = [
+    { disabled: false },
+    { disabled: true },
+    { disabled: false },
+    { disabled: true },
+    { disabled: false }
+  ];
+  assert.equal(api.getNextEnabledContextMenuIndex(items, 0, 'next'), 2);
+  assert.equal(api.getNextEnabledContextMenuIndex(items, 2, 'next'), 4);
+  assert.equal(api.getNextEnabledContextMenuIndex(items, 4, 'next'), 0);
+  assert.equal(api.getNextEnabledContextMenuIndex(items, 2, 'previous'), 0);
+  assert.equal(api.getNextEnabledContextMenuIndex(items, 0, 'previous'), 4);
+  assert.equal(api.getNextEnabledContextMenuIndex(items, -1, 'next'), 0);
+  assert.equal(api.getNextEnabledContextMenuIndex(items, -1, 'previous'), 4);
+  assert.equal(api.getNextEnabledContextMenuIndex(items.map(() => ({ disabled: true })), 0, 'next'), null);
+});
