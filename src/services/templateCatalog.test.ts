@@ -199,3 +199,46 @@ test('only the dedicated LIL SYNN template defaults to Music Agreement; other te
   assert.equal(customDocument.title, 'Independent Recording Services Agreement');
   assert.equal(customDocument.type, 'legal_agreement');
 });
+
+
+test('template profiles give distinct legal structures to specialized agreement families', async () => {
+  const api = await import('./templateCatalog') as unknown as {
+    buildTemplateDocument: (id: string) => import('../types/document').DocumentModel;
+  };
+  const expectations: Array<[string, RegExp, RegExp]> = [
+    ['beat-license-agreement', /License Grant & Permitted Exploitation/i, /Territory, Term & Distribution Limits/i],
+    ['music-collaboration-split-sheet', /Writer Contributions & Composition Shares/i, /Publisher Splits & Registration Duties/i],
+    ['residential-lease-agreement', /Premises, Occupancy & Authorized Residents/i, /Rent, Deposits & Utility Allocation/i],
+    ['real-estate-purchase-agreement', /Purchase Price, Earnest Money & Escrow/i, /Title, Survey & Closing Conditions/i],
+    ['photography-services-agreement', /Creative Brief, Shot List & Production Plan/i, /Image License, Model Releases & Portfolio Rights/i],
+    ['employment-offer-letter', /Position, Reporting Line & Start Conditions/i, /Base Pay, Incentives & Benefits/i],
+    ['llc-operating-agreement', /Members, Purpose & Company Formation/i, /Capital Accounts, Allocations & Distributions/i],
+    ['promissory-note', /Principal, Funding & Promise to Pay/i, /Interest, Maturity & Payment Application/i],
+    ['saas-subscription-agreement', /Subscription Scope, Seats & Authorized Use/i, /Service Availability, Support & Maintenance/i],
+    ['cybersecurity-incident-response', /Incident Scope, Authority & Response Activation/i, /Containment, Evidence Handling & Recovery/i],
+    ['influencer-campaign-agreement', /Campaign Brief, Deliverables & Posting Calendar/i, /Disclosure, Usage Rights & Paid Amplification/i],
+    ['bill-of-sale', /Goods, Seller Authority & Transfer/i, /Price, Delivery & Acceptance/i]
+  ];
+  for (const [id, firstHeading, secondHeading] of expectations) {
+    const doc = api.buildTemplateDocument(id);
+    const text = doc.sections.map(section => [
+      section.title,
+      section.content || '',
+      ...section.clauses.map(clause => clause.heading + ' ' + clause.content)
+    ].join('\\n')).join('\\n');
+    assert.match(text, firstHeading, id + ' should use its specialized first provision');
+    assert.match(text, secondHeading, id + ' should use its specialized second provision');
+  }
+});
+
+test('specialized templates no longer reuse the same category-wide six-section outline', async () => {
+  const api = await import('./templateCatalog') as unknown as {
+    buildTemplateDocument: (id: string) => import('../types/document').DocumentModel;
+  };
+  const recording = api.buildTemplateDocument('recording-artist-agreement');
+  const beatLicense = api.buildTemplateDocument('beat-license-agreement');
+  const residentialLease = api.buildTemplateDocument('residential-lease-agreement');
+  const purchase = api.buildTemplateDocument('real-estate-purchase-agreement');
+  assert.notDeepEqual(recording.sections.map(section => section.title), beatLicense.sections.map(section => section.title));
+  assert.notDeepEqual(residentialLease.sections.map(section => section.title), purchase.sections.map(section => section.title));
+});

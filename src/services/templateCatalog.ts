@@ -1,4 +1,5 @@
 import type { DocumentModel, DocumentType, Section } from '../types/document';
+import { resolveTemplateContentProfile } from './templateProfiles';
 
 export type TemplateCategory =
   | 'Music & Entertainment'
@@ -334,7 +335,7 @@ export const DOCUMENT_TEMPLATE_CATALOG: DocumentTemplateDefinition[] = TEMPLATE_
     documentType: CATEGORY_BLUEPRINTS[category].documentType,
     focus,
     deliverable,
-    sectionTitles: [...CATEGORY_BLUEPRINTS[category].sectionTitles]
+    sectionTitles: [...resolveTemplateContentProfile(id, category).sectionTitles]
   };
 });
 
@@ -421,59 +422,60 @@ export function buildTemplateDocument(templateId: string, agreementType?: string
       signed: false
     }
   ];
+  const profile = resolveTemplateContentProfile(template.id, template.category);
   const sections = [
     buildSection(
       0,
-      template.sectionTitles[0],
-      template.description + '\n\nDrafting fields: [EFFECTIVE DATE] • [PROJECT / PROPERTY / ACCOUNT IDENTIFIER] • [AUTHORIZED TERRITORY OR LOCATION].',
+      profile.sectionTitles[0],
+      template.description + '\n\n' + profile.guidance[0] + '\n\nDrafting fields: [EFFECTIVE DATE] • [PROJECT / PROPERTY / ACCOUNT IDENTIFIER] • [AUTHORIZED TERRITORY OR LOCATION].',
       [
-        ['Transaction Purpose & Parties', 'The parties enter this ' + template.title + ' to address ' + template.focus + '. The full legal names, capacities and notice details of each party must be completed before execution.'],
-        ['Scope, Assets & Exclusions', 'The scope includes ' + template.focus + '. The parties shall identify all excluded activities, assets, locations, accounts or services in an attached schedule.']
+        [profile.clauseHeadings[0][0], 'The parties enter this ' + template.title + ' to address ' + template.focus + '. ' + profile.guidance[0]],
+        [profile.clauseHeadings[0][1], 'The parties shall list every included asset, service, location, account, person or item and expressly identify exclusions, assumptions and third-party dependencies.']
       ]
     ),
     buildSection(
       1,
-      template.sectionTitles[1],
-      'This section allocates the operational duties associated with ' + template.focus + '. All deliverables and material dependencies should be entered in the schedule before work begins.',
+      profile.sectionTitles[1],
+      'This section allocates the operational duties associated with ' + template.focus + '. ' + profile.guidance[1],
       [
-        [blueprint.performanceHeading, template.deliverable + '. Each party shall provide the cooperation, access, approvals and information reasonably required for the agreed work or transaction.'],
-        ['Milestones, Review & Change Control', 'The parties shall document milestones, review periods, acceptance criteria, correction requests and any approved change in scope, quantity, timing or specification. Silence should not constitute acceptance unless expressly selected in the completed schedule.']
+        [profile.clauseHeadings[1][0], template.deliverable + '. ' + profile.guidance[1]],
+        [profile.clauseHeadings[1][1], 'The parties shall document milestones, review periods, objective acceptance criteria, correction requests and approved changes in scope, quantity, timing or specification. Silence shall not constitute acceptance unless expressly selected in the completed schedule.']
       ]
     ),
     buildSection(
       2,
-      template.sectionTitles[2],
-      blueprint.moneyLead,
+      profile.sectionTitles[2],
+      blueprint.moneyLead + ' ' + profile.guidance[2],
       [
-        [blueprint.moneyHeading, '[CURRENCY] [TOTAL AMOUNT OR RATE] • [DEPOSIT / ADVANCE] • [MILESTONE OR INSTALLMENT DATES] • [PAYMENT METHOD].'],
-        ['Statements, Records & Reconciliation', 'The responsible party shall maintain complete supporting invoices, receipts, statements and calculation records. Any reconciliation period, audit right or objection deadline must be expressly stated.']
+        [profile.clauseHeadings[2][0], '[CURRENCY] [TOTAL AMOUNT OR RATE] • [DEPOSIT / ADVANCE] • [MILESTONE OR INSTALLMENT DATES] • [PAYMENT METHOD]. ' + profile.guidance[2]],
+        [profile.clauseHeadings[2][1], 'The responsible party shall maintain invoices, receipts, usage calculations, statements and payment evidence. Any audit right, reconciliation period and objection deadline must be expressly completed.']
       ]
     ),
     buildSection(
       3,
-      template.sectionTitles[3],
-      blueprint.rightsLead + ' The rights schedule shall specify any retained rights, permitted uses, restrictions, required notices and record-retention period.',
+      profile.sectionTitles[3],
+      blueprint.rightsLead + ' ' + profile.guidance[3],
       [
-        [blueprint.rightsHeading, 'The parties shall identify the owner of each asset, work product, data set or property interest and the precise rights granted, retained, transferred or excluded.'],
-        ['Ownership, Access & Recordkeeping', 'Each party shall use protected information only for the stated purpose, limit access to authorized persons and retain evidence of approvals, delivery, payment and compliance.']
+        [profile.clauseHeadings[3][0], profile.guidance[3] + ' The schedule shall state the precise rights granted, retained, transferred or excluded.'],
+        [profile.clauseHeadings[3][1], 'Each party shall limit access to authorized persons, use protected material only for the stated purpose and retain evidence of approvals, delivery, payment and compliance.']
       ]
     ),
     buildSection(
       4,
-      template.sectionTitles[4],
-      blueprint.riskLead,
+      profile.sectionTitles[4],
+      blueprint.riskLead + ' ' + profile.guidance[4],
       [
-        ['Term, Renewal & Completion', '[START DATE] • [INITIAL TERM] • [RENEWAL METHOD AND NOTICE WINDOW] • [COMPLETION OR MATURITY DATE]. The parties shall state any conditions required for renewal or final completion.'],
-        [blueprint.riskHeading, 'The parties shall describe material defaults, written notice addresses, cure periods, available remedies, responsibility for loss, permitted suspension, termination effects and any transition or handover assistance.']
+        [profile.clauseHeadings[4][0], profile.guidance[4]],
+        [profile.clauseHeadings[4][1], 'The parties shall state applicable notice channels, cure periods, available remedies, responsibility for loss, suspension rights, termination effects and any required transition or handover assistance.']
       ]
     ),
     buildSection(
       5,
-      template.sectionTitles[5],
-      'All schedules, exhibits, technical requirements, property details, deliverable inventories and approved changes should be attached and identified by version. Notices shall be sent using the contact details completed below.',
+      profile.sectionTitles[5],
+      profile.guidance[5] + ' All schedules, exhibits, technical requirements, property details and approved changes should be attached and identified by version.',
       [
-        ['Governing Terms, Compliance & Disputes', '[GOVERNING LAW] • [VENUE / DISPUTE PROCESS] • [REQUIRED APPROVALS]. The parties should confirm all mandatory consumer, employment, tenancy, privacy, licensing and sector-specific requirements that apply to this transaction.'],
-        ['Execution, Counterparts & Schedules', 'The persons signing below confirm that they have reviewed the completed schedules and are authorized to sign for the stated party. Electronic and counterpart execution should be used only as permitted by applicable law and the parties’ agreed process.']
+        [profile.clauseHeadings[5][0], profile.guidance[5] + ' Required approvals, compliance records and supporting documents should be listed in the attached schedule.'],
+        [profile.clauseHeadings[5][1], 'The persons signing below confirm that they have reviewed the completed schedules and are authorized to sign for the stated party. Electronic and counterpart execution should be used only as permitted by applicable law and the parties’ agreed process.']
       ]
     )
   ];
