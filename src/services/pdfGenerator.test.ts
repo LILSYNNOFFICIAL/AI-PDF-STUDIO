@@ -400,3 +400,31 @@ test('PDF header exports customized metadata labels and values and omits deleted
   assert.ok(output.includes('Prepared by: LIL SYNN'));
   assert.ok(!output.includes('Document Type'));
 });
+
+
+test('clause headings render as a separate display-font hierarchy above body copy', () => {
+  const doc = applyDocumentPreset(buildDocumentFromPrompt('Clause typography hierarchy').updatedDoc, 'midnight-executive');
+  doc.sections = [{
+    ...doc.sections[0],
+    sectionNumber: '2.0',
+    title: 'RIGHTS AND OBLIGATIONS',
+    content: '',
+    clauses: [{
+      id: 'styled-clause',
+      clauseNumber: '2.1',
+      heading: 'VISUAL CLAUSE HEADING',
+      content: 'VISUAL CLAUSE BODY COPY MUST REMAIN SELECTABLE.',
+      orderIndex: 0
+    }],
+    tables: [],
+    charts: [],
+    images: []
+  }];
+  const pdf = generatePdfDocument(doc);
+  const pageContent = ((pdf as any).internal.pages as string[][]).slice(1).flat().join('');
+  const headingIndex = pageContent.indexOf('(VISUAL CLAUSE HEADING)');
+  assert.ok(headingIndex >= 0, 'Expected clause heading in PDF text stream');
+  const headingPrefix = pageContent.slice(Math.max(0, headingIndex - 180), headingIndex);
+  assert.match(headingPrefix, /\\/F\\d+\\s+12(?:\\.0+)?\\s+Tf/, 'Clause heading should use the 12pt display hierarchy, not body typography');
+  assert.ok(pageContent.includes('(VISUAL CLAUSE BODY COPY MUST REMAIN SELECTABLE.)'));
+});
