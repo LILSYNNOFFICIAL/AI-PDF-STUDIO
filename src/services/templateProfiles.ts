@@ -267,8 +267,7 @@ const PROFILES: ProfileSeed[] = [
       'Attach the item inventory, condition photographs and receipt. Both parties should retain a signed copy showing the transfer date.'
     ]
   }
-];
-
+,
   {
     id: 'recording-artist',
     matches: /^recording-artist-agreement$/,
@@ -380,7 +379,8 @@ const PROFILES: ProfileSeed[] = [
     sectionTitles: ["Event Scope, Venue & Production Plan","Vendors, Staffing & Run of Show","Fees, Ticketing & Settlement","Permits, Safety & Event Data","Cancellation, Force Majeure & Closeout","Run of Show, Budget & Execution"],
     clauseHeadings: [["Event Purpose, Date, Venue & Capacity","Scope, Deliverables & Excluded Services"],["Vendor Roles, Staffing & Call Times","Run of Show, Equipment & Change Control"],["Service Fee, Deposit & Production Budget","Ticketing, Revenue Share & Settlement"],["Permits, Insurance & Safety Plan","Attendee Data, Photography & Recording"],["Cancellation, Postponement & Force Majeure","Incident Response, Refunds & Final Reconciliation"],["Run of Show & Approved Budget","Vendor Contacts, Notices & Signatures"]],
     guidance: ["Identify event date, venue, capacity, purpose, event owner, scope and excluded services. Confirm venue access and load-in/load-out windows.","List vendors, staffing roles, call times, equipment, run of show, approval chain and change-order process.","Set service fee, deposits, production budget, ticketing authority, revenue shares, settlement timing and approved deductions.","Allocate permits, insurance, safety, security, attendee data, photography and recording permissions.","Define cancellation, postponement, force majeure, incident response, refunds, vendor closeout and final reconciliation.","Attach run of show, budget, vendor matrix, emergency contacts and venue requirements."]
-  },
+  }
+];
 
 const CATEGORY_FALLBACKS: Record<string, TemplateContentProfile> = {
   'Music & Entertainment': {
