@@ -554,6 +554,21 @@ export function validateTableDesign(design: TableDesign): void {
   }
 }
 
+
+export function getSectionHeadingBorderStyles(
+  style: DocumentDesign['layoutDefaults']['sectionHeadingStyle'],
+  accent: string,
+  border: string
+): { borderTop: string; borderBottom: string; borderLeft: string; borderColor: string } {
+  const isDoubleRule = style === 'double-rule';
+  return {
+    borderTop: isDoubleRule ? `3px double ${accent}` : 'none',
+    borderBottom: style === 'editorial-rule' ? `1px solid ${accent}` : isDoubleRule ? `3px double ${accent}` : 'none',
+    borderLeft: style === 'numbered-card' || style === 'side-rule' ? `3px solid ${accent}` : 'none',
+    borderColor: style === 'numbered-card' ? border : accent
+  };
+}
+
 export function validateDocumentDesign(design: DocumentDesign): void {
   if (!design || typeof design !== 'object') throw new Error('Document design must be an object.');
   if (design.schemaVersion !== 1) throw new Error('Unsupported document design schema version.');
