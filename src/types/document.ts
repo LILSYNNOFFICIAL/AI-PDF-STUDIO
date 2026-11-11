@@ -274,6 +274,8 @@ export interface SignatureField {
   label: string;
   kind: 'text' | 'signature' | 'date';
   value?: string;
+  /** Desired blank-line length in approximate characters; PDF output fits it to the printable width. */
+  lineLength?: number;
 }
 
 export interface InlineSignatureBlock {

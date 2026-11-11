@@ -36,6 +36,12 @@ test('returns no fields for text that is not a labeled signature template', () =
   assert.deepEqual(parseSignatureFields('Please sign below.\nThank you.'), []);
 });
 
+test('selected underline lengths are retained independently for each field', () => {
+  const fields = parseSignatureFields('Date: ____________________\nName: ____________\nExtra: ____');
+  assert.deepEqual(fields.map(field => field.lineLength), [20, 12, 4]);
+  assert.ok(fields.every(field => field.value === ''));
+});
+
 test('provides neutral editable Date, Name and Extra fields when no text is selected', () => {
   const fields = createDefaultSignatureFields();
   assert.deepEqual(fields.map(field => [field.label, field.kind]), [
@@ -87,4 +93,12 @@ test('PDF places an inline signature panel between the surrounding section text'
   assert.ok(allPages.includes(after), 'Expected text after the signature block');
   assert.ok(allPages.indexOf(before) < allPages.indexOf('Jarred Gainer'), 'Expected the block after the preceding text');
   assert.ok(allPages.indexOf('Jarred Gainer') < allPages.indexOf(after), 'Expected the block before the following text');
+});
+
+
+test('uses a selected bare label as a customizable field instead of falling back to defaults', () => {
+  const fields = parseSignatureFields('Effective Date');
+  assert.equal(fields.length, 1);
+  assert.equal(fields[0].label, 'Effective Date');
+  assert.equal(fields[0].kind, 'date');
 });

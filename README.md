@@ -127,3 +127,16 @@ The project is configured for GitHub Pages and an API service. Deployment workfl
 ## Legal and safety note
 
 AI PDF Studio is a document preparation tool. It does not provide legal representation, determine enforceability, guarantee compliance, or replace review by a qualified professional. Template wording must be adapted to the transaction, parties, facts, and applicable law. Do not enter secrets or sensitive personal information unless you understand the data handling and deployment configuration of the instance you are using.
+
+
+## Bundled template artwork
+
+The template gallery uses original, locally bundled SVG artwork in `public/assets/templates/`. The category set includes music and entertainment, business, real estate, creative work, employment, corporate/legal, finance, technology, marketing, and general-purpose documents, plus a dedicated LIL SYNN visual. These assets are first-party repository files, so the gallery does not depend on third-party image hosts or require users to upload artwork. Asset paths are resolved through the Vite base path for GitHub Pages subpath deployments.
+
+## Signature and custom-field sizing
+
+The signature insertion workflow can read selected labeled text such as `Date: ________` and `Name: __________` into editable fields. When no text is selected, the insertion panel supplies neutral Date, Name, Extra field, and Signature rows. Each field can be renamed, changed between Text, Date, and Signature, removed, and assigned its own approximate underline length. The PDF renderer fits long lines to the available printable width rather than imposing a fixed character-count ceiling.
+
+## Built-in Help Center
+
+Open **More → Help & Getting Started** for in-app instructions covering document creation, AI prompting, text and section editing, signature/date fields, visual themes, PDF preview/export, review responsibilities, and keyboard shortcuts. A standalone guide is maintained at `docs/help/user-guide.md`.

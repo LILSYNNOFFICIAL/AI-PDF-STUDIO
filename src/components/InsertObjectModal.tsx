@@ -546,13 +546,17 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
               </div>
               <div className="space-y-2">
                 {signatureFields.map(field => (
-                  <div key={field.id} className="grid grid-cols-[minmax(105px,0.8fr)_minmax(0,1.5fr)_auto] items-center gap-2">
+                  <div key={field.id} className="grid grid-cols-[minmax(82px,1fr)_82px_82px_minmax(90px,1.2fr)_auto] items-center gap-1.5">
                     <input
                       aria-label="Signature field label"
                       value={field.label}
                       onChange={event => updateSignatureField(field.id, { label: event.target.value })}
                       className="min-w-0 rounded border border-slate-700 bg-slate-950 px-2 py-2 text-[11px] text-slate-200"
                     />
+                    <select aria-label={field.label + ' field type'} value={field.kind} onChange={event => updateSignatureField(field.id, { kind: event.target.value as SignatureField['kind'] })} className="min-w-0 rounded border border-slate-700 bg-slate-950 px-1.5 py-2 text-[10px] text-slate-300">
+                      <option value="text">Text</option><option value="date">Date</option><option value="signature">Signature</option>
+                    </select>
+                    <input aria-label={field.label + ' line length in characters'} type="number" min="1" step="1" value={field.lineLength ?? 48} onChange={event => updateSignatureField(field.id, { lineLength: Math.max(1, Number.parseInt(event.target.value, 10) || 1) })} className="min-w-0 w-full rounded border border-slate-700 bg-slate-950 px-1.5 py-2 text-[10px] text-slate-300" title="Approximate underline length in characters" />
                     {field.kind === 'signature' && signatureMode === 'line' ? (
                       <div className="border-b border-slate-500 px-2 py-2 text-[10px] text-slate-500">Blank line for handwritten signature</div>
                     ) : field.kind === 'signature' && signatureMode === 'drawn' ? (
@@ -571,7 +575,7 @@ export const InsertObjectModal: React.FC<InsertObjectModalProps> = ({
                 ))}
                 <button
                   type="button"
-                  onClick={() => setSignatureFields(current => [...current, { id: 'signature-field-' + Date.now(), label: 'Additional field', kind: 'text', value: '' }])}
+                  onClick={() => setSignatureFields(current => [...current, { id: 'signature-field-' + Date.now(), label: 'Extra field ' + (current.length + 1), kind: 'text', value: '', lineLength: 48 }])}
                   className="rounded bg-slate-800 px-3 py-1.5 text-[10px] text-slate-300 hover:bg-slate-700"
                 >
                   <Plus className="mr-1 inline h-3 w-3" /> Add field

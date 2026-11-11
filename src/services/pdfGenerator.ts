@@ -668,8 +668,8 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
       const padding = appearance.padding * 0.264583;
       const innerWidth = Math.max(10, sectionWidth - padding * 2);
       const rows = (block.fields || []).map(field => {
-        if (field.kind === 'signature') return { field, height: 13 };
-        const lines = pdf.splitTextToSize(field.value || ' ', innerWidth);
+        if (field.kind === 'signature' || !field.value) return { field, height: 13 };
+        const lines = pdf.splitTextToSize(field.value, innerWidth);
         return { field, height: 5 + Math.max(1, lines.length) * 3.6 };
       });
       const titleHeight = block.title ? 6 : 0;
@@ -711,6 +711,12 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
         pdf.setTextColor(...colorToRgb(appearance.labelColor));
         pdf.text(field.label.toUpperCase(), blockX + padding, fieldY);
         const valueY = fieldY + 3.5;
+        const desiredLineWidth = Math.min(innerWidth, Math.max(2, (Number(field.lineLength) || 48) * 1.6));
+        const drawFieldLine = () => {
+          pdf.setDrawColor(...colorToRgb(appearance.textColor));
+          pdf.setLineWidth(0.25);
+          pdf.line(blockX + padding, fieldY + 9.5, blockX + padding + desiredLineWidth, fieldY + 9.5);
+        };
         if (field.kind === 'signature') {
           if (block.signatureMode === 'drawn' && block.signatureImageDataUrl) {
             try {
@@ -727,20 +733,18 @@ export function generatePdfDocument(doc: DocumentModel): jsPDF {
             pdf.setTextColor(...colorToRgb(appearance.textColor));
             const signatureText = block.signatureValue || field.value || '';
             if (signatureText) pdf.text(signatureText.slice(0, 120), blockX + padding, valueY + 2);
-            pdf.setDrawColor(...colorToRgb(appearance.textColor));
-            pdf.setLineWidth(0.25);
-            pdf.line(blockX + padding, fieldY + 9.5, blockX + sectionWidth - padding, fieldY + 9.5);
+            drawFieldLine();
           } else {
-            pdf.setDrawColor(...colorToRgb(appearance.textColor));
-            pdf.setLineWidth(0.25);
-            pdf.line(blockX + padding, fieldY + 9.5, blockX + sectionWidth - padding, fieldY + 9.5);
+            drawFieldLine();
           }
-        } else {
-          const lines = pdf.splitTextToSize(field.value || ' ', innerWidth);
+        } else if (field.value) {
+          const lines = pdf.splitTextToSize(field.value, innerWidth);
           pdf.setFont(primaryFont, 'normal');
           pdf.setFontSize(9);
           pdf.setTextColor(...colorToRgb(appearance.textColor));
           pdf.text(lines, blockX + padding, valueY);
+        } else {
+          drawFieldLine();
         }
         fieldY += height;
       }
