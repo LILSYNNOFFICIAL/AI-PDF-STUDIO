@@ -268,7 +268,7 @@ test('expanded template families receive their own operationally specific clause
   ];
   for (const [id, first, second] of expectations) {
     const doc = api.buildTemplateDocument(id);
-    const headings = doc.sections.flatMap(section => [section.title, ...section.clauses.map(clause => clause.heading)]);
+    const headings = doc.sections.flatMap(section => [section.title, ...section.clauses.map(clause => clause.heading)].filter((value): value is string => typeof value === 'string'));
     assert.ok(headings.some(value => first.test(value)), id + ' must have a family-specific opening provision');
     assert.ok(headings.some(value => second.test(value)), id + ' must have a family-specific commercial or operational provision');
   }
